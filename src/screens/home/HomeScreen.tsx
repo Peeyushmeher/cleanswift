@@ -1,12 +1,17 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainTabsParamList } from '../../navigation/MainTabs';
+import type { ProfileStackParamList } from '../../navigation/ProfileStack';
 
-interface HomeScreenProps {
-  onBookService: () => void;
-  onSelectCar: () => void;
-  onProfile?: () => void;
-  onOrders?: () => void;
-}
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabsParamList, 'Home'>,
+  NativeStackNavigationProp<ProfileStackParamList>
+>;
 
 const quickActions = [
   { icon: 'water' as const, label: 'Quick Wash', color: '#1DA4F3' },
@@ -16,200 +21,333 @@ const quickActions = [
   { icon: 'cube' as const, label: 'Luxury Package', color: '#1DA4F3' },
 ];
 
-export default function HomeScreen({ onBookService, onSelectCar, onProfile, onOrders }: HomeScreenProps) {
+export default function HomeScreen() {
+  const navigation = useNavigation<NavigationProp>();
+
+  const handleBookService = () => {
+    // Navigate to the Book tab, which shows the BookingStack (ServiceSelection screen)
+    navigation.navigate('Book');
+  };
+
+  const handleSelectCar = () => {
+    // Navigate to Profile tab, then to SelectCar screen
+    (navigation as any).navigate('Profile', { screen: 'SelectCar' });
+  };
+
+  const handleProfile = () => {
+    navigation.navigate('Profile');
+  };
+
+  const handleOrders = () => {
+    navigation.navigate('Orders');
+  };
+
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Main Content - Scrollable */}
-      <ScrollView className="flex-1">
-        {/* Header */}
-        <View className="px-6 pt-16 pb-8 flex items-center justify-between" style={{ flexDirection: 'row' }}>
-          <View>
-            <Text className="text-[#C6CFD9] mb-2.5" style={{ fontSize: 14 }}>Good Morning</Text>
-            <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-              CleanSwift
-            </Text>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>Good Morning</Text>
+              <Text style={styles.title}>CleanSwift</Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleProfile}
+              activeOpacity={0.8}
+              style={styles.profileButton}
+            >
+              <Ionicons name="person" size={24} color="#6FF0C4" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={onProfile}
-            activeOpacity={0.8}
-            className="w-12 h-12 rounded-full border-2 border-[#6FF0C4]/40 bg-[#6FF0C4]/5 flex items-center justify-center transition-all duration-200 active:scale-95 hover:border-[#6FF0C4]/60 hover:bg-[#6FF0C4]/10"
-            style={{
-              shadowColor: '#6FF0C4',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.15,
-              shadowRadius: 20,
-            }}
-          >
-            <Ionicons name="person" size={24} color="#6FF0C4" />
-          </TouchableOpacity>
-        </View>
 
-        {/* Hero Car Card */}
-        <View className="px-6 mb-8">
-          <TouchableOpacity
-            onPress={onBookService}
-            activeOpacity={0.95}
-            className="w-full bg-[#0A1A2F] rounded-3xl p-7 shadow-xl border border-white/5 transition-all duration-200 active:scale-[0.99]"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 20 },
-              shadowOpacity: 0.4,
-              shadowRadius: 40,
-            }}
-          >
-            {/* Car Icon */}
-            <View className="mb-6 relative">
-              <Ionicons name="car-sport" size={64} color="#6FF0C4" />
-              <View className="absolute inset-0 blur-2xl opacity-20 bg-[#6FF0C4]" />
-            </View>
+          {/* Hero Car Card */}
+          <View style={styles.carCardContainer}>
+            <TouchableOpacity
+              onPress={handleBookService}
+              activeOpacity={0.95}
+              style={styles.carCard}
+            >
+              {/* Car Icon */}
+              <View style={styles.carIconContainer}>
+                <Ionicons name="car-sport" size={64} color="#6FF0C4" />
+                <View style={styles.carIconGlow} />
+              </View>
 
-            {/* Car Info */}
-            <View className="mb-6">
-              <Text className="text-[#F5F7FA] mb-1.5" style={{ fontSize: 20, fontWeight: '600' }}>
-                2022 BMW M4
-              </Text>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                Primary Vehicle
-              </Text>
-            </View>
+              {/* Car Info */}
+              <View style={styles.carInfo}>
+                <Text style={styles.carName}>2022 BMW M4</Text>
+                <Text style={styles.carLabel}>Primary Vehicle</Text>
+              </View>
 
-            {/* CTA Buttons */}
-            <View className="flex gap-3" style={{ flexDirection: 'row' }}>
-              <TouchableOpacity
-                onPress={onBookService}
-                activeOpacity={0.8}
-                className="flex-1 bg-[#1DA4F3] text-white py-4 rounded-full transition-all duration-200 active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/25"
-                style={{
-                  minHeight: 48,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  shadowColor: '#1DA4F3',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 8,
-                }}
-              >
-                <Text className="text-white" style={{ fontSize: 16, fontWeight: '600' }}>
-                  Book a Wash
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={onSelectCar}
-                activeOpacity={0.8}
-                className="px-7 bg-[#0A1A2F] border border-[#C6CFD9]/20 text-[#F5F7FA] py-4 rounded-full transition-all duration-200 active:scale-[0.98] hover:border-[#6FF0C4]/30"
-                style={{
-                  minHeight: 48,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 1,
-                  borderColor: 'rgba(198,207,217,0.2)',
-                }}
-              >
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 15, fontWeight: '600' }}>
-                  Change
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </View>
+              {/* CTA Buttons */}
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  onPress={handleBookService}
+                  activeOpacity={0.8}
+                  style={styles.primaryButton}
+                >
+                  <Text style={styles.primaryButtonText}>Book a Wash</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSelectCar}
+                  activeOpacity={0.8}
+                  style={styles.secondaryButton}
+                >
+                  <Text style={styles.secondaryButtonText}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </View>
 
-        {/* Quick Actions */}
-        <View className="px-6 mb-8">
-          <Text className="text-[#F5F7FA] mb-5" style={{ fontSize: 18, fontWeight: '600' }}>
-            Quick Actions
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="flex gap-3 pb-2"
-            contentContainerStyle={{ gap: 12 }}
-          >
-            {quickActions.map((action, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={onBookService}
-                activeOpacity={0.8}
-                className="flex-shrink-0 bg-[#0A1A2F] rounded-2xl p-5 border border-white/5 transition-all duration-200 active:scale-95 hover:border-[#6FF0C4]/30"
-                style={{ width: 128, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-              >
-                <Ionicons
-                  name={action.icon}
-                  size={32}
-                  color={action.color}
-                  style={{ marginBottom: 14, alignSelf: 'center' }}
-                />
-                <Text className="text-[#C6CFD9] text-center" style={{ fontSize: 13 }}>
-                  {action.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+          {/* Quick Actions */}
+          <View style={styles.quickActionsContainer}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickActionsScroll}
+            >
+              {quickActions.map((action, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={handleBookService}
+                  activeOpacity={0.8}
+                  style={styles.quickActionCard}
+                >
+                  <Ionicons
+                    name={action.icon}
+                    size={32}
+                    color={action.color}
+                    style={styles.quickActionIcon}
+                  />
+                  <Text style={styles.quickActionLabel}>{action.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
-        {/* Upcoming Bookings */}
-        <View className="px-6 mb-24">
-          <Text className="text-[#F5F7FA] mb-5" style={{ fontSize: 18, fontWeight: '600' }}>
-            Upcoming
-          </Text>
-          <View
-            className="bg-[#0A1A2F] rounded-2xl p-6 border border-[#1DA4F3]/20 flex items-center gap-4"
-            style={{
-              flexDirection: 'row',
-              shadowColor: '#1DA4F3',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.1,
-              shadowRadius: 20,
-              borderWidth: 1,
-              borderColor: 'rgba(29,164,243,0.2)',
-            }}
-          >
-            <View className="w-12 h-12 rounded-full bg-[#1DA4F3]/10 flex items-center justify-center flex-shrink-0">
-              <Ionicons name="time" size={24} color="#1DA4F3" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[#F5F7FA] mb-1.5" style={{ fontSize: 16, fontWeight: '500' }}>
-                Full Detail Service
-              </Text>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                Tomorrow, 2:00 PM
-              </Text>
+          {/* Upcoming Bookings */}
+          <View style={styles.upcomingContainer}>
+            <Text style={styles.sectionTitle}>Upcoming</Text>
+            <View style={styles.upcomingCard}>
+              <View style={styles.upcomingIconContainer}>
+                <Ionicons name="time" size={24} color="#1DA4F3" />
+              </View>
+              <View style={styles.upcomingContent}>
+                <Text style={styles.upcomingTitle}>Full Detail Service</Text>
+                <Text style={styles.upcomingSubtitle}>Tomorrow, 2:00 PM</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View
-        className="bg-[#0A1A2F]/95 backdrop-blur-lg border-t border-white/5 px-6 py-4 safe-area-inset-bottom"
-        style={{ borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' }}
-      >
-        <View className="flex items-center justify-around" style={{ flexDirection: 'row' }}>
-          <TouchableOpacity className="flex flex-col items-center gap-1.5">
-            <Ionicons name="home" size={24} color="#6FF0C4" />
-            <Text className="text-[#6FF0C4]" style={{ fontSize: 11, fontWeight: '500' }}>
-              Home
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onBookService} className="flex flex-col items-center gap-1.5">
-            <Ionicons name="water" size={24} color="#C6CFD9" />
-            <Text className="text-[#C6CFD9]" style={{ fontSize: 11, fontWeight: '500' }}>
-              Book
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onOrders} className="flex flex-col items-center gap-1.5">
-            <Ionicons name="cube" size={24} color="#C6CFD9" />
-            <Text className="text-[#C6CFD9]" style={{ fontSize: 11, fontWeight: '500' }}>
-              Orders
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onProfile} className="flex flex-col items-center gap-1.5">
-            <Ionicons name="person" size={24} color="#C6CFD9" />
-            <Text className="text-[#C6CFD9]" style={{ fontSize: 11, fontWeight: '500' }}>
-              Profile
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
+  },
+  greeting: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  title: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  profileButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(111, 240, 196, 0.4)',
+    backgroundColor: 'rgba(111, 240, 196, 0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#6FF0C4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+  },
+  carCardContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  carCard: {
+    width: '100%',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 24,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.4,
+    shadowRadius: 40,
+    elevation: 10,
+  },
+  carIconContainer: {
+    marginBottom: 24,
+    position: 'relative',
+    alignItems: 'center',
+  },
+  carIconGlow: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#6FF0C4',
+    opacity: 0.2,
+  },
+  carInfo: {
+    marginBottom: 24,
+  },
+  carName: {
+    color: '#F5F7FA',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  carLabel: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+  },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: '#1DA4F3',
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 48,
+    marginRight: 6,
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    paddingHorizontal: 28,
+    backgroundColor: '#0A1A2F',
+    borderWidth: 1,
+    borderColor: 'rgba(198, 207, 217, 0.2)',
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 48,
+    marginLeft: 6,
+  },
+  secondaryButtonText: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  quickActionsContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  quickActionsScroll: {
+    paddingRight: 24,
+  },
+  quickActionCard: {
+    width: 128,
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  quickActionIcon: {
+    marginBottom: 14,
+  },
+  quickActionLabel: {
+    color: '#C6CFD9',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  upcomingContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 96,
+  },
+  upcomingCard: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(29, 164, 243, 0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  upcomingIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(29, 164, 243, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  upcomingContent: {
+    flex: 1,
+  },
+  upcomingTitle: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  upcomingSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+});

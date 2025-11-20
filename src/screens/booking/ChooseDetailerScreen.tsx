@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useBooking } from '../../contexts/BookingContext';
 
-interface ChooseDetailerScreenProps {
-  onBack: () => void;
-  onContinue: () => void;
-}
+type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseDetailer'>;
 
 const detailers = [
   {
@@ -37,179 +38,338 @@ const detailers = [
   },
 ];
 
-export default function ChooseDetailerScreen({ onBack, onContinue }: ChooseDetailerScreenProps) {
-  const [selectedDetailer, setSelectedDetailer] = useState<string>('');
+export default function ChooseDetailerScreen({ navigation, route }: Props) {
+  const { setDetailer } = useBooking();
+  const [selectedDetailerId, setSelectedDetailerId] = useState<string>('');
+
+  const handleContinue = () => {
+    if (!selectedDetailerId) return;
+
+    // Find selected detailer
+    const selectedDetailerData = detailers.find(d => d.id === selectedDetailerId);
+    if (!selectedDetailerData) return;
+
+    // Update BookingContext (convert to Detailer type expected by context)
+    // Parse years_experience from "5+ years" format
+    const yearsMatch = selectedDetailerData.experience.match(/(\d+)/);
+    const yearsExperience = yearsMatch ? parseInt(yearsMatch[1]) : 0;
+    
+    setDetailer({
+      id: selectedDetailerData.id,
+      full_name: selectedDetailerData.name,
+      avatar_url: null,
+      rating: selectedDetailerData.rating,
+      review_count: selectedDetailerData.reviews,
+      years_experience: yearsExperience,
+      is_active: true,
+    });
+
+    // Navigate to next screen
+    navigation.navigate('OrderSummary', {
+      selectedService: route.params.selectedService,
+      selectedAddons: route.params.selectedAddons,
+      date: route.params.date,
+      time: route.params.time,
+      detailerId: selectedDetailerId,
+    });
+  };
 
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors"
-        >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-        </TouchableOpacity>
-        <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-          Choose Your Detailer
-        </Text>
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView className="flex-1 px-6 pb-32" showsVerticalScrollIndicator={false}>
-        <View className="space-y-4" style={{ gap: 16 }}>
-          {detailers.map((detailer) => {
-            const isSelected = selectedDetailer === detailer.id;
-
-            return (
-              <TouchableOpacity
-                key={detailer.id}
-                onPress={() => setSelectedDetailer(detailer.id)}
-                activeOpacity={isSelected ? 1 : 0.8}
-                className={`w-full bg-[#0A1A2F] rounded-3xl p-6 transition-all duration-200 relative ${
-                  isSelected
-                    ? 'border-2 border-[#6FF0C4] shadow-lg shadow-[#6FF0C4]/20'
-                    : 'border border-white/5 active:scale-[0.98]'
-                }`}
-                style={{
-                  borderWidth: isSelected ? 2 : 1,
-                  borderColor: isSelected ? '#6FF0C4' : 'rgba(255,255,255,0.05)',
-                  shadowColor: isSelected ? '#6FF0C4' : 'transparent',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: isSelected ? 0.2 : 0,
-                  shadowRadius: 8,
-                }}
-              >
-                {/* Selection Checkmark */}
-                {isSelected && (
-                  <View
-                    className="absolute top-5 right-5 w-6 h-6 rounded-full bg-[#6FF0C4] flex items-center justify-center"
-                    style={{ width: 24, height: 24 }}
-                  >
-                    <Ionicons name="checkmark" size={16} color="#050B12" />
-                  </View>
-                )}
-
-                <View className="flex items-start gap-4" style={{ flexDirection: 'row' }}>
-                  {/* Profile Photo */}
-                  <View className="flex-shrink-0">
-                    <View
-                      className={`w-16 h-16 rounded-full bg-gradient-to-br from-[#1DA4F3]/20 to-[#6FF0C4]/20 flex items-center justify-center ${
-                        isSelected ? 'ring-2 ring-[#6FF0C4]' : ''
-                      }`}
-                      style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 32,
-                        backgroundColor: 'rgba(29,164,243,0.15)',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderWidth: isSelected ? 2 : 0,
-                        borderColor: isSelected ? '#6FF0C4' : 'transparent',
-                      }}
-                    >
-                      <Text className="text-[#F5F7FA]" style={{ fontSize: 24, fontWeight: '600' }}>
-                        {detailer.name.split(' ').map(n => n[0]).join('')}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Details */}
-                  <View className="flex-1">
-                    {/* Name */}
-                    <Text className="text-[#F5F7FA] mb-2" style={{ fontSize: 20, fontWeight: '600' }}>
-                      {detailer.name}
-                    </Text>
-
-                    {/* Rating */}
-                    <View className="flex items-center gap-2 mb-3" style={{ flexDirection: 'row' }}>
-                      <View className="flex items-center gap-1" style={{ flexDirection: 'row' }}>
-                        <Ionicons name="star" size={16} color="#6FF0C4" />
-                        <Text className="text-[#F5F7FA]" style={{ fontSize: 15, fontWeight: '500' }}>
-                          {detailer.rating}
-                        </Text>
-                      </View>
-                      <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                        ({detailer.reviews} reviews)
-                      </Text>
-                    </View>
-
-                    {/* Distance & ETA */}
-                    <View className="space-y-2" style={{ gap: 8 }}>
-                      <View className="flex items-center gap-2" style={{ flexDirection: 'row' }}>
-                        <Ionicons name="location" size={16} color="#C6CFD9" />
-                        <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                          {detailer.distance} away
-                        </Text>
-                      </View>
-                      <View className="flex items-center gap-2" style={{ flexDirection: 'row' }}>
-                        <Ionicons name="time" size={16} color="#1DA4F3" />
-                        <Text className="text-[#1DA4F3]" style={{ fontSize: 14, fontWeight: '500' }}>
-                          Estimated arrival: {detailer.eta}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Experience Badge */}
-                    <View className="mt-3">
-                      <View
-                        className="px-3 py-1 bg-[#050B12] rounded-full"
-                        style={{
-                          alignSelf: 'flex-start',
-                          paddingHorizontal: 12,
-                          paddingVertical: 4,
-                          backgroundColor: '#050B12',
-                          borderRadius: 999,
-                        }}
-                      >
-                        <Text className="text-[#C6CFD9]" style={{ fontSize: 12 }}>
-                          {detailer.experience} experience
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
-
-      {/* Bottom CTA */}
-      <View className="px-6 pb-8 bg-gradient-to-t from-[#050B12] via-[#050B12] to-transparent pt-6">
-        <TouchableOpacity
-          onPress={onContinue}
-          disabled={!selectedDetailer}
-          activeOpacity={selectedDetailer ? 0.8 : 1}
-          className={`w-full py-4 rounded-full transition-all duration-200 ${
-            selectedDetailer
-              ? 'bg-[#1DA4F3] text-white active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/20'
-              : 'bg-[#0A1A2F] text-[#C6CFD9]/50 cursor-not-allowed'
-          }`}
-          style={{
-            minHeight: 56,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: selectedDetailer ? '#1DA4F3' : '#0A1A2F',
-            shadowColor: selectedDetailer ? '#1DA4F3' : 'transparent',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: selectedDetailer ? 0.2 : 0,
-            shadowRadius: 8,
-          }}
-        >
-          <Text
-            className={selectedDetailer ? 'text-white' : 'text-[#C6CFD9]/50'}
-            style={{
-              fontSize: 17,
-              fontWeight: '600',
-              color: selectedDetailer ? 'white' : 'rgba(198,207,217,0.5)',
-            }}
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            style={styles.backButton}
           >
-            Continue
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Choose Your Detailer</Text>
+        </View>
+
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.detailersList}>
+            {detailers.map((detailer) => {
+              const isSelected = selectedDetailerId === detailer.id;
+
+              return (
+                <TouchableOpacity
+                  key={detailer.id}
+                  onPress={() => setSelectedDetailerId(detailer.id)}
+                  activeOpacity={isSelected ? 1 : 0.8}
+                  style={[
+                    styles.detailerCard,
+                    isSelected && styles.detailerCardSelected,
+                  ]}
+                >
+                  {/* Selection Checkmark */}
+                  {isSelected && (
+                    <View style={styles.checkmark}>
+                      <Ionicons name="checkmark" size={16} color="#050B12" />
+                    </View>
+                  )}
+
+                  <View style={styles.detailerCardContent}>
+                    {/* Profile Photo */}
+                    <View style={styles.profileContainer}>
+                      <View style={[
+                        styles.profileAvatar,
+                        isSelected && styles.profileAvatarSelected,
+                      ]}>
+                        <Text style={styles.profileInitials}>
+                          {detailer.name.split(' ').map(n => n[0]).join('')}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Details */}
+                    <View style={styles.detailerDetails}>
+                      {/* Name */}
+                      <Text style={styles.detailerName}>{detailer.name}</Text>
+
+                      {/* Rating */}
+                      <View style={styles.ratingRow}>
+                        <View style={styles.ratingContainer}>
+                          <Ionicons name="star" size={16} color="#6FF0C4" />
+                          <Text style={styles.ratingText}>{detailer.rating}</Text>
+                        </View>
+                        <Text style={styles.reviewsText}>({detailer.reviews} reviews)</Text>
+                      </View>
+
+                      {/* Distance & ETA */}
+                      <View style={styles.infoRow}>
+                        <View style={styles.infoItem}>
+                          <Ionicons name="location" size={16} color="#C6CFD9" />
+                          <Text style={styles.infoText}>{detailer.distance} away</Text>
+                        </View>
+                        <View style={styles.infoItem}>
+                          <Ionicons name="time" size={16} color="#1DA4F3" />
+                          <Text style={styles.etaText}>Estimated arrival: {detailer.eta}</Text>
+                        </View>
+                      </View>
+
+                      {/* Experience Badge */}
+                      <View style={styles.experienceBadge}>
+                        <Text style={styles.experienceText}>{detailer.experience} experience</Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        {/* Bottom CTA */}
+        <View style={styles.bottomCTA}>
+          <TouchableOpacity
+            onPress={handleContinue}
+            disabled={!selectedDetailerId}
+            activeOpacity={selectedDetailerId ? 0.8 : 1}
+            style={[
+              styles.continueButton,
+              !selectedDetailerId && styles.continueButtonDisabled,
+            ]}
+          >
+            <Text style={[
+              styles.continueButtonText,
+              !selectedDetailerId && styles.continueButtonTextDisabled,
+            ]}>
+              Continue
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  backButton: {
+    padding: 4,
+    marginRight: 16,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 120,
+  },
+  detailersList: {
+  },
+  detailerCard: {
+    width: '100%',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    position: 'relative',
+    marginBottom: 16,
+  },
+  detailerCardSelected: {
+    borderWidth: 2,
+    borderColor: '#6FF0C4',
+    shadowColor: '#6FF0C4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  checkmark: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#6FF0C4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detailerCardContent: {
+    flexDirection: 'row',
+  },
+  profileContainer: {
+    marginRight: 16,
+  },
+  profileAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(29,164,243,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileAvatarSelected: {
+    borderWidth: 2,
+    borderColor: '#6FF0C4',
+  },
+  profileInitials: {
+    color: '#F5F7FA',
+    fontSize: 24,
+    fontWeight: '600',
+  },
+  detailerDetails: {
+    flex: 1,
+  },
+  detailerName: {
+    color: '#F5F7FA',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  ratingText: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  reviewsText: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  infoRow: {
+    marginBottom: 12,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoText: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  etaText: {
+    color: '#1DA4F3',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  experienceBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: '#050B12',
+    borderRadius: 999,
+    marginTop: 12,
+  },
+  experienceText: {
+    color: '#C6CFD9',
+    fontSize: 12,
+  },
+  bottomCTA: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
+    backgroundColor: '#050B12',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  continueButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 56,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#0A1A2F',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  continueButtonTextDisabled: {
+    color: 'rgba(198,207,217,0.5)',
+  },
+});

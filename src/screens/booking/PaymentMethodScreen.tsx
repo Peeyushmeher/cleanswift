@@ -1,209 +1,412 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useBooking } from '../../contexts/BookingContext';
 
-interface PaymentMethodScreenProps {
-  onBack: () => void;
-  onContinue: () => void;
-  onAddCard: () => void;
-  showPriceSummary?: boolean;
-}
+type Props = NativeStackScreenProps<BookingStackParamList, 'PaymentMethod'>;
 
 const savedCards = [
   { id: '1', type: 'visa', last4: '2741', expiry: '10/27' },
   { id: '2', type: 'mastercard', last4: '8392', expiry: '03/26' },
 ];
 
-export default function PaymentMethodScreen({ onBack, onContinue, onAddCard, showPriceSummary = true }: PaymentMethodScreenProps) {
+export default function PaymentMethodScreen({ navigation, route }: Props) {
+  const { priceBreakdown } = useBooking();
   const [selectedCard, setSelectedCard] = useState<string>('apple-pay');
+  const showPriceSummary = route.params?.showPrice ?? true;
+
+  const handleCompletePayment = () => {
+    // Navigate to post-payment screen (likely ServiceProgress or LiveTracking)
+    navigation.navigate('ServiceProgress');
+  };
+
+  const handleAddCard = () => {
+    navigation.navigate('AddPaymentCard');
+  };
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toFixed(2)}`;
+  };
 
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors"
-        >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-        </TouchableOpacity>
-        <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-          Payment Method
-        </Text>
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView className="flex-1 px-6 pb-32" showsVerticalScrollIndicator={false}>
-        {/* Security Statement */}
-        <Text className="text-[#C6CFD9] text-center mb-6" style={{ fontSize: 13 }}>
-          Your payment information is encrypted and securely stored.
-        </Text>
-
-        {/* Apple Pay */}
-        <TouchableOpacity
-          onPress={() => setSelectedCard('apple-pay')}
-          activeOpacity={0.8}
-          className={`w-full bg-black border py-4 rounded-full mb-6 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-3 ${
-            selectedCard === 'apple-pay'
-              ? 'border-[#6FF0C4] shadow-lg shadow-[#6FF0C4]/20'
-              : 'border-white/10'
-          }`}
-          style={{
-            flexDirection: 'row',
-            borderWidth: selectedCard === 'apple-pay' ? 2 : 1,
-            borderColor: selectedCard === 'apple-pay' ? '#6FF0C4' : 'rgba(255,255,255,0.1)',
-            shadowColor: selectedCard === 'apple-pay' ? '#6FF0C4' : 'transparent',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: selectedCard === 'apple-pay' ? 0.2 : 0,
-            shadowRadius: 8,
-          }}
-        >
-          <Ionicons name="logo-apple" size={24} color="white" />
-          <Text className="text-white" style={{ fontSize: 16, fontWeight: '500' }}>
-            Apple Pay
-          </Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        <View className="flex items-center gap-4 mb-6" style={{ flexDirection: 'row' }}>
-          <View className="flex-1 h-px bg-[#C6CFD9]/20" style={{ height: 1 }} />
-          <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>OR</Text>
-          <View className="flex-1 h-px bg-[#C6CFD9]/20" style={{ height: 1 }} />
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Payment Method</Text>
         </View>
 
-        {/* Saved Cards */}
-        <View className="space-y-3 mb-4" style={{ gap: 12 }}>
-          {savedCards.map((card) => {
-            const isSelected = selectedCard === card.id;
-            const iconName = card.type === 'visa' ? 'card' : 'card';
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Security Statement */}
+          <Text style={styles.securityText}>
+            Your payment information is encrypted and securely stored.
+          </Text>
 
-            return (
-              <TouchableOpacity
-                key={card.id}
-                onPress={() => setSelectedCard(card.id)}
-                activeOpacity={0.8}
-                className={`w-full bg-[#0A1A2F] rounded-2xl p-5 transition-all duration-200 relative ${
-                  isSelected
-                    ? 'border-2 border-[#6FF0C4] shadow-lg shadow-[#6FF0C4]/20'
-                    : 'border border-white/5 active:scale-[0.98]'
-                }`}
-                style={{
-                  borderWidth: isSelected ? 2 : 1,
-                  borderColor: isSelected ? '#6FF0C4' : 'rgba(255,255,255,0.05)',
-                  shadowColor: isSelected ? '#6FF0C4' : 'transparent',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: isSelected ? 0.2 : 0,
-                  shadowRadius: 8,
-                }}
-              >
-                {isSelected && (
-                  <View
-                    className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#6FF0C4] flex items-center justify-center"
-                    style={{ width: 20, height: 20 }}
-                  >
-                    <Ionicons name="checkmark" size={12} color="#050B12" />
+          {/* Apple Pay */}
+          <TouchableOpacity
+            onPress={() => setSelectedCard('apple-pay')}
+            activeOpacity={0.8}
+            style={[
+              styles.applePayButton,
+              selectedCard === 'apple-pay' && styles.applePayButtonSelected,
+            ]}
+          >
+            <Ionicons name="logo-apple" size={24} color="white" />
+            <Text style={styles.applePayText}>Apple Pay</Text>
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Saved Cards */}
+          <View style={styles.cardsList}>
+            {savedCards.map((card) => {
+              const isSelected = selectedCard === card.id;
+
+              return (
+                <TouchableOpacity
+                  key={card.id}
+                  onPress={() => setSelectedCard(card.id)}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.cardOption,
+                    isSelected && styles.cardOptionSelected,
+                  ]}
+                >
+                  {isSelected && (
+                    <View style={styles.cardCheckmark}>
+                      <Ionicons name="checkmark" size={12} color="#050B12" />
+                    </View>
+                  )}
+
+                  <View style={styles.cardContent}>
+                    <Ionicons name="card" size={48} color="white" style={{ opacity: 0.9 }} />
+                    <View style={styles.cardDetails}>
+                      <Text style={styles.cardNumber}>
+                        {card.type === 'visa' ? 'Visa' : 'Mastercard'} •••• {card.last4}
+                      </Text>
+                      <Text style={styles.cardExpiry}>Exp {card.expiry}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Add New Card */}
+          <TouchableOpacity
+            onPress={handleAddCard}
+            activeOpacity={0.8}
+            style={styles.addCardButton}
+          >
+            <View style={styles.addCardContent}>
+              <View style={styles.addCardIcon}>
+                <Ionicons name="add" size={20} color="#6FF0C4" />
+              </View>
+              <Text style={styles.addCardText}>Add New Card</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Price Summary */}
+          {showPriceSummary && (
+            <View style={styles.priceSummary}>
+              <View style={styles.priceRows}>
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Service</Text>
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(priceBreakdown.servicePrice)}
+                  </Text>
+                </View>
+                {priceBreakdown.addonsTotal > 0 && (
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceLabel}>Add-ons</Text>
+                    <Text style={styles.priceValue}>
+                      {formatCurrency(priceBreakdown.addonsTotal)}
+                    </Text>
                   </View>
                 )}
-
-                <View className="flex items-center gap-4" style={{ flexDirection: 'row' }}>
-                  <Ionicons name={iconName} size={48} color="white" style={{ opacity: 0.9 }} />
-                  <View className="flex-1">
-                    <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 16, fontWeight: '500' }}>
-                      {card.type === 'visa' ? 'Visa' : 'Mastercard'} •••• {card.last4}
-                    </Text>
-                    <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                      Exp {card.expiry}
+                {priceBreakdown.taxAmount > 0 && (
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceLabel}>HST</Text>
+                    <Text style={styles.priceValue}>
+                      {formatCurrency(priceBreakdown.taxAmount)}
                     </Text>
                   </View>
+                )}
+                <View style={styles.priceDivider} />
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Total</Text>
+                  <Text style={styles.totalValue}>
+                    {formatCurrency(priceBreakdown.totalAmount)}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Add New Card */}
-        <TouchableOpacity
-          onPress={onAddCard}
-          activeOpacity={0.8}
-          className="w-full bg-[#0A1A2F] rounded-2xl p-5 border border-dashed border-[#6FF0C4]/30 transition-all duration-200 active:scale-[0.98] hover:border-[#6FF0C4]/50"
-          style={{
-            borderWidth: 1,
-            borderColor: 'rgba(111,240,196,0.3)',
-            borderStyle: 'dashed',
-          }}
-        >
-          <View className="flex items-center justify-center gap-3" style={{ flexDirection: 'row' }}>
-            <View
-              className="w-10 h-10 rounded-full bg-[#6FF0C4]/10 flex items-center justify-center"
-              style={{ width: 40, height: 40 }}
-            >
-              <Ionicons name="add" size={20} color="#6FF0C4" />
+              </View>
             </View>
-            <Text className="text-[#6FF0C4]" style={{ fontSize: 16, fontWeight: '500' }}>
-              Add New Card
-            </Text>
-          </View>
-        </TouchableOpacity>
+          )}
+        </ScrollView>
 
-        {/* Price Summary */}
-        {showPriceSummary && (
-          <View
-            className="mt-8 bg-[#0A1A2F] rounded-2xl p-5 border border-white/5"
-            style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
+        {/* Bottom CTA */}
+        <View style={styles.bottomCTA}>
+          <TouchableOpacity
+            onPress={handleCompletePayment}
+            activeOpacity={0.8}
+            style={styles.completeButton}
           >
-            <View className="space-y-2" style={{ gap: 8 }}>
-              <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Service</Text>
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$149.00</Text>
-              </View>
-              <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Add-ons</Text>
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$35.00</Text>
-              </View>
-              <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>HST</Text>
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$24.57</Text>
-              </View>
-              <View
-                className="h-px bg-[#C6CFD9]/20 my-3"
-                style={{ height: 1, backgroundColor: 'rgba(198,207,217,0.2)', marginVertical: 12 }}
-              />
-              <View className="flex justify-between items-center" style={{ flexDirection: 'row' }}>
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 18, fontWeight: '600' }}>
-                  Total
-                </Text>
-                <Text className="text-[#6FF0C4]" style={{ fontSize: 24, fontWeight: '700' }}>
-                  $208.57
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Bottom CTA */}
-      <View className="px-6 pb-8 bg-gradient-to-t from-[#050B12] via-[#050B12] to-transparent pt-6">
-        <TouchableOpacity
-          onPress={onContinue}
-          activeOpacity={0.8}
-          className="w-full bg-[#1DA4F3] text-white py-4 rounded-full transition-all duration-200 active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/20"
-          style={{
-            minHeight: 56,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#1DA4F3',
-            shadowColor: '#1DA4F3',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.2,
-            shadowRadius: 8,
-          }}
-        >
-          <Text className="text-white" style={{ fontSize: 17, fontWeight: '600' }}>
-            {showPriceSummary ? 'Complete Payment' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Text style={styles.completeButtonText}>
+              {showPriceSummary ? 'Complete Payment' : 'Save'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  backButton: {
+    padding: 4,
+    marginRight: 16,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 120,
+  },
+  securityText: {
+    color: '#C6CFD9',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  applePayButton: {
+    width: '100%',
+    height: 48,
+    backgroundColor: '#000000',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  applePayButtonSelected: {
+    borderWidth: 2,
+    borderColor: '#6FF0C4',
+    shadowColor: '#6FF0C4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  applePayText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 12,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(198,207,217,0.2)',
+  },
+  dividerText: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    marginHorizontal: 16,
+  },
+  cardsList: {
+    marginBottom: 16,
+  },
+  cardOption: {
+    width: '100%',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    position: 'relative',
+    marginBottom: 12,
+  },
+  cardOptionSelected: {
+    borderWidth: 2,
+    borderColor: '#6FF0C4',
+    shadowColor: '#6FF0C4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardCheckmark: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#6FF0C4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardDetails: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  cardNumber: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  cardExpiry: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  addCardButton: {
+    width: '100%',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(111,240,196,0.3)',
+    borderStyle: 'dashed',
+    marginBottom: 32,
+  },
+  addCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(111,240,196,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  addCardText: {
+    color: '#6FF0C4',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  priceSummary: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  priceRows: {
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  priceLabel: {
+    color: '#C6CFD9',
+    fontSize: 15,
+  },
+  priceValue: {
+    color: '#F5F7FA',
+    fontSize: 15,
+  },
+  priceDivider: {
+    height: 1,
+    backgroundColor: 'rgba(198,207,217,0.2)',
+    marginVertical: 12,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  totalValue: {
+    color: '#6FF0C4',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  bottomCTA: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
+    backgroundColor: '#050B12',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  completeButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 56,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  completeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});

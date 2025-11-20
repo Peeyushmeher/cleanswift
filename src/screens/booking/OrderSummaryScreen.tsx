@@ -1,218 +1,417 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useBooking } from '../../contexts/BookingContext';
 
-interface OrderSummaryScreenProps {
-  onBack: () => void;
-  onContinue: () => void;
-}
+type Props = NativeStackScreenProps<BookingStackParamList, 'OrderSummary'>;
 
-export default function OrderSummaryScreen({ onBack, onContinue }: OrderSummaryScreenProps) {
+export default function OrderSummaryScreen({ navigation, route }: Props) {
+  const {
+    selectedService,
+    selectedAddons,
+    selectedCar,
+    selectedDetailer,
+    selectedDate,
+    selectedTimeSlot,
+    priceBreakdown,
+  } = useBooking();
+
+  const handleContinue = () => {
+    navigation.navigate('PaymentMethod', { showPrice: true });
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return 'Not selected';
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+  };
+
+  const formatTime = (timeSlot: string | null) => {
+    if (!timeSlot) return 'Not selected';
+    // Parse time and create a 2-hour window
+    const [time, period] = timeSlot.split(' ');
+    const [hours, minutes] = time.split(':');
+    let hour = parseInt(hours);
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    
+    const startHour = hour;
+    const endHour = (hour + 2) % 24;
+    const startPeriod = startHour >= 12 ? 'PM' : 'AM';
+    const endPeriod = endHour >= 12 ? 'PM' : 'AM';
+    const displayStartHour = startHour > 12 ? startHour - 12 : startHour === 0 ? 12 : startHour;
+    const displayEndHour = endHour > 12 ? endHour - 12 : endHour === 0 ? 12 : endHour;
+    
+    return `${displayStartHour}:00 ${startPeriod} - ${displayEndHour}:00 ${endPeriod} Arrival Window`;
+  };
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toFixed(2)}`;
+  };
+
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors"
-        >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-        </TouchableOpacity>
-        <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-          Order Summary
-        </Text>
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView className="flex-1 px-6 pb-32" showsVerticalScrollIndicator={false}>
-        {/* Service Card */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="flex justify-between items-start mb-3" style={{ flexDirection: 'row' }}>
-            <View className="flex-1">
-              <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 20, fontWeight: '600' }}>
-                Full Exterior Detail
-              </Text>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                Premium exterior cleaning, hand wash, wax
-              </Text>
-            </View>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text className="text-[#6FF0C4]" style={{ fontSize: 14, fontWeight: '500' }}>
-                Change
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Text className="text-[#1DA4F3]" style={{ fontSize: 18, fontWeight: '600' }}>
-            $149.00
-          </Text>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Order Summary</Text>
         </View>
 
-        {/* Car Card */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <View className="flex justify-between items-start" style={{ flexDirection: 'row' }}>
-            <View className="flex items-start gap-4 flex-1" style={{ flexDirection: 'row' }}>
-              <Ionicons name="car-sport" size={40} color="#6FF0C4" />
-              <View>
-                <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 18, fontWeight: '600' }}>
-                  2022 BMW M4
+          {/* Service Card */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.cardHeaderContent}>
+                <Text style={styles.cardTitle}>
+                  {selectedService?.name || 'No service selected'}
                 </Text>
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                  License: ABC-123
+                <Text style={styles.cardSubtitle}>
+                  {selectedService?.description || ''}
                 </Text>
               </View>
-            </View>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text className="text-[#6FF0C4]" style={{ fontSize: 14, fontWeight: '500' }}>
-                Change
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Detailer Card */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="flex justify-between items-start" style={{ flexDirection: 'row' }}>
-            <View className="flex items-start gap-4 flex-1" style={{ flexDirection: 'row' }}>
-              <View
-                className="w-12 h-12 rounded-full bg-gradient-to-br from-[#1DA4F3]/20 to-[#6FF0C4]/20 flex items-center justify-center ring-1 ring-[#6FF0C4]/30"
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: 'rgba(29,164,243,0.15)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 1,
-                  borderColor: 'rgba(111,240,196,0.3)',
-                }}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ServiceSelection')}
               >
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 18, fontWeight: '600' }}>
-                  MT
+                <Text style={styles.changeLink}>Change</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.servicePrice}>
+              {formatCurrency(selectedService?.price || 0)}
+            </Text>
+          </View>
+
+          {/* Car Card */}
+          {selectedCar && (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="car-sport" size={40} color="#6FF0C4" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>
+                      {selectedCar.year} {selectedCar.make} {selectedCar.model}
+                    </Text>
+                    <Text style={styles.cardSubtitle}>
+                      License: {selectedCar.license_plate}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('Profile', { screen: 'SelectCar' })}
+                >
+                  <Text style={styles.changeLink}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Detailer Card */}
+          {selectedDetailer && (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <View style={styles.avatarContainer}>
+                    <Text style={styles.avatarText}>
+                      {selectedDetailer.full_name.split(' ').map(n => n[0]).join('')}
+                    </Text>
+                  </View>
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{selectedDetailer.full_name}</Text>
+                    <View style={styles.ratingRow}>
+                      <Ionicons name="star" size={16} color="#6FF0C4" />
+                      <Text style={styles.ratingText}>{selectedDetailer.rating}</Text>
+                      <Text style={styles.reviewsText}>
+                        ({selectedDetailer.review_count} reviews)
+                      </Text>
+                    </View>
+                    <Text style={styles.cardSubtitle}>2.1 km away</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('ChooseDetailer', {
+                    selectedService: route.params.selectedService,
+                    selectedAddons: route.params.selectedAddons,
+                    date: route.params.date,
+                    time: route.params.time,
+                  })}
+                >
+                  <Text style={styles.changeLink}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Date & Time Card */}
+          {(selectedDate || selectedTimeSlot) && (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="calendar" size={40} color="#1DA4F3" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{formatDate(selectedDate)}</Text>
+                    <Text style={styles.cardSubtitle}>{formatTime(selectedTimeSlot)}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('BookingDateTime', {
+                    selectedService: route.params.selectedService,
+                    selectedAddons: route.params.selectedAddons,
+                  })}
+                >
+                  <Text style={styles.changeLink}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Price Breakdown */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Price Breakdown</Text>
+
+            <View style={styles.priceRows}>
+              <View style={styles.priceRow}>
+                <Text style={styles.priceLabel}>Service</Text>
+                <Text style={styles.priceValue}>
+                  {formatCurrency(priceBreakdown.servicePrice)}
                 </Text>
               </View>
-              <View className="flex-1">
-                <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 18, fontWeight: '600' }}>
-                  Marcus Thompson
-                </Text>
-                <View className="flex items-center gap-1 mb-1" style={{ flexDirection: 'row' }}>
-                  <Ionicons name="star" size={16} color="#6FF0C4" />
-                  <Text className="text-[#F5F7FA]" style={{ fontSize: 14 }}>
-                    4.9
-                  </Text>
-                  <Text className="text-[#C6CFD9]" style={{ fontSize: 12 }}>
-                    (142 reviews)
+
+              {selectedAddons.map((addon) => (
+                <View key={addon.id} style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>{addon.name}</Text>
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(addon.price)}
                   </Text>
                 </View>
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                  2.1 km away
+              ))}
+
+              {priceBreakdown.taxAmount > 0 && (
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>HST</Text>
+                  <Text style={styles.priceValue}>
+                    {formatCurrency(priceBreakdown.taxAmount)}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.divider} />
+
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalValue}>
+                  {formatCurrency(priceBreakdown.totalAmount)}
                 </Text>
               </View>
             </View>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text className="text-[#6FF0C4]" style={{ fontSize: 14, fontWeight: '500' }}>
-                Change
-              </Text>
-            </TouchableOpacity>
           </View>
+        </ScrollView>
+
+        {/* Bottom CTA */}
+        <View style={styles.bottomCTA}>
+          <TouchableOpacity
+            onPress={handleContinue}
+            activeOpacity={0.8}
+            style={styles.continueButton}
+          >
+            <Text style={styles.continueButtonText}>Continue to Payment</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Date & Time Card */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="flex justify-between items-start" style={{ flexDirection: 'row' }}>
-            <View className="flex items-start gap-4 flex-1" style={{ flexDirection: 'row' }}>
-              <Ionicons name="calendar" size={40} color="#1DA4F3" />
-              <View>
-                <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 18, fontWeight: '600' }}>
-                  Thu, November 16
-                </Text>
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                  1:00 PM - 3:00 PM Arrival Window
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text className="text-[#6FF0C4]" style={{ fontSize: 14, fontWeight: '500' }}>
-                Change
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Price Breakdown */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <Text className="text-[#F5F7FA] mb-4" style={{ fontSize: 18, fontWeight: '600' }}>
-            Price Breakdown
-          </Text>
-
-          <View className="space-y-3" style={{ gap: 12 }}>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Service</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$149.00</Text>
-            </View>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Wax Finish</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$25.00</Text>
-            </View>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Tire Shine</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$10.00</Text>
-            </View>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>HST</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$24.57</Text>
-            </View>
-
-            <View className="h-px bg-[#C6CFD9]/20 my-4" style={{ height: 1, backgroundColor: 'rgba(198,207,217,0.2)', marginVertical: 16 }} />
-
-            <View className="flex justify-between items-center" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 18, fontWeight: '600' }}>
-                Total
-              </Text>
-              <Text className="text-[#6FF0C4]" style={{ fontSize: 24, fontWeight: '700' }}>
-                $208.57
-              </Text>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Bottom CTA */}
-      <View className="px-6 pb-8 bg-gradient-to-t from-[#050B12] via-[#050B12] to-transparent pt-6">
-        <TouchableOpacity
-          onPress={onContinue}
-          activeOpacity={0.8}
-          className="w-full bg-[#1DA4F3] text-white py-4 rounded-full transition-all duration-200 active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/20"
-          style={{
-            minHeight: 56,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#1DA4F3',
-            shadowColor: '#1DA4F3',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.2,
-            shadowRadius: 8,
-          }}
-        >
-          <Text className="text-white" style={{ fontSize: 17, fontWeight: '600' }}>
-            Continue to Payment
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  backButton: {
+    padding: 4,
+    marginRight: 16,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 120,
+  },
+  card: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  cardHeaderContent: {
+    flex: 1,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  cardContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  cardTitle: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  servicePrice: {
+    color: '#1DA4F3',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  changeLink: {
+    color: '#6FF0C4',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  avatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(29,164,243,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  avatarText: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  ratingText: {
+    color: '#F5F7FA',
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  reviewsText: {
+    color: '#C6CFD9',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  sectionTitle: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  priceRows: {
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  priceLabel: {
+    color: '#C6CFD9',
+    fontSize: 15,
+  },
+  priceValue: {
+    color: '#F5F7FA',
+    fontSize: 15,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(198,207,217,0.2)',
+    marginVertical: 16,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  totalValue: {
+    color: '#6FF0C4',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  bottomCTA: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
+    backgroundColor: '#050B12',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  continueButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 56,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});

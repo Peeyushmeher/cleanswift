@@ -1,9 +1,10 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
-interface ServiceProgressScreenProps {
-  onComplete: () => void;
-}
+type Props = NativeStackScreenProps<BookingStackParamList, 'ServiceProgress'>;
 
 const steps = [
   { id: 1, title: 'Arrived', subtitle: 'Detailer is preparing equipment', icon: 'location' as const, status: 'completed' },
@@ -12,227 +13,347 @@ const steps = [
   { id: 4, title: 'Final Touches', subtitle: 'Adding finishing treatments', icon: 'checkmark' as const, status: 'upcoming' },
 ];
 
-export default function ServiceProgressScreen({ onComplete }: ServiceProgressScreenProps) {
+export default function ServiceProgressScreen({ navigation }: Props) {
+  const handleCompleteService = () => {
+    navigation.navigate('ReceiptRating');
+  };
+
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6">
-        <Text className="text-[#F5F7FA] text-center mb-2" style={{ fontSize: 28, fontWeight: '600', textAlign: 'center' }}>
-          Cleaning In Progress
-        </Text>
-        <Text className="text-[#C6CFD9] text-center" style={{ fontSize: 15, textAlign: 'center' }}>
-          Your detailer is working on your vehicle
-        </Text>
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView className="flex-1 px-6 pb-32" showsVerticalScrollIndicator={false}>
-        {/* Progress Timeline */}
-        <View className="mb-8">
-          <View className="relative">
-            {/* Vertical Line */}
-            <View
-              className="absolute left-6 top-0 bottom-0 w-0.5 bg-[#C6CFD9]/20"
-              style={{
-                position: 'absolute',
-                left: 24,
-                top: 0,
-                bottom: 0,
-                width: 2,
-                backgroundColor: 'rgba(198,207,217,0.2)',
-              }}
-            />
-
-            {/* Steps */}
-            <View className="space-y-8" style={{ gap: 32 }}>
-              {steps.map((step, index) => {
-                const isCompleted = step.status === 'completed';
-                const isCurrent = step.status === 'current';
-                const isUpcoming = step.status === 'upcoming';
-
-                return (
-                  <View key={step.id} className="relative flex items-start gap-6" style={{ flexDirection: 'row' }}>
-                    {/* Icon Circle */}
-                    <View
-                      className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        isCurrent
-                          ? 'bg-[#6FF0C4]/20 ring-4 ring-[#6FF0C4]/30'
-                          : isCompleted
-                          ? 'bg-[#6FF0C4]/10'
-                          : 'bg-[#0A1A2F] border-2 border-[#C6CFD9]/20'
-                      }`}
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 24,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backgroundColor: isCurrent
-                          ? 'rgba(111,240,196,0.2)'
-                          : isCompleted
-                          ? 'rgba(111,240,196,0.1)'
-                          : '#0A1A2F',
-                        borderWidth: isCurrent ? 4 : isUpcoming ? 2 : 0,
-                        borderColor: isCurrent
-                          ? 'rgba(111,240,196,0.3)'
-                          : isUpcoming
-                          ? 'rgba(198,207,217,0.2)'
-                          : 'transparent',
-                      }}
-                    >
-                      <Ionicons
-                        name={step.icon}
-                        size={24}
-                        color={isCurrent || isCompleted ? '#6FF0C4' : '#C6CFD9'}
-                      />
-                    </View>
-
-                    {/* Content */}
-                    <View className="flex-1 pt-1">
-                      <Text
-                        className={`mb-1 ${
-                          isCurrent ? 'text-[#F5F7FA]' : isCompleted ? 'text-[#F5F7FA]/80' : 'text-[#C6CFD9]'
-                        }`}
-                        style={{
-                          fontSize: 18,
-                          fontWeight: isCurrent ? '600' : '500',
-                          color: isCurrent ? '#F5F7FA' : isCompleted ? 'rgba(245,247,250,0.8)' : '#C6CFD9',
-                        }}
-                      >
-                        {step.title}
-                      </Text>
-                      <Text
-                        className={`${
-                          isCurrent ? 'text-[#C6CFD9]' : 'text-[#C6CFD9]/60'
-                        }`}
-                        style={{
-                          fontSize: 14,
-                          color: isCurrent ? '#C6CFD9' : 'rgba(198,207,217,0.6)',
-                        }}
-                      >
-                        {step.subtitle}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        </View>
-
-        {/* Estimated Time */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-6 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="text-center" style={{ alignItems: 'center' }}>
-            <Text className="text-[#C6CFD9] mb-2" style={{ fontSize: 15 }}>
-              Estimated Time Remaining
-            </Text>
-            <Text className="text-[#1DA4F3]" style={{ fontSize: 32, fontWeight: '700' }}>
-              22 minutes
-            </Text>
-            <Text className="text-[#C6CFD9] mt-2" style={{ fontSize: 13, marginTop: 8 }}>
-              Finishing by 3:45 PM
-            </Text>
-          </View>
-        </View>
-
-        {/* Detailer Card */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="flex items-center gap-4" style={{ flexDirection: 'row' }}>
-            <View
-              className="w-14 h-14 rounded-full bg-gradient-to-br from-[#1DA4F3]/20 to-[#6FF0C4]/20 flex items-center justify-center ring-2 ring-[#6FF0C4]/30"
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
-                backgroundColor: 'rgba(29,164,243,0.15)',
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderWidth: 2,
-                borderColor: 'rgba(111,240,196,0.3)',
-              }}
-            >
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 20, fontWeight: '600' }}>
-                MT
-              </Text>
-            </View>
-
-            <View className="flex-1">
-              <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 17, fontWeight: '600' }}>
-                Marcus Thompson
-              </Text>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                On-site
-              </Text>
-            </View>
-
-            {/* Action Buttons */}
-            <View className="flex gap-2" style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="w-10 h-10 rounded-full bg-[#050B12] border border-[#C6CFD9]/20 flex items-center justify-center transition-all duration-200 active:scale-95"
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: '#050B12',
-                  borderWidth: 1,
-                  borderColor: 'rgba(198,207,217,0.2)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="call" size={16} color="#F5F7FA" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="w-10 h-10 rounded-full bg-[#050B12] border border-[#C6CFD9]/20 flex items-center justify-center transition-all duration-200 active:scale-95"
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: '#050B12',
-                  borderWidth: 1,
-                  borderColor: 'rgba(198,207,217,0.2)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons name="chatbubble" size={16} color="#F5F7FA" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Note */}
-        <Text className="text-[#C6CFD9] text-center mt-6" style={{ fontSize: 14, textAlign: 'center', marginTop: 24 }}>
-          We'll notify you once the detailing is complete.
-        </Text>
-      </ScrollView>
-
-      {/* Demo: Auto-transition */}
-      <View className="fixed top-4 right-4" style={{ position: 'absolute', top: 16, right: 16 }}>
-        <TouchableOpacity
-          onPress={onComplete}
-          activeOpacity={0.8}
-          className="px-4 py-2 bg-[#1DA4F3] text-white rounded-full"
-          style={{
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            backgroundColor: '#1DA4F3',
-            borderRadius: 999,
-          }}
-        >
-          <Text className="text-white" style={{ fontSize: 12 }}>
-            Complete Service
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>
+            Cleaning In Progress
           </Text>
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.headerSubtitle}>
+            Your detailer is working on your vehicle
+          </Text>
+        </View>
+
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Progress Timeline */}
+          <View style={styles.timelineContainer}>
+            <View style={styles.timelineWrapper}>
+              {/* Vertical Line */}
+              <View style={styles.verticalLine} />
+
+              {/* Steps */}
+              <View style={styles.stepsContainer}>
+                {steps.map((step, index) => {
+                  const isCompleted = step.status === 'completed';
+                  const isCurrent = step.status === 'current';
+                  const isUpcoming = step.status === 'upcoming';
+
+                  return (
+                    <View key={step.id} style={styles.stepRow}>
+                      {/* Icon Circle */}
+                      <View
+                        style={[
+                          styles.iconCircle,
+                          isCurrent && styles.iconCircleCurrent,
+                          isCompleted && styles.iconCircleCompleted,
+                          isUpcoming && styles.iconCircleUpcoming,
+                        ]}
+                      >
+                        <Ionicons
+                          name={step.icon}
+                          size={24}
+                          color={isCurrent || isCompleted ? '#6FF0C4' : '#C6CFD9'}
+                        />
+                      </View>
+
+                      {/* Content */}
+                      <View style={styles.stepContent}>
+                        <Text
+                          style={[
+                            styles.stepTitle,
+                            isCurrent && styles.stepTitleCurrent,
+                            isCompleted && styles.stepTitleCompleted,
+                            isUpcoming && styles.stepTitleUpcoming,
+                          ]}
+                        >
+                          {step.title}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.stepSubtitle,
+                            isCurrent ? styles.stepSubtitleCurrent : styles.stepSubtitleMuted,
+                          ]}
+                        >
+                          {step.subtitle}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </View>
+
+          {/* Estimated Time */}
+          <View style={styles.card}>
+            <View style={styles.cardCenter}>
+              <Text style={styles.estimatedLabel}>
+                Estimated Time Remaining
+              </Text>
+              <Text style={styles.estimatedTime}>
+                22 minutes
+              </Text>
+              <Text style={styles.estimatedFinish}>
+                Finishing by 3:45 PM
+              </Text>
+            </View>
+          </View>
+
+          {/* Detailer Card */}
+          <View style={styles.card}>
+            <View style={styles.detailerRow}>
+              <View style={styles.avatarContainer}>
+                <Text style={styles.avatarText}>MT</Text>
+              </View>
+
+              <View style={styles.detailerInfo}>
+                <Text style={styles.detailerName}>Marcus Thompson</Text>
+                <Text style={styles.detailerStatus}>On-site</Text>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.actionButtons}>
+                <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
+                  <Ionicons name="call" size={16} color="#F5F7FA" />
+                </TouchableOpacity>
+                <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
+                  <Ionicons name="chatbubble" size={16} color="#F5F7FA" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Note */}
+          <Text style={styles.footerNote}>
+            We'll notify you once the detailing is complete.
+          </Text>
+
+          {/* Complete Service Button */}
+          <TouchableOpacity
+            onPress={handleCompleteService}
+            activeOpacity={0.8}
+            style={styles.completeButton}
+          >
+            <Text style={styles.completeButtonText}>Complete Service</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  timelineContainer: {
+    marginBottom: 32,
+  },
+  timelineWrapper: {
+    position: 'relative',
+  },
+  verticalLine: {
+    position: 'absolute',
+    left: 24,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: 'rgba(198,207,217,0.2)',
+  },
+  stepsContainer: {
+    gap: 32,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  iconCircleCurrent: {
+    backgroundColor: 'rgba(111,240,196,0.2)',
+    borderWidth: 4,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  iconCircleCompleted: {
+    backgroundColor: 'rgba(111,240,196,0.1)',
+  },
+  iconCircleUpcoming: {
+    backgroundColor: '#0A1A2F',
+    borderWidth: 2,
+    borderColor: 'rgba(198,207,217,0.2)',
+  },
+  stepContent: {
+    flex: 1,
+    marginLeft: 16,
+    paddingTop: 4,
+  },
+  stepTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  stepTitleCurrent: {
+    color: '#F5F7FA',
+    fontWeight: '600',
+  },
+  stepTitleCompleted: {
+    color: 'rgba(245,247,250,0.8)',
+  },
+  stepTitleUpcoming: {
+    color: '#C6CFD9',
+  },
+  stepSubtitle: {
+    fontSize: 14,
+  },
+  stepSubtitleCurrent: {
+    color: '#C6CFD9',
+  },
+  stepSubtitleMuted: {
+    color: 'rgba(198,207,217,0.6)',
+  },
+  card: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 16,
+  },
+  cardCenter: {
+    alignItems: 'center',
+  },
+  estimatedLabel: {
+    color: '#C6CFD9',
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  estimatedTime: {
+    color: '#1DA4F3',
+    fontSize: 32,
+    fontWeight: '700',
+  },
+  estimatedFinish: {
+    color: '#C6CFD9',
+    fontSize: 13,
+    marginTop: 8,
+  },
+  detailerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(29,164,243,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  avatarText: {
+    color: '#F5F7FA',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  detailerInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  detailerName: {
+    color: '#F5F7FA',
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  detailerStatus: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#050B12',
+    borderWidth: 1,
+    borderColor: 'rgba(198,207,217,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerNote: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  completeButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 56,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  completeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});
