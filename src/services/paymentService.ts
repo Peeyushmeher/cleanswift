@@ -118,33 +118,45 @@ export async function createBooking(bookingData: {
   location_notes: string | null;
 }): Promise<string> {
   try {
+    // Generate unique receipt ID (format: CS-YYYYMMDD-HHMMSS-RANDOM)
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+    const timeStr = now.toISOString().slice(11, 19).replace(/:/g, ''); // HHMMSS
+    const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 char random
+    const receipt_id = `CS-${dateStr}-${timeStr}-${randomStr}`;
+
+    const insertPayload = {
+      receipt_id: receipt_id,
+      user_id: bookingData.user_id,
+      service_id: bookingData.service_id,
+      car_id: bookingData.car_id,
+      detailer_id: bookingData.detailer_id,
+      scheduled_date: bookingData.scheduled_date,
+      scheduled_time_start: bookingData.scheduled_time_start,
+      scheduled_time_end: null,
+      address_line1: bookingData.address_line1,
+      address_line2: bookingData.address_line2,
+      city: bookingData.city,
+      province: bookingData.province,
+      postal_code: bookingData.postal_code,
+      latitude: bookingData.latitude,
+      longitude: bookingData.longitude,
+      location_notes: bookingData.location_notes,
+      status: 'scheduled',
+      service_price: bookingData.service_price,
+      addons_total: bookingData.addons_total,
+      tax_amount: bookingData.tax_amount,
+      total_amount: bookingData.total_amount,
+      payment_method_id: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    console.log('createBooking payload:', insertPayload);
+
     const { data, error } = await supabase
       .from('bookings')
-      .insert({
-        user_id: bookingData.user_id,
-        service_id: bookingData.service_id,
-        car_id: bookingData.car_id,
-        detailer_id: bookingData.detailer_id,
-        scheduled_date: bookingData.scheduled_date,
-        scheduled_time_start: bookingData.scheduled_time_start,
-        scheduled_time_end: null,
-        address_line1: bookingData.address_line1,
-        address_line2: bookingData.address_line2,
-        city: bookingData.city,
-        province: bookingData.province,
-        postal_code: bookingData.postal_code,
-        latitude: bookingData.latitude,
-        longitude: bookingData.longitude,
-        location_notes: bookingData.location_notes,
-        status: 'scheduled',
-        service_price: bookingData.service_price,
-        addons_total: bookingData.addons_total,
-        tax_amount: bookingData.tax_amount,
-        total_amount: bookingData.total_amount,
-        payment_method_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .insert(insertPayload)
       .select('id')
       .single();
 

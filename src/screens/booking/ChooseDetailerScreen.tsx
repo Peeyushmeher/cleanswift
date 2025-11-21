@@ -1,68 +1,28 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
+import { useDetailers } from '../../hooks/useDetailers';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseDetailer'>;
 
-const detailers = [
-  {
-    id: '1',
-    name: 'Marcus Thompson',
-    rating: 4.9,
-    reviews: 142,
-    distance: '2.1 km',
-    eta: '12–18 min',
-    experience: '5+ years',
-  },
-  {
-    id: '2',
-    name: 'Alicia Rivera',
-    rating: 4.8,
-    reviews: 98,
-    distance: '3.4 km',
-    eta: '18–24 min',
-    experience: '4+ years',
-  },
-  {
-    id: '3',
-    name: 'Daniel Chen',
-    rating: 4.95,
-    reviews: 203,
-    distance: '1.8 km',
-    eta: '10–15 min',
-    experience: '7+ years',
-  },
-];
-
 export default function ChooseDetailerScreen({ navigation, route }: Props) {
   const { setDetailer } = useBooking();
+  const { data: detailers, loading, error } = useDetailers();
   const [selectedDetailerId, setSelectedDetailerId] = useState<string>('');
 
   const handleContinue = () => {
     if (!selectedDetailerId) return;
 
-    // Find selected detailer
+    // Find selected detailer (data now comes from Supabase with real UUIDs)
     const selectedDetailerData = detailers.find(d => d.id === selectedDetailerId);
     if (!selectedDetailerData) return;
 
-    // Update BookingContext (convert to Detailer type expected by context)
-    // Parse years_experience from "5+ years" format
-    const yearsMatch = selectedDetailerData.experience.match(/(\d+)/);
-    const yearsExperience = yearsMatch ? parseInt(yearsMatch[1]) : 0;
-    
-    setDetailer({
-      id: selectedDetailerData.id,
-      full_name: selectedDetailerData.name,
-      avatar_url: null,
-      rating: selectedDetailerData.rating,
-      review_count: selectedDetailerData.reviews,
-      years_experience: yearsExperience,
-      is_active: true,
-    });
+    // Update BookingContext - data already matches Detailer type
+    setDetailer(selectedDetailerData);
 
     // Navigate to next screen
     navigation.navigate('OrderSummary', {
@@ -89,14 +49,33 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
           <Text style={styles.headerTitle}>Choose Your Detailer</Text>
         </View>
 
+        {/* Loading State */}
+        {loading && (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#6FF0C4" />
+            <Text style={styles.loadingText}>Loading detailers...</Text>
+          </View>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <View style={[styles.centerContainer, styles.errorContainer]}>
+            <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
+            <Text style={styles.errorTitle}>Unable to load detailers</Text>
+            <Text style={styles.errorMessage}>{error.message}</Text>
+          </View>
+        )}
+
         {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.detailersList}>
-            {detailers.map((detailer) => {
+        {!loading && !error && (
+          <>
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.detailersList}>
+                {detailers.map((detailer) => {
               const isSelected = selectedDetailerId === detailer.id;
 
               return (
@@ -124,7 +103,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                         isSelected && styles.profileAvatarSelected,
                       ]}>
                         <Text style={styles.profileInitials}>
-                          {detailer.name.split(' ').map(n => n[0]).join('')}
+                          {detailer.full_name.split(' ').map(n => n[0]).join('')}
                         </Text>
                       </View>
                     </View>
@@ -132,7 +111,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                     {/* Details */}
                     <View style={styles.detailerDetails}>
                       {/* Name */}
-                      <Text style={styles.detailerName}>{detailer.name}</Text>
+                      <Text style={styles.detailerName}>{detailer.full_name}</Text>
 
                       {/* Rating */}
                       <View style={styles.ratingRow}>
@@ -140,24 +119,26 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                           <Ionicons name="star" size={16} color="#6FF0C4" />
                           <Text style={styles.ratingText}>{detailer.rating}</Text>
                         </View>
-                        <Text style={styles.reviewsText}>({detailer.reviews} reviews)</Text>
+                        <Text style={styles.reviewsText}>({detailer.review_count} reviews)</Text>
                       </View>
 
                       {/* Distance & ETA */}
                       <View style={styles.infoRow}>
                         <View style={styles.infoItem}>
                           <Ionicons name="location" size={16} color="#C6CFD9" />
-                          <Text style={styles.infoText}>{detailer.distance} away</Text>
+                          <Text style={styles.infoText}>N/A</Text>
+                          {/* TODO: Replace with real distance when geolocation is implemented */}
                         </View>
                         <View style={styles.infoItem}>
                           <Ionicons name="time" size={16} color="#1DA4F3" />
-                          <Text style={styles.etaText}>Estimated arrival: {detailer.eta}</Text>
+                          <Text style={styles.etaText}>Estimated arrival: Calculating...</Text>
+                          {/* TODO: Replace with real ETA when geolocation is implemented */}
                         </View>
                       </View>
 
                       {/* Experience Badge */}
                       <View style={styles.experienceBadge}>
-                        <Text style={styles.experienceText}>{detailer.experience} experience</Text>
+                        <Text style={styles.experienceText}>{detailer.years_experience}+ years experience</Text>
                       </View>
                     </View>
                   </View>
@@ -186,6 +167,8 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
             </Text>
           </TouchableOpacity>
         </View>
+        </>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -214,6 +197,32 @@ const styles = StyleSheet.create({
     color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    color: '#C6CFD9',
+    fontSize: 16,
+    marginTop: 16,
+  },
+  errorTitle: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,

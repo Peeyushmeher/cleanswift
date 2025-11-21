@@ -7,6 +7,7 @@ import { useStripe } from '@stripe/stripe-react-native';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import {
   createPaymentIntent,
   updateBookingPaymentStatus,
@@ -53,29 +54,81 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       const scheduledDate = selectedDate.toISOString().split('T')[0];
       const scheduledTime = selectedTimeSlot;
 
+      // Determine car_id: use selectedCar OR fetch user's primary car
+      let finalCarId = selectedCar?.id || null;
+
+      if (!finalCarId) {
+        console.log('No car selected, fetching user primary car...');
+        const { data: primaryCar, error: carError } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_primary', true)
+          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
+
+        if (carError) {
+          console.error('Error fetching primary car:', carError);
+        }
+
+        if (primaryCar) {
+          finalCarId = primaryCar.id;
+          console.log('Using primary car for booking:', finalCarId);
+        }
+      } else {
+        console.log('Using selected car for booking:', finalCarId);
+      }
+
+      // If still no car, show error and don't proceed
+      if (!finalCarId) {
+        Alert.alert(
+          'Vehicle Required',
+          'Please add a vehicle to your profile before booking a service.',
+          [
+            {
+              text: 'Add Vehicle',
+              onPress: () => {
+                // Navigate to Profile tab where user can add cars
+                // Assuming MainTabs has a Profile tab
+                navigation.getParent()?.navigate('Profile');
+              },
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
       // Step 1: Create booking record in Supabase
       const bookingId = await createBooking({
         user_id: user.id,
         service_id: selectedService.id,
-        car_id: selectedCar?.id || null,
+        car_id: finalCarId, // Now guaranteed to be a valid UUID
         detailer_id: selectedDetailer?.id || null,
         scheduled_date: scheduledDate,
-        scheduled_time: scheduledTime,
-        service_duration_minutes: selectedService.duration_minutes,
+        scheduled_time_start: scheduledTime, // Fixed: was 'scheduled_time'
         total_amount: priceBreakdown.totalAmount,
         service_price: priceBreakdown.servicePrice,
         addons_total: priceBreakdown.addonsTotal,
         tax_amount: priceBreakdown.taxAmount,
-        location_address: null,
-        location_latitude: null,
-        location_longitude: null,
-        notes: null,
+        // TODO: Wire address from user profile or location selection flow
+        address_line1: 'Customer address TBD', // TODO: get from user profile
+        address_line2: null,
+        city: 'Toronto', // TODO: get from user profile
+        province: 'ON', // TODO: get from user profile
+        postal_code: 'M1M 1M1', // TODO: get from user profile
+        latitude: null,
+        longitude: null,
+        location_notes: null,
       });
 
       // Step 2: Create booking addons if any
       if (selectedAddons.length > 0) {
-        const addonIds = selectedAddons.map((addon) => addon.id);
-        await createBookingAddons(bookingId, addonIds);
+        // Map to { id, price } format expected by createBookingAddons
+        const addonData = selectedAddons.map((addon) => ({
+          id: addon.id,
+          price: addon.price,
+        }));
+        await createBookingAddons(bookingId, addonData);
       }
 
       // Step 3: Create PaymentIntent via Edge Function

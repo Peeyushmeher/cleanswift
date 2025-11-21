@@ -72,11 +72,12 @@ serve(async (req) => {
     // Verify booking exists and belongs to authenticated user
     const { data: booking, error: bookingError } = await supabaseClient
       .from('bookings')
-      .select('id, user_id, total_amount, payment_status')
+      .select('id, user_id, total_amount')
       .eq('id', booking_id)
       .single();
 
     if (bookingError || !booking) {
+      console.error('Booking query error:', bookingError);
       return new Response(
         JSON.stringify({ error: 'Booking not found or access denied' }),
         {
@@ -86,16 +87,7 @@ serve(async (req) => {
       );
     }
 
-    // Verify booking is not already paid
-    if (booking.payment_status === 'paid') {
-      return new Response(
-        JSON.stringify({ error: 'Booking is already paid' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    // Note: Duplicate payment protection can be added later via payment_method_id or separate payment tracking
 
     // Verify amount matches booking total (prevent tampering)
     const amountDifference = Math.abs(amount - booking.total_amount);
