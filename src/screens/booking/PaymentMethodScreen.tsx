@@ -1,10 +1,18 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useStripe } from '@stripe/stripe-react-native';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  createPaymentIntent,
+  updateBookingPaymentStatus,
+  createBooking,
+  createBookingAddons,
+} from '../../services/paymentService';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PaymentMethod'>;
 
@@ -14,13 +22,123 @@ const savedCards = [
 ];
 
 export default function PaymentMethodScreen({ navigation, route }: Props) {
-  const { priceBreakdown } = useBooking();
+  const {
+    priceBreakdown,
+    selectedService,
+    selectedAddons,
+    selectedCar,
+    selectedDate,
+    selectedTimeSlot,
+    selectedDetailer,
+  } = useBooking();
+  const { user } = useAuth();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [selectedCard, setSelectedCard] = useState<string>('apple-pay');
+  const [isProcessing, setIsProcessing] = useState(false);
   const showPriceSummary = route.params?.showPrice ?? true;
 
-  const handleCompletePayment = () => {
-    // Navigate to post-payment screen (likely ServiceProgress or LiveTracking)
-    navigation.navigate('ServiceProgress');
+  const handleCompletePayment = async () => {
+    if (isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+
+      // Validate required booking data
+      if (!user || !selectedService || !selectedDate || !selectedTimeSlot) {
+        Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
+        return;
+      }
+
+      // Format scheduled date and time
+      const scheduledDate = selectedDate.toISOString().split('T')[0];
+      const scheduledTime = selectedTimeSlot;
+
+      // Step 1: Create booking record in Supabase
+      const bookingId = await createBooking({
+        user_id: user.id,
+        service_id: selectedService.id,
+        car_id: selectedCar?.id || null,
+        detailer_id: selectedDetailer?.id || null,
+        scheduled_date: scheduledDate,
+        scheduled_time: scheduledTime,
+        service_duration_minutes: selectedService.duration_minutes,
+        total_amount: priceBreakdown.totalAmount,
+        service_price: priceBreakdown.servicePrice,
+        addons_total: priceBreakdown.addonsTotal,
+        tax_amount: priceBreakdown.taxAmount,
+        location_address: null,
+        location_latitude: null,
+        location_longitude: null,
+        notes: null,
+      });
+
+      // Step 2: Create booking addons if any
+      if (selectedAddons.length > 0) {
+        const addonIds = selectedAddons.map((addon) => addon.id);
+        await createBookingAddons(bookingId, addonIds);
+      }
+
+      // Step 3: Create PaymentIntent via Edge Function
+      const { client_secret, payment_intent_id } = await createPaymentIntent(
+        bookingId,
+        priceBreakdown.totalAmount
+      );
+
+      // Step 4: Initialize PaymentSheet
+      const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: 'CleanSwift',
+        paymentIntentClientSecret: client_secret,
+        defaultBillingDetails: {
+          email: user.email,
+        },
+        returnURL: 'cleanswift://payment-complete',
+      });
+
+      if (initError) {
+        console.error('PaymentSheet init error:', initError);
+        Alert.alert('Error', 'Failed to initialize payment. Please try again.');
+        return;
+      }
+
+      // Step 5: Present PaymentSheet
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        // User cancelled or payment failed
+        if (presentError.code === 'Canceled') {
+          console.log('Payment cancelled by user');
+        } else {
+          console.error('Payment error:', presentError);
+          Alert.alert('Payment Failed', presentError.message || 'Payment could not be processed.');
+
+          // Update booking status to failed
+          await updateBookingPaymentStatus({
+            booking_id: bookingId,
+            payment_intent_id: payment_intent_id,
+            payment_status: 'failed',
+          });
+        }
+        return;
+      }
+
+      // Step 6: Payment successful - update booking status
+      await updateBookingPaymentStatus({
+        booking_id: bookingId,
+        payment_intent_id: payment_intent_id,
+        payment_status: 'paid',
+      });
+
+      // Step 7: Navigate to success screen
+      navigation.navigate('ServiceProgress');
+    } catch (error) {
+      console.error('Payment error:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleAddCard = () => {
@@ -169,10 +287,15 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           <TouchableOpacity
             onPress={handleCompletePayment}
             activeOpacity={0.8}
-            style={styles.completeButton}
+            disabled={isProcessing}
+            style={[styles.completeButton, isProcessing && styles.completeButtonDisabled]}
           >
             <Text style={styles.completeButtonText}>
-              {showPriceSummary ? 'Complete Payment' : 'Save'}
+              {isProcessing
+                ? 'Processing...'
+                : showPriceSummary
+                ? 'Complete Payment'
+                : 'Save'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -403,6 +526,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  },
+  completeButtonDisabled: {
+    backgroundColor: '#0A1A2F',
+    opacity: 0.6,
   },
   completeButtonText: {
     color: '#FFFFFF',

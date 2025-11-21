@@ -1,205 +1,268 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ProfileStackParamList } from '../../navigation/ProfileStack';
 
-interface EditProfileScreenProps {
-  onBack: () => void;
-  onSave: () => void;
-}
+type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
-export default function EditProfileScreen({ onBack, onSave }: EditProfileScreenProps) {
+export default function EditProfileScreen({ navigation }: Props) {
   const [name, setName] = useState('Peeyush Yerremsetty');
   const [email, setEmail] = useState('meherpeeyush@gmail.com');
   const [phone, setPhone] = useState('437-989-6480');
 
   const isFormValid = name.length > 0 && email.length > 0 && phone.length > 0;
 
-  return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors"
-        >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-        </TouchableOpacity>
-        <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-          Edit Profile
-        </Text>
-      </View>
+  const handleSave = () => {
+    // TODO: Implement save logic
+    console.log('Save profile changes');
+    navigation.goBack();
+  };
 
-      {/* Form - Scrollable */}
-      <ScrollView className="flex-1 px-6 pb-32" showsVerticalScrollIndicator={false}>
-        {/* Profile Photo */}
-        <View className="flex flex-col items-center mb-8" style={{ alignItems: 'center' }}>
-          <View className="relative">
-            <View
-              className="w-24 h-24 rounded-full bg-gradient-to-br from-[#1DA4F3]/20 to-[#6FF0C4]/20 flex items-center justify-center ring-2 ring-[#6FF0C4]/30"
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 48,
-                backgroundColor: 'rgba(29,164,243,0.15)',
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderWidth: 2,
-                borderColor: 'rgba(111,240,196,0.3)',
-              }}
-            >
-              <Ionicons name="person" size={48} color="#6FF0C4" />
+  return (
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Profile</Text>
+        </View>
+
+        {/* Form - Scrollable */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Profile Photo */}
+          <View style={styles.photoSection}>
+            <View style={styles.photoContainer}>
+              <View style={styles.avatar}>
+                <Ionicons name="person" size={48} color="#6FF0C4" />
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.cameraButton}
+              >
+                <Ionicons name="camera" size={16} color="#050B12" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#6FF0C4] flex items-center justify-center shadow-lg transition-all duration-200 active:scale-95"
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: '#6FF0C4',
-                justifyContent: 'center',
-                alignItems: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-              }}
-            >
-              <Ionicons name="camera" size={16} color="#050B12" />
+            <Text style={styles.photoHint}>Tap to change photo</Text>
+          </View>
+
+          {/* Form Fields */}
+          <View style={styles.formFields}>
+            {/* Full Name */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Full Name</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholderTextColor="rgba(198,207,217,0.5)"
+                style={styles.input}
+              />
+            </View>
+
+            {/* Email */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                placeholderTextColor="rgba(198,207,217,0.5)"
+                style={styles.input}
+              />
+            </View>
+
+            {/* Phone */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Phone Number</Text>
+              <TextInput
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                autoComplete="tel"
+                placeholderTextColor="rgba(198,207,217,0.5)"
+                style={styles.input}
+              />
+            </View>
+          </View>
+
+          {/* Danger Zone */}
+          <View style={styles.dangerZone}>
+            <TouchableOpacity activeOpacity={0.7}>
+              <Text style={styles.deleteText}>Delete Account</Text>
             </TouchableOpacity>
           </View>
-          <Text className="text-[#C6CFD9] mt-3" style={{ fontSize: 14, marginTop: 12 }}>
-            Tap to change photo
-          </Text>
-        </View>
+        </ScrollView>
 
-        {/* Form Fields */}
-        <View className="space-y-5" style={{ gap: 20 }}>
-          {/* Full Name */}
-          <View>
+        {/* Bottom CTA */}
+        <View style={styles.bottomCTA}>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={!isFormValid}
+            activeOpacity={isFormValid ? 0.8 : 1}
+            style={[
+              styles.saveButton,
+              !isFormValid && styles.saveButtonDisabled,
+            ]}
+          >
             <Text
-              className="block text-[#C6CFD9] mb-2 px-1"
-              style={{ fontSize: 14, fontWeight: '500' }}
+              style={[
+                styles.saveButtonText,
+                !isFormValid && styles.saveButtonTextDisabled,
+              ]}
             >
-              Full Name
-            </Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholderTextColor="rgba(198,207,217,0.5)"
-              className="w-full bg-[#0A1A2F] border border-[#C6CFD9]/20 rounded-2xl px-5 py-4 text-[#F5F7FA] placeholder:text-[#C6CFD9]/50 focus:border-[#1DA4F3] focus:outline-none focus:ring-1 focus:ring-[#1DA4F3]/50 transition-all"
-              style={{
-                fontSize: 16,
-                borderWidth: 1,
-                borderColor: 'rgba(198,207,217,0.2)',
-              }}
-            />
-          </View>
-
-          {/* Email */}
-          <View>
-            <Text
-              className="block text-[#C6CFD9] mb-2 px-1"
-              style={{ fontSize: 14, fontWeight: '500' }}
-            >
-              Email
-            </Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              placeholderTextColor="rgba(198,207,217,0.5)"
-              className="w-full bg-[#0A1A2F] border border-[#C6CFD9]/20 rounded-2xl px-5 py-4 text-[#F5F7FA] placeholder:text-[#C6CFD9]/50 focus:border-[#1DA4F3] focus:outline-none focus:ring-1 focus:ring-[#1DA4F3]/50 transition-all"
-              style={{
-                fontSize: 16,
-                borderWidth: 1,
-                borderColor: 'rgba(198,207,217,0.2)',
-              }}
-            />
-          </View>
-
-          {/* Phone */}
-          <View>
-            <Text
-              className="block text-[#C6CFD9] mb-2 px-1"
-              style={{ fontSize: 14, fontWeight: '500' }}
-            >
-              Phone Number
-            </Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              placeholderTextColor="rgba(198,207,217,0.5)"
-              className="w-full bg-[#0A1A2F] border border-[#C6CFD9]/20 rounded-2xl px-5 py-4 text-[#F5F7FA] placeholder:text-[#C6CFD9]/50 focus:border-[#1DA4F3] focus:outline-none focus:ring-1 focus:ring-[#1DA4F3]/50 transition-all"
-              style={{
-                fontSize: 16,
-                borderWidth: 1,
-                borderColor: 'rgba(198,207,217,0.2)',
-              }}
-            />
-          </View>
-        </View>
-
-        {/* Danger Zone */}
-        <View
-          className="mt-12 pt-8 border-t border-[#C6CFD9]/10"
-          style={{
-            marginTop: 48,
-            paddingTop: 32,
-            borderTopWidth: 1,
-            borderTopColor: 'rgba(198,207,217,0.1)',
-          }}
-        >
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text className="text-[#C6CFD9]" style={{ fontSize: 14, color: '#C6CFD9' }}>
-              Delete Account
+              Save Changes
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      {/* Bottom CTA */}
-      <View className="px-6 pb-8 bg-gradient-to-t from-[#050B12] via-[#050B12] to-transparent pt-6">
-        <TouchableOpacity
-          onPress={onSave}
-          disabled={!isFormValid}
-          activeOpacity={isFormValid ? 0.8 : 1}
-          className={`w-full py-4 rounded-full transition-all duration-200 ${
-            isFormValid
-              ? 'bg-[#1DA4F3] text-white active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/20'
-              : 'bg-[#0A1A2F] text-[#C6CFD9]/50 cursor-not-allowed'
-          }`}
-          style={{
-            minHeight: 56,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: isFormValid ? '#1DA4F3' : '#0A1A2F',
-            shadowColor: isFormValid ? '#1DA4F3' : 'transparent',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: isFormValid ? 0.2 : 0,
-            shadowRadius: 8,
-          }}
-        >
-          <Text
-            className={isFormValid ? 'text-white' : 'text-[#C6CFD9]/50'}
-            style={{
-              fontSize: 17,
-              fontWeight: '600',
-              color: isFormValid ? 'white' : 'rgba(198,207,217,0.5)',
-            }}
-          >
-            Save Changes
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 16,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  photoSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  photoContainer: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(29,164,243,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  cameraButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#6FF0C4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  photoHint: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    marginTop: 12,
+  },
+  formFields: {
+    gap: 20,
+  },
+  fieldContainer: {
+    gap: 8,
+  },
+  label: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    fontWeight: '500',
+    paddingHorizontal: 4,
+  },
+  input: {
+    width: '100%',
+    backgroundColor: '#0A1A2F',
+    borderWidth: 1,
+    borderColor: 'rgba(198,207,217,0.2)',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    color: '#F5F7FA',
+    fontSize: 16,
+  },
+  dangerZone: {
+    marginTop: 48,
+    paddingTop: 32,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(198,207,217,0.1)',
+  },
+  deleteText: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  bottomCTA: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    paddingTop: 16,
+    backgroundColor: '#050B12',
+  },
+  saveButton: {
+    minHeight: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1DA4F3',
+    borderRadius: 28,
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#0A1A2F',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  saveButtonTextDisabled: {
+    color: 'rgba(198,207,217,0.5)',
+  },
+});

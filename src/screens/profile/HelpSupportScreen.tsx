@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ProfileStackParamList } from '../../navigation/ProfileStack';
 
-interface HelpSupportScreenProps {
-  onBack: () => void;
-}
+type Props = NativeStackScreenProps<ProfileStackParamList, 'HelpSupport'>;
 
 const quickActions = [
   { icon: 'alert-circle' as const, title: 'Report an Issue', subtitle: 'Having a problem? Let us know' },
@@ -47,194 +48,305 @@ const policies = [
   { label: 'Refund Policy', action: 'refund' },
 ];
 
-export default function HelpSupportScreen({ onBack }: HelpSupportScreenProps) {
+export default function HelpSupportScreen({ navigation }: Props) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors"
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Support</Text>
+        </View>
+
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-        </TouchableOpacity>
-        <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-          Support
-        </Text>
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView className="flex-1 px-6 pb-8" showsVerticalScrollIndicator={false}>
-        {/* Quick Actions */}
-        <View className="mb-8">
-          <View className="space-y-3" style={{ gap: 12 }}>
-            {quickActions.map((action, index) => (
-              <TouchableOpacity
-                key={index}
-                activeOpacity={0.8}
-                className="w-full bg-[#0A1A2F] rounded-2xl p-5 border border-white/5 flex items-start gap-4 transition-all duration-200 active:bg-[#050B12]"
-                style={{
-                  flexDirection: 'row',
-                  borderWidth: 1,
-                  borderColor: 'rgba(255,255,255,0.05)',
-                }}
-              >
-                <View
-                  className="w-12 h-12 rounded-full bg-[#1DA4F3]/10 flex items-center justify-center flex-shrink-0"
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: 'rgba(29,164,243,0.1)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Ionicons name={action.icon} size={24} color="#1DA4F3" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 16, fontWeight: '500' }}>
-                    {action.title}
-                  </Text>
-                  <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                    {action.subtitle}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* FAQs */}
-        <View className="mb-8">
-          <Text className="text-[#F5F7FA] mb-4" style={{ fontSize: 18, fontWeight: '600' }}>
-            Frequently Asked Questions
-          </Text>
-          <View className="space-y-3" style={{ gap: 12 }}>
-            {faqs.map((faq, index) => {
-              const isExpanded = expandedFaq === index;
-              return (
+          {/* Quick Actions */}
+          <View style={styles.quickActionsSection}>
+            <View style={styles.quickActionsList}>
+              {quickActions.map((action, index) => (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => setExpandedFaq(isExpanded ? null : index)}
                   activeOpacity={0.8}
-                  className="w-full bg-[#0A1A2F] rounded-2xl p-5 border border-white/5 transition-all duration-200"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: 'rgba(255,255,255,0.05)',
-                  }}
+                  style={styles.quickActionCard}
                 >
-                  <View className="flex items-start justify-between gap-3" style={{ flexDirection: 'row' }}>
-                    <Text className="text-[#F5F7FA] flex-1" style={{ fontSize: 16, fontWeight: '500', flex: 1 }}>
-                      {faq.question}
-                    </Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color="#C6CFD9"
-                      style={{
-                        transform: [{ rotate: isExpanded ? '90deg' : '0deg' }],
-                      }}
-                    />
+                  <View style={styles.quickActionIconContainer}>
+                    <Ionicons name={action.icon} size={24} color="#1DA4F3" />
                   </View>
-                  {isExpanded && (
-                    <Text className="text-[#C6CFD9] mt-3" style={{ fontSize: 15, marginTop: 12 }}>
-                      {faq.answer}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Contact Us */}
-        <View className="mb-8">
-          <Text className="text-[#F5F7FA] mb-4" style={{ fontSize: 18, fontWeight: '600' }}>
-            Contact Us
-          </Text>
-          <View
-            className="bg-[#0A1A2F] rounded-2xl border border-white/5 overflow-hidden"
-            style={{
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.05)',
-              borderRadius: 16,
-              overflow: 'hidden',
-            }}
-          >
-            {contactOptions.map((option, index) => {
-              const isLast = index === contactOptions.length - 1;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  activeOpacity={0.8}
-                  className={`w-full flex items-center gap-4 px-5 py-4 transition-all duration-200 active:bg-[#050B12] ${
-                    !isLast ? 'border-b border-[#C6CFD9]/10' : ''
-                  }`}
-                  style={{
-                    flexDirection: 'row',
-                    borderBottomWidth: isLast ? 0 : 1,
-                    borderBottomColor: isLast ? 'transparent' : 'rgba(198,207,217,0.1)',
-                  }}
-                >
-                  <Ionicons name={option.icon} size={20} color="#C6CFD9" />
-                  <View className="flex-1">
-                    <Text className="text-[#F5F7FA] mb-0.5" style={{ fontSize: 16, fontWeight: '500' }}>
-                      {option.label}
-                    </Text>
-                    <Text className="text-[#C6CFD9]" style={{ fontSize: 13 }}>
-                      {option.subtitle}
-                    </Text>
+                  <View style={styles.quickActionContent}>
+                    <Text style={styles.quickActionTitle}>{action.title}</Text>
+                    <Text style={styles.quickActionSubtitle}>{action.subtitle}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
                 </TouchableOpacity>
-              );
-            })}
+              ))}
+            </View>
           </View>
-        </View>
 
-        {/* Policies */}
-        <View className="mb-8">
-          <Text className="text-[#F5F7FA] mb-4" style={{ fontSize: 18, fontWeight: '600' }}>
-            Policies
-          </Text>
-          <View
-            className="bg-[#0A1A2F] rounded-2xl border border-white/5 overflow-hidden"
-            style={{
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.05)',
-              borderRadius: 16,
-              overflow: 'hidden',
-            }}
-          >
-            {policies.map((policy, index) => {
-              const isLast = index === policies.length - 1;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  activeOpacity={0.8}
-                  className={`w-full flex items-center justify-between px-5 py-4 transition-all duration-200 active:bg-[#050B12] ${
-                    !isLast ? 'border-b border-[#C6CFD9]/10' : ''
-                  }`}
-                  style={{
-                    flexDirection: 'row',
-                    borderBottomWidth: isLast ? 0 : 1,
-                    borderBottomColor: isLast ? 'transparent' : 'rgba(198,207,217,0.1)',
-                  }}
-                >
-                  <Text className="text-[#F5F7FA]" style={{ fontSize: 16, fontWeight: '500' }}>
-                    {policy.label}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
-                </TouchableOpacity>
-              );
-            })}
+          {/* FAQs */}
+          <View style={styles.faqSection}>
+            <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+            <View style={styles.faqList}>
+              {faqs.map((faq, index) => {
+                const isExpanded = expandedFaq === index;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => setExpandedFaq(isExpanded ? null : index)}
+                    activeOpacity={0.8}
+                    style={styles.faqCard}
+                  >
+                    <View style={styles.faqHeader}>
+                      <Text style={styles.faqQuestion}>{faq.question}</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color="#C6CFD9"
+                        style={{
+                          transform: [{ rotate: isExpanded ? '90deg' : '0deg' }],
+                        }}
+                      />
+                    </View>
+                    {isExpanded && (
+                      <Text style={styles.faqAnswer}>{faq.answer}</Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+
+          {/* Contact Us */}
+          <View style={styles.contactSection}>
+            <Text style={styles.sectionTitle}>Contact Us</Text>
+            <View style={styles.contactCard}>
+              {contactOptions.map((option, index) => {
+                const isLast = index === contactOptions.length - 1;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.contactOption,
+                      !isLast && styles.contactOptionWithBorder,
+                    ]}
+                  >
+                    <Ionicons name={option.icon} size={20} color="#C6CFD9" />
+                    <View style={styles.contactOptionContent}>
+                      <Text style={styles.contactOptionLabel}>{option.label}</Text>
+                      <Text style={styles.contactOptionSubtitle}>{option.subtitle}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Policies */}
+          <View style={styles.policiesSection}>
+            <Text style={styles.sectionTitle}>Policies</Text>
+            <View style={styles.policiesCard}>
+              {policies.map((policy, index) => {
+                const isLast = index === policies.length - 1;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.policyOption,
+                      !isLast && styles.policyOptionWithBorder,
+                    ]}
+                  >
+                    <Text style={styles.policyLabel}>{policy.label}</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 16,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  quickActionsSection: {
+    marginBottom: 32,
+  },
+  quickActionsList: {
+    gap: 12,
+  },
+  quickActionCard: {
+    width: '100%',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  quickActionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(29,164,243,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickActionContent: {
+    flex: 1,
+  },
+  quickActionTitle: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  quickActionSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  faqSection: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  faqList: {
+    gap: 12,
+  },
+  faqCard: {
+    width: '100%',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  faqHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  faqQuestion: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  faqAnswer: {
+    color: '#C6CFD9',
+    fontSize: 15,
+    marginTop: 12,
+  },
+  contactSection: {
+    marginBottom: 32,
+  },
+  contactCard: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    overflow: 'hidden',
+  },
+  contactOption: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  contactOptionWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(198,207,217,0.1)',
+  },
+  contactOptionContent: {
+    flex: 1,
+  },
+  contactOptionLabel: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  contactOptionSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 13,
+  },
+  policiesSection: {
+    marginBottom: 32,
+  },
+  policiesCard: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    overflow: 'hidden',
+  },
+  policyOption: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  policyOptionWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(198,207,217,0.1)',
+  },
+  policyLabel: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+});

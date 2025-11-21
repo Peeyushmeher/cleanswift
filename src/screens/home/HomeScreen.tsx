@@ -31,7 +31,7 @@ export default function HomeScreen() {
 
   const handleSelectCar = () => {
     // Navigate to Profile tab, then to SelectCar screen
-    (navigation as any).navigate('Profile', { screen: 'SelectCar' });
+    navigation.navigate('Profile', { screen: 'SelectCar' });
   };
 
   const handleProfile = () => {
@@ -134,7 +134,11 @@ export default function HomeScreen() {
           {/* Upcoming Bookings */}
           <View style={styles.upcomingContainer}>
             <Text style={styles.sectionTitle}>Upcoming</Text>
-            <View style={styles.upcomingCard}>
+            <TouchableOpacity
+              onPress={handleOrders}
+              activeOpacity={0.8}
+              style={styles.upcomingCard}
+            >
               <View style={styles.upcomingIconContainer}>
                 <Ionicons name="time" size={24} color="#1DA4F3" />
               </View>
@@ -142,7 +146,7 @@ export default function HomeScreen() {
                 <Text style={styles.upcomingTitle}>Full Detail Service</Text>
                 <Text style={styles.upcomingSubtitle}>Tomorrow, 2:00 PM</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -1,17 +1,10 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ProfileStackParamList } from '../../navigation/ProfileStack';
 
-interface ProfileScreenProps {
-  onEditProfile: () => void;
-  onOrders: () => void;
-  onManageCars?: () => void;
-  onPayment: () => void;
-  onNotifications: () => void;
-  onSupport: () => void;
-  onSettings: () => void;
-  onLogout: () => void;
-  onBack?: () => void;
-}
+type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
 
 const menuSections = [
   {
@@ -39,214 +32,286 @@ const menuSections = [
   },
 ];
 
-export default function ProfileScreen({
-  onEditProfile,
-  onOrders,
-  onManageCars,
-  onPayment,
-  onNotifications,
-  onSupport,
-  onSettings,
-  onLogout,
-  onBack,
-}: ProfileScreenProps) {
+export default function ProfileScreen({ navigation }: Props) {
   const handleAction = (action: string) => {
     switch (action) {
       case 'edit-profile':
-        onEditProfile();
+        navigation.navigate('EditProfile');
         break;
       case 'manage-cars':
-        onManageCars?.();
+        navigation.navigate('SelectCar');
         break;
       case 'payment':
-        onPayment();
+        // TODO: Navigate to payment methods screen when implemented
+        console.log('Navigate to payment methods');
         break;
       case 'notifications':
-        onNotifications();
+        navigation.navigate('Notifications');
         break;
       case 'settings':
-        onSettings();
+        // TODO: Navigate to settings screen when implemented
+        console.log('Navigate to settings');
         break;
       case 'support':
-        onSupport();
+        navigation.navigate('HelpSupport');
         break;
     }
   };
 
+  const handleOrders = () => {
+    // @ts-ignore - Navigate to different tab stack
+    navigation.navigate('Orders');
+  };
+
+  const handleLogout = () => {
+    // TODO: Implement logout logic
+    console.log('Logout');
+  };
+
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header with Back Button */}
-      {onBack && (
-        <View className="px-6 pt-16 pb-4 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-          <TouchableOpacity
-            onPress={onBack}
-            activeOpacity={0.7}
-            className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors active:scale-95"
-          >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-          </TouchableOpacity>
-          <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-            Profile
-          </Text>
-        </View>
-      )}
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header with Profile */}
+        <View style={styles.profileHeader}>
+          <View style={styles.profileRow}>
+            {/* Profile Photo */}
+            <View style={styles.profileAvatar}>
+              <Ionicons name="person" size={40} color="#6FF0C4" />
+            </View>
 
-      {/* Header with Profile */}
-      <View className={onBack ? "px-6 pb-8" : "px-6 pt-16 pb-8"}>
-        <View className="flex items-center gap-4" style={{ flexDirection: 'row' }}>
-          {/* Profile Photo */}
-          <View
-            className="w-20 h-20 rounded-full bg-gradient-to-br from-[#1DA4F3]/20 to-[#6FF0C4]/20 flex items-center justify-center ring-2 ring-[#6FF0C4]/40"
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: 'rgba(29,164,243,0.15)',
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderWidth: 2,
-              borderColor: 'rgba(111,240,196,0.4)',
-            }}
-          >
-            <Ionicons name="person" size={40} color="#6FF0C4" />
-          </View>
+            {/* User Info */}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>Peeyush Yerremsetty</Text>
+              <Text style={styles.userEmail}>meherpeeyush@gmail.com</Text>
+              <Text style={styles.userPhone}>437-989-6480</Text>
+            </View>
 
-          {/* User Info */}
-          <View className="flex-1">
-            <Text className="text-[#F5F7FA] mb-1.5" style={{ fontSize: 24, fontWeight: '600' }}>
-              Peeyush Yerremsetty
-            </Text>
-            <Text className="text-[#C6CFD9] mb-1" style={{ fontSize: 15 }}>
-              meherpeeyush@gmail.com
-            </Text>
-            <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>
-              437-989-6480
-            </Text>
-          </View>
-
-          {/* Edit Button */}
-          <TouchableOpacity
-            onPress={onEditProfile}
-            activeOpacity={0.7}
-            className="text-[#6FF0C4] hover:text-[#6FF0C4]/80 transition-colors active:scale-95"
-          >
-            <Ionicons name="settings" size={20} color="#6FF0C4" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Scrollable Menu */}
-      <ScrollView className="flex-1 px-6 pb-32" showsVerticalScrollIndicator={false}>
-        {/* Quick Order Link */}
-        <View className="mb-8">
-          <TouchableOpacity
-            onPress={onOrders}
-            activeOpacity={0.8}
-            className="w-full bg-[#0A1A2F] rounded-2xl border border-white/5 px-6 py-5 flex items-center gap-4 transition-all duration-200 active:bg-[#050B12] hover:border-[#6FF0C4]/30"
-            style={{
-              flexDirection: 'row',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.05)',
-            }}
-          >
-            <View
-              className="w-12 h-12 rounded-full bg-[#1DA4F3]/10 flex items-center justify-center flex-shrink-0"
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: 'rgba(29,164,243,0.1)',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
+            {/* Edit Button */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('EditProfile')}
+              activeOpacity={0.7}
+              style={styles.editButton}
             >
-              <Ionicons name="cube" size={24} color="#1DA4F3" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 16, fontWeight: '600' }}>
-                Your Orders
-              </Text>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                View booking history & receipts
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
-          </TouchableOpacity>
+              <Ionicons name="settings" size={20} color="#6FF0C4" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {menuSections.map((section, sectionIndex) => (
-          <View key={sectionIndex} className="mb-8">
-            {/* Section Title */}
-            <Text
-              className="text-[#C6CFD9] mb-4 px-1"
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                letterSpacing: 0.8,
-                textTransform: 'uppercase',
-              }}
-            >
-              {section.title.toUpperCase()}
-            </Text>
-
-            {/* Menu Items */}
-            <View
-              className="bg-[#0A1A2F] rounded-2xl border border-white/5 overflow-hidden"
-              style={{
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.05)',
-                borderRadius: 16,
-                overflow: 'hidden',
-              }}
-            >
-              {section.items.map((item, itemIndex) => {
-                const isLast = itemIndex === section.items.length - 1;
-
-                return (
-                  <TouchableOpacity
-                    key={itemIndex}
-                    onPress={() => handleAction(item.action)}
-                    activeOpacity={0.8}
-                    className={`w-full flex items-center gap-4 px-6 py-4.5 transition-all duration-200 active:bg-[#050B12] hover:bg-[#0A1A2F]/80 ${
-                      !isLast ? 'border-b border-[#C6CFD9]/10' : ''
-                    }`}
-                    style={{
-                      minHeight: 60,
-                      flexDirection: 'row',
-                      borderBottomWidth: isLast ? 0 : 1,
-                      borderBottomColor: isLast ? 'transparent' : 'rgba(198,207,217,0.1)',
-                    }}
-                  >
-                    <Ionicons name={item.icon} size={20} color="#C6CFD9" />
-                    <Text className="flex-1 text-[#F5F7FA]" style={{ fontSize: 16, fontWeight: '500' }}>
-                      {item.label}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        ))}
-
-        {/* Logout Button */}
-        <TouchableOpacity
-          onPress={onLogout}
-          activeOpacity={0.8}
-          className="w-full bg-[#0A1A2F] rounded-2xl border border-white/5 px-6 py-4 flex items-center justify-center gap-3 transition-all duration-200 active:bg-[#050B12] hover:border-red-500/30"
-          style={{
-            minHeight: 56,
-            flexDirection: 'row',
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.05)',
-          }}
+        {/* Scrollable Menu */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Ionicons name="log-out" size={20} color="#C6CFD9" />
-          <Text className="text-[#C6CFD9]" style={{ fontSize: 16, fontWeight: '500' }}>
-            Log Out
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+          {/* Quick Order Link */}
+          <View style={styles.ordersSection}>
+            <TouchableOpacity
+              onPress={handleOrders}
+              activeOpacity={0.8}
+              style={styles.ordersCard}
+            >
+              <View style={styles.ordersIconContainer}>
+                <Ionicons name="cube" size={24} color="#1DA4F3" />
+              </View>
+              <View style={styles.ordersContent}>
+                <Text style={styles.ordersTitle}>Your Orders</Text>
+                <Text style={styles.ordersSubtitle}>View booking history & receipts</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+            </TouchableOpacity>
+          </View>
+
+          {menuSections.map((section, sectionIndex) => (
+            <View key={sectionIndex} style={styles.menuSection}>
+              {/* Section Title */}
+              <Text style={styles.sectionTitle}>
+                {section.title.toUpperCase()}
+              </Text>
+
+              {/* Menu Items */}
+              <View style={styles.menuCard}>
+                {section.items.map((item, itemIndex) => {
+                  const isLast = itemIndex === section.items.length - 1;
+
+                  return (
+                    <TouchableOpacity
+                      key={itemIndex}
+                      onPress={() => handleAction(item.action)}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.menuItem,
+                        !isLast && styles.menuItemWithBorder,
+                      ]}
+                    >
+                      <Ionicons name={item.icon} size={20} color="#C6CFD9" />
+                      <Text style={styles.menuItemLabel}>{item.label}</Text>
+                      <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.8}
+            style={styles.logoutButton}
+          >
+            <Ionicons name="log-out" size={20} color="#C6CFD9" />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  profileHeader: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 32,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  profileAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(29,164,243,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(111,240,196,0.4)',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    color: '#F5F7FA',
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  userEmail: {
+    color: '#C6CFD9',
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  userPhone: {
+    color: '#C6CFD9',
+    fontSize: 15,
+  },
+  editButton: {
+    padding: 4,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  ordersSection: {
+    marginBottom: 32,
+  },
+  ordersCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    gap: 16,
+  },
+  ordersIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(29,164,243,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ordersContent: {
+    flex: 1,
+  },
+  ordersTitle: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  ordersSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  menuSection: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    color: '#C6CFD9',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  menuCard: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 60,
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    gap: 16,
+  },
+  menuItemWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(198,207,217,0.1)',
+  },
+  menuItemLabel: {
+    flex: 1,
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    minHeight: 56,
+    gap: 12,
+  },
+  logoutText: {
+    color: '#C6CFD9',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+});

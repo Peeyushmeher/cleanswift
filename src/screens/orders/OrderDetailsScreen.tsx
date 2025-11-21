@@ -1,260 +1,413 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { OrdersStackParamList } from '../../navigation/OrdersStack';
 
-interface OrderDetailsScreenProps {
-  onBack: () => void;
-  onBookAgain: () => void;
-}
+type Props = NativeStackScreenProps<OrdersStackParamList, 'OrderDetails'>;
 
-export default function OrderDetailsScreen({ onBack, onBookAgain }: OrderDetailsScreenProps) {
+export default function OrderDetailsScreen({ navigation, route }: Props) {
+  const { orderId } = route.params;
+
+  const handleBookAgain = () => {
+    // Navigate to booking flow
+    // @ts-ignore - Navigate to different tab stack
+    navigation.navigate('Book');
+  };
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors"
-        >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-        </TouchableOpacity>
-        <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-          Service Details
-        </Text>
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView className="flex-1 px-6 pb-32" showsVerticalScrollIndicator={false}>
-        {/* Service Summary */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="flex items-center gap-2 mb-4" style={{ flexDirection: 'row' }}>
-            <View
-              className="w-2 h-2 rounded-full bg-[#6FF0C4]"
-              style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#6FF0C4' }}
-            />
-            <Text className="text-[#6FF0C4]" style={{ fontSize: 14, fontWeight: '500' }}>
-              Completed
-            </Text>
-          </View>
-
-          <Text className="text-[#F5F7FA] mb-2" style={{ fontSize: 24, fontWeight: '600' }}>
-            Full Exterior Detail
-          </Text>
-          <Text className="text-[#C6CFD9] mb-4" style={{ fontSize: 15 }}>
-            Completed on Nov 16 at 2:42 PM
-          </Text>
-        </View>
-
-        {/* Car Details */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="flex items-start gap-4" style={{ flexDirection: 'row' }}>
-            <Ionicons name="car-sport" size={40} color="#6FF0C4" />
-            <View>
-              <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 18, fontWeight: '600' }}>
-                2022 BMW M4
-              </Text>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                License: ABC-123
-              </Text>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                Black Sapphire Metallic
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Detailer Information */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="flex items-start gap-4" style={{ flexDirection: 'row' }}>
-            <View
-              className="w-14 h-14 rounded-full bg-gradient-to-br from-[#1DA4F3]/20 to-[#6FF0C4]/20 flex items-center justify-center ring-2 ring-[#6FF0C4]/30"
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
-                backgroundColor: 'rgba(29,164,243,0.15)',
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderWidth: 2,
-                borderColor: 'rgba(111,240,196,0.3)',
-              }}
-            >
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 20, fontWeight: '600' }}>
-                MT
-              </Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 18, fontWeight: '600' }}>
-                Marcus Thompson
-              </Text>
-              <View className="flex items-center gap-1 mb-1" style={{ flexDirection: 'row' }}>
-                <Ionicons name="star" size={16} color="#6FF0C4" />
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 14 }}>
-                  4.9
-                </Text>
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 12 }}>
-                  (142 reviews)
-                </Text>
-              </View>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-                Detailer since 2021
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Date & Time */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <View className="space-y-3" style={{ gap: 12 }}>
-            <View className="flex items-center gap-3" style={{ flexDirection: 'row' }}>
-              <Ionicons name="calendar" size={20} color="#C6CFD9" />
-              <View>
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 15, fontWeight: '500' }}>
-                  Thursday, November 16
-                </Text>
-              </View>
-            </View>
-            <View className="flex items-center gap-3" style={{ flexDirection: 'row' }}>
-              <Ionicons name="time" size={20} color="#C6CFD9" />
-              <View>
-                <Text className="text-[#F5F7FA]" style={{ fontSize: 15, fontWeight: '500' }}>
-                  1:00 PM - 3:00 PM
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Payment Summary */}
-        <View
-          className="bg-[#0A1A2F] rounded-3xl p-6 mb-4 border border-white/5"
-          style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }}
-        >
-          <Text className="text-[#F5F7FA] mb-4" style={{ fontSize: 18, fontWeight: '600' }}>
-            Payment Summary
-          </Text>
-
-          <View className="space-y-2 mb-3" style={{ gap: 8 }}>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Full Exterior Detail</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$149.00</Text>
-            </View>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Wax Finish</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$25.00</Text>
-            </View>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>Interior Refresh</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$15.00</Text>
-            </View>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 15 }}>HST</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 15 }}>$24.57</Text>
-            </View>
-          </View>
-
-          <View
-            className="h-px bg-[#C6CFD9]/20 mb-3"
-            style={{ height: 1, backgroundColor: 'rgba(198,207,217,0.2)', marginBottom: 12 }}
-          />
-
-          <View className="flex justify-between items-center mb-4" style={{ flexDirection: 'row' }}>
-            <Text className="text-[#F5F7FA]" style={{ fontSize: 18, fontWeight: '600' }}>
-              Total
-            </Text>
-            <Text className="text-[#6FF0C4]" style={{ fontSize: 24, fontWeight: '700' }}>
-              $213.57
-            </Text>
-          </View>
-
-          <View
-            className="pt-4 border-t border-[#C6CFD9]/10"
-            style={{
-              paddingTop: 16,
-              borderTopWidth: 1,
-              borderTopColor: 'rgba(198,207,217,0.1)',
-            }}
-          >
-            <View className="flex justify-between mb-1" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>Payment Method</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 14 }}>Visa •••• 2741</Text>
-            </View>
-            <View className="flex justify-between" style={{ flexDirection: 'row' }}>
-              <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>Receipt ID</Text>
-              <Text className="text-[#F5F7FA]" style={{ fontSize: 14 }}>8F3D-21B7</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Download/Share */}
-        <View className="flex gap-3 mb-4" style={{ flexDirection: 'row', gap: 12 }}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
           <TouchableOpacity
-            activeOpacity={0.8}
-            className="flex-1 bg-[#0A1A2F] rounded-2xl px-5 py-4 border border-white/5 flex items-center justify-center gap-2 transition-all duration-200 active:bg-[#050B12]"
-            style={{
-              flex: 1,
-              flexDirection: 'row',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.05)',
-            }}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            style={styles.backButton}
           >
-            <Ionicons name="download" size={20} color="#C6CFD9" />
-            <Text className="text-[#F5F7FA]" style={{ fontSize: 15, fontWeight: '500' }}>
-              Download
-            </Text>
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Service Details</Text>
+        </View>
+
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Service Summary */}
+          <View style={styles.card}>
+            <View style={styles.statusRow}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusText}>Completed</Text>
+            </View>
+
+            <Text style={styles.serviceTitle}>Full Exterior Detail</Text>
+            <Text style={styles.completedDate}>Completed on Nov 16 at 2:42 PM</Text>
+          </View>
+
+          {/* Car Details */}
+          <View style={styles.card}>
+            <View style={styles.rowStart}>
+              <Ionicons name="car-sport" size={40} color="#6FF0C4" />
+              <View>
+                <Text style={styles.carName}>2022 BMW M4</Text>
+                <Text style={styles.carDetail}>License: ABC-123</Text>
+                <Text style={styles.carDetail}>Black Sapphire Metallic</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Detailer Information */}
+          <View style={styles.card}>
+            <View style={styles.rowStart}>
+              <View style={styles.detailerAvatar}>
+                <Text style={styles.detailerInitials}>MT</Text>
+              </View>
+              <View style={styles.flex1}>
+                <Text style={styles.detailerName}>Marcus Thompson</Text>
+                <View style={styles.ratingRow}>
+                  <Ionicons name="star" size={16} color="#6FF0C4" />
+                  <Text style={styles.ratingScore}>4.9</Text>
+                  <Text style={styles.ratingCount}>(142 reviews)</Text>
+                </View>
+                <Text style={styles.detailerSince}>Detailer since 2021</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Date & Time */}
+          <View style={styles.card}>
+            <View style={styles.dateTimeContainer}>
+              <View style={styles.dateTimeRow}>
+                <Ionicons name="calendar" size={20} color="#C6CFD9" />
+                <Text style={styles.dateTimeText}>Thursday, November 16</Text>
+              </View>
+              <View style={styles.dateTimeRow}>
+                <Ionicons name="time" size={20} color="#C6CFD9" />
+                <Text style={styles.dateTimeText}>1:00 PM - 3:00 PM</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Payment Summary */}
+          <View style={styles.card}>
+            <Text style={styles.paymentTitle}>Payment Summary</Text>
+
+            <View style={styles.lineItemsContainer}>
+              <View style={styles.lineItem}>
+                <Text style={styles.lineItemLabel}>Full Exterior Detail</Text>
+                <Text style={styles.lineItemValue}>$149.00</Text>
+              </View>
+              <View style={styles.lineItem}>
+                <Text style={styles.lineItemLabel}>Wax Finish</Text>
+                <Text style={styles.lineItemValue}>$25.00</Text>
+              </View>
+              <View style={styles.lineItem}>
+                <Text style={styles.lineItemLabel}>Interior Refresh</Text>
+                <Text style={styles.lineItemValue}>$15.00</Text>
+              </View>
+              <View style={styles.lineItem}>
+                <Text style={styles.lineItemLabel}>HST</Text>
+                <Text style={styles.lineItemValue}>$24.57</Text>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>$213.57</Text>
+            </View>
+
+            <View style={styles.metaSection}>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Payment Method</Text>
+                <Text style={styles.metaValue}>Visa •••• 2741</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaLabel}>Receipt ID</Text>
+                <Text style={styles.metaValue}>8F3D-21B7</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Download/Share */}
+          <View style={styles.actionsRow}>
+            <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
+              <Ionicons name="download" size={20} color="#C6CFD9" />
+              <Text style={styles.actionButtonText}>Download</Text>
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
+              <Ionicons name="share-social" size={20} color="#C6CFD9" />
+              <Text style={styles.actionButtonText}>Share</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* Bottom CTA */}
+        <View style={styles.bottomCTA}>
           <TouchableOpacity
+            onPress={handleBookAgain}
             activeOpacity={0.8}
-            className="flex-1 bg-[#0A1A2F] rounded-2xl px-5 py-4 border border-white/5 flex items-center justify-center gap-2 transition-all duration-200 active:bg-[#050B12]"
-            style={{
-              flex: 1,
-              flexDirection: 'row',
-              borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.05)',
-            }}
+            style={styles.bookAgainButton}
           >
-            <Ionicons name="share-social" size={20} color="#C6CFD9" />
-            <Text className="text-[#F5F7FA]" style={{ fontSize: 15, fontWeight: '500' }}>
-              Share
-            </Text>
+            <Text style={styles.bookAgainText}>Book Again</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      {/* Bottom CTA */}
-      <View className="px-6 pb-8 bg-gradient-to-t from-[#050B12] via-[#050B12] to-transparent pt-6">
-        <TouchableOpacity
-          onPress={onBookAgain}
-          activeOpacity={0.8}
-          className="w-full bg-[#1DA4F3] text-white py-4 rounded-full transition-all duration-200 active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/20"
-          style={{
-            minHeight: 56,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#1DA4F3',
-            shadowColor: '#1DA4F3',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.2,
-            shadowRadius: 8,
-          }}
-        >
-          <Text className="text-white" style={{ fontSize: 17, fontWeight: '600' }}>
-            Book Again
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 16,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  card: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  // Service Summary
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#6FF0C4',
+  },
+  statusText: {
+    color: '#6FF0C4',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  serviceTitle: {
+    color: '#F5F7FA',
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  completedDate: {
+    color: '#C6CFD9',
+    fontSize: 15,
+  },
+  // Car Details
+  rowStart: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  carName: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  carDetail: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  // Detailer Information
+  detailerAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(29,164,243,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  detailerInitials: {
+    color: '#F5F7FA',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  flex1: {
+    flex: 1,
+  },
+  detailerName: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  ratingScore: {
+    color: '#F5F7FA',
+    fontSize: 14,
+  },
+  ratingCount: {
+    color: '#C6CFD9',
+    fontSize: 12,
+  },
+  detailerSince: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  // Date & Time
+  dateTimeContainer: {
+    gap: 12,
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dateTimeText: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  // Payment Summary
+  paymentTitle: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  lineItemsContainer: {
+    gap: 8,
+    marginBottom: 12,
+  },
+  lineItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  lineItemLabel: {
+    color: '#C6CFD9',
+    fontSize: 15,
+  },
+  lineItemValue: {
+    color: '#F5F7FA',
+    fontSize: 15,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(198,207,217,0.2)',
+    marginBottom: 12,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  totalLabel: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  totalValue: {
+    color: '#6FF0C4',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  metaSection: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(198,207,217,0.1)',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  metaLabel: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  metaValue: {
+    color: '#F5F7FA',
+    fontSize: 14,
+  },
+  // Actions Row
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  actionButtonText: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  // Bottom CTA
+  bottomCTA: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    paddingTop: 16,
+    backgroundColor: '#050B12',
+  },
+  bookAgainButton: {
+    minHeight: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1DA4F3',
+    borderRadius: 28,
+    shadowColor: '#1DA4F3',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  bookAgainText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});

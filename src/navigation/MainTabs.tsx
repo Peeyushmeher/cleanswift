@@ -1,15 +1,16 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigatorScreenParams } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/home/HomeScreen';
-import BookingStack from './BookingStack';
+import BookingStack, { BookingStackParamList } from './BookingStack';
 import OrdersStack from './OrdersStack';
-import ProfileStack from './ProfileStack';
+import ProfileStack, { ProfileStackParamList } from './ProfileStack';
 
 export type MainTabsParamList = {
   Home: undefined;
-  Book: undefined;
+  Book: NavigatorScreenParams<BookingStackParamList> | undefined;
   Orders: undefined;
-  Profile: undefined;
+  Profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();

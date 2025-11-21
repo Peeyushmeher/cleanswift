@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ProfileStackParamList } from '../../navigation/ProfileStack';
 
-interface NotificationsScreenProps {
-  onBack: () => void;
-}
+type Props = NativeStackScreenProps<ProfileStackParamList, 'Notifications'>;
 
 interface ToggleSetting {
   id: string;
@@ -19,29 +20,17 @@ const ToggleSwitch = ({ enabled, locked, onPress }: { enabled: boolean; locked?:
     onPress={onPress}
     disabled={locked}
     activeOpacity={locked ? 1 : 0.8}
-    className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${
-      enabled ? 'bg-[#6FF0C4]' : 'bg-[#C6CFD9]/30'
-    } ${locked ? 'opacity-50' : ''}`}
-    style={{
-      width: 48,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: enabled ? '#6FF0C4' : 'rgba(198,207,217,0.3)',
-      opacity: locked ? 0.5 : 1,
-      justifyContent: 'center',
-    }}
+    style={[
+      styles.toggleSwitch,
+      { backgroundColor: enabled ? '#6FF0C4' : 'rgba(198,207,217,0.3)' },
+      locked && styles.toggleSwitchLocked,
+    ]}
   >
     <View
-      className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform duration-200 ${
-        enabled ? 'translate-x-6' : 'translate-x-1'
-      }`}
-      style={{
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: 'white',
-        transform: [{ translateX: enabled ? 24 : 4 }],
-      }}
+      style={[
+        styles.toggleThumb,
+        { transform: [{ translateX: enabled ? 24 : 4 }] },
+      ]}
     />
   </TouchableOpacity>
 );
@@ -55,39 +44,20 @@ const SettingsSection = ({
   items: ToggleSetting[];
   onToggle: (id: string) => void;
 }) => (
-  <View className="mb-8">
-    <Text
-      className="text-[#C6CFD9] mb-3 px-1"
-      style={{
-        fontSize: 13,
-        fontWeight: '600',
-        letterSpacing: 0.8,
-        textTransform: 'uppercase',
-      }}
-    >
-      {title.toUpperCase()}
-    </Text>
-    <View className="space-y-4" style={{ gap: 16 }}>
+  <View style={styles.section}>
+    <Text style={styles.sectionTitle}>{title.toUpperCase()}</Text>
+    <View style={styles.sectionItems}>
       {items.map((item) => (
         <TouchableOpacity
           key={item.id}
           onPress={() => !item.locked && onToggle(item.id)}
           activeOpacity={item.locked ? 1 : 0.8}
           disabled={item.locked}
-          className="bg-[#0A1A2F] rounded-2xl p-5 border border-white/5 flex items-start justify-between gap-4 transition-all duration-200 active:bg-[#050B12]"
-          style={{
-            flexDirection: 'row',
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.05)',
-          }}
+          style={styles.settingItem}
         >
-          <View className="flex-1">
-            <Text className="text-[#F5F7FA] mb-1" style={{ fontSize: 16, fontWeight: '500' }}>
-              {item.label}
-            </Text>
-            <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
-              {item.description}
-            </Text>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingLabel}>{item.label}</Text>
+            <Text style={styles.settingDescription}>{item.description}</Text>
           </View>
           <ToggleSwitch enabled={item.enabled} locked={item.locked} onPress={() => !item.locked && onToggle(item.id)} />
         </TouchableOpacity>
@@ -96,7 +66,7 @@ const SettingsSection = ({
   </View>
 );
 
-export default function NotificationsScreen({ onBack }: NotificationsScreenProps) {
+export default function NotificationsScreen({ navigation }: Props) {
   const [settings, setSettings] = useState<ToggleSetting[]>([
     { id: 'push', label: 'Push Notifications', description: 'Receive updates about your bookings', enabled: true },
     { id: 'sms', label: 'SMS Notifications', description: 'Get text messages for important updates', enabled: true },
@@ -139,53 +109,143 @@ export default function NotificationsScreen({ onBack }: NotificationsScreenProps
   };
 
   return (
-    <View className="fixed inset-0 bg-gradient-to-b from-[#0A1A2F] to-[#050B12] flex flex-col">
-      {/* Header */}
-      <View className="px-6 pt-16 pb-6 flex items-center gap-4" style={{ flexDirection: 'row' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          activeOpacity={0.7}
-          className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors"
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+            style={styles.backButton}
+          >
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Notifications</Text>
+        </View>
+
+        {/* Scrollable Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
-        </TouchableOpacity>
-        <Text className="text-[#F5F7FA]" style={{ fontSize: 28, fontWeight: '600' }}>
-          Notifications
-        </Text>
-      </View>
+          <SettingsSection
+            title="General"
+            items={settings}
+            onToggle={(id) => toggleSetting(settings, setSettings, id)}
+          />
 
-      {/* Scrollable Content */}
-      <ScrollView className="flex-1 px-6 pb-8" showsVerticalScrollIndicator={false}>
-        <SettingsSection
-          title="General"
-          items={settings}
-          onToggle={(id) => toggleSetting(settings, setSettings, id)}
-        />
+          <SettingsSection
+            title="Service Updates"
+            items={serviceUpdates}
+            onToggle={(id) => toggleSetting(serviceUpdates, setServiceUpdates, id)}
+          />
 
-        <SettingsSection
-          title="Service Updates"
-          items={serviceUpdates}
-          onToggle={(id) => toggleSetting(serviceUpdates, setServiceUpdates, id)}
-        />
+          <SettingsSection
+            title="Reminders"
+            items={reminders}
+            onToggle={(id) => toggleSetting(reminders, setReminders, id)}
+          />
 
-        <SettingsSection
-          title="Reminders"
-          items={reminders}
-          onToggle={(id) => toggleSetting(reminders, setReminders, id)}
-        />
+          <SettingsSection
+            title="Promotions"
+            items={promotional}
+            onToggle={(id) => toggleSetting(promotional, setPromotional, id)}
+          />
 
-        <SettingsSection
-          title="Promotions"
-          items={promotional}
-          onToggle={(id) => toggleSetting(promotional, setPromotional, id)}
-        />
-
-        <SettingsSection
-          title="System"
-          items={system}
-          onToggle={(id) => toggleSetting(system, setSystem, id)}
-        />
-      </ScrollView>
+          <SettingsSection
+            title="System"
+            items={system}
+            onToggle={(id) => toggleSetting(system, setSystem, id)}
+          />
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#050B12',
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 16,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    color: '#F5F7FA',
+    fontSize: 28,
+    fontWeight: '600',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    color: '#C6CFD9',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sectionItems: {
+    gap: 16,
+  },
+  settingItem: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  settingContent: {
+    flex: 1,
+  },
+  settingLabel: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  settingDescription: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  toggleSwitch: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+  },
+  toggleSwitchLocked: {
+    opacity: 0.5,
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'white',
+  },
+});
