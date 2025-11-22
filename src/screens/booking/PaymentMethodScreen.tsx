@@ -1,18 +1,19 @@
-import { useState, useLayoutEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackScreenProps, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useStripe } from '@stripe/stripe-react-native';
-import { BookingStackParamList } from '../../navigation/BookingStack';
-import { useBooking } from '../../contexts/BookingContext';
+import { useLayoutEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useBooking } from '../../contexts/BookingContext';
 import { supabase } from '../../lib/supabase';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 import {
-  createPaymentIntent,
-  updateBookingPaymentStatus,
   createBooking,
   createBookingAddons,
+  createPaymentIntent,
+  updateBookingPaymentStatus,
 } from '../../services/paymentService';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PaymentMethod'>;

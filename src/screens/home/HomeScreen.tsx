@@ -1,10 +1,10 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
 
@@ -31,7 +31,7 @@ export default function HomeScreen() {
 
   const handleSelectCar = () => {
     // Navigate to Profile tab, then to SelectCar screen
-    navigation.navigate('Profile', { screen: 'SelectCar' });
+    (navigation as any).navigate('Profile', { screen: 'SelectCar' });
   };
 
   const handleProfile = () => {

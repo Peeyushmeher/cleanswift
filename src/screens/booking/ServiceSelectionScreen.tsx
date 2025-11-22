@@ -1,12 +1,13 @@
-import { useState, useLayoutEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackScreenProps, useNavigation } from '@react-navigation/native';
-import { BookingStackParamList } from '../../navigation/BookingStack';
-import { useServices } from '../../hooks/useServices';
-import { useServiceAddons } from '../../hooks/useServiceAddons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useLayoutEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
+import { useServiceAddons } from '../../hooks/useServiceAddons';
+import { useServices } from '../../hooks/useServices';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ServiceSelection'>;
 
@@ -250,9 +251,6 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 4,
     marginRight: 16,
-  },
-  backButton: {
-    padding: 4,
   },
   headerTitle: {
     color: '#F5F7FA',

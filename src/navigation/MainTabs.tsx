@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     right: 24,
     height: 60,
     flexDirection: 'row',
-    backgroundColor: 'rgba(0, 0, 0, 0)',
+    backgroundColor: 'rgba(10, 26, 47, 0.75)',
     borderRadius: 30,
     paddingHorizontal: 8,
     paddingVertical: 8,
@@ -180,6 +180,19 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     elevation: 0,
     overflow: 'visible',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   tabBarItem: {
     flex: 1,

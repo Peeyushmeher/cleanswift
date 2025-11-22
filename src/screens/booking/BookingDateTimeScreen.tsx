@@ -1,10 +1,11 @@
-import { useState, useLayoutEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackScreenProps, useNavigation } from '@react-navigation/native';
-import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useLayoutEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingDateTime'>;
 
