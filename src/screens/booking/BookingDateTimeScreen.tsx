@@ -5,29 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
+import { DEMO_DATES, DEMO_TIME_SLOTS } from '../../config/demoData';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingDateTime'>;
-
-const dates = [
-  { day: 'Mon', date: 13, available: false },
-  { day: 'Tue', date: 14, available: false },
-  { day: 'Wed', date: 15, available: false },
-  { day: 'Thu', date: 16, available: true },
-  { day: 'Fri', date: 17, available: true },
-  { day: 'Sat', date: 18, available: true },
-  { day: 'Sun', date: 19, available: true },
-];
-
-const timeSlots = [
-  { time: '8:00 AM', available: true },
-  { time: '9:30 AM', available: true },
-  { time: '11:00 AM', available: true },
-  { time: '1:00 PM', available: true },
-  { time: '3:30 PM', available: true },
-  { time: '5:00 PM', available: false },
-  { time: '6:30 PM', available: false },
-  { time: '8:00 PM', available: false },
-];
 
 export default function BookingDateTimeScreen({ navigation, route }: Props) {
   const { setDateTime } = useBooking();
@@ -45,8 +26,8 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
     // Update BookingContext
     setDateTime(bookingDate, selectedTime);
 
-    // Navigate to next screen
-    navigation.navigate('ChooseDetailer', {
+    // Navigate to next screen (LocationSelection)
+    navigation.navigate('LocationSelection', {
       selectedService: route.params.selectedService,
       selectedAddons: route.params.selectedAddons,
       date: selectedDate.toString(),
@@ -66,7 +47,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Choose Date & Time</Text>
         </View>
@@ -80,7 +61,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
           {/* Date Picker */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="calendar" size={20} color="#6FF0C4" />
+              <Ionicons name="calendar" size={20} color={COLORS.accent.mint} />
               <Text style={styles.sectionTitle}>Select Date</Text>
             </View>
             <ScrollView
@@ -88,7 +69,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.dateScrollContent}
             >
-              {dates.map((date) => {
+              {DEMO_DATES.map((date) => {
                 const isSelected = selectedDate === date.date;
                 const isAvailable = date.available;
 
@@ -122,11 +103,11 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
           {/* Time Slot Grid */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="time" size={20} color="#1DA4F3" />
+              <Ionicons name="time" size={20} color={COLORS.accent.blue} />
               <Text style={styles.sectionTitle}>Select Time</Text>
             </View>
             <View style={styles.timeGrid}>
-              {timeSlots.map((slot) => {
+              {DEMO_TIME_SLOTS.map((slot) => {
                 const isSelected = selectedTime === slot.time;
                 const isAvailable = slot.available;
 
@@ -183,7 +164,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -200,7 +181,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -220,7 +201,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 8,
@@ -232,39 +213,39 @@ const styles = StyleSheet.create({
     width: 80,
     paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     alignItems: 'center',
     marginRight: 12,
   },
   dateCardSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
-    backgroundColor: '#071C33',
-    shadowColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
+    backgroundColor: COLORS.bg.surfaceSelected,
+    shadowColor: COLORS.shadow.mint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   dateCardDisabled: {
-    backgroundColor: 'rgba(10,26,47,0.3)',
+    backgroundColor: COLORS.special.surfaceFaded,
     opacity: 0.4,
   },
   dateDayLabel: {
     fontSize: 12,
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     marginBottom: 4,
     textAlign: 'center',
   },
   dateDayLabelSelected: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
   },
   dateNumber: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     textAlign: 'center',
   },
   timeGrid: {
@@ -277,9 +258,9 @@ const styles = StyleSheet.create({
     minHeight: 56,
     paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 6,
@@ -287,36 +268,36 @@ const styles = StyleSheet.create({
   },
   timeCardSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
-    backgroundColor: '#071C33',
-    shadowColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
+    backgroundColor: COLORS.bg.surfaceSelected,
+    shadowColor: COLORS.shadow.mint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   timeCardDisabled: {
-    backgroundColor: 'rgba(10,26,47,0.3)',
+    backgroundColor: COLORS.special.surfaceFaded,
     opacity: 0.4,
   },
   timeText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
   },
   timeTextSelected: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
   },
   timeTextDisabled: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
   },
   bottomCTA: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: COLORS.border.subtle,
   },
   continueButton: {
     width: '100%',
@@ -325,24 +306,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: '#071326',
+    backgroundColor: COLORS.bg.surfaceDisabled,
     shadowOpacity: 0,
     elevation: 0,
   },
   continueButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },
   continueButtonTextDisabled: {
-    color: '#5F7290',
+    color: COLORS.text.disabledAlt,
   },
 });

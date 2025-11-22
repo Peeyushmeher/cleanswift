@@ -11,7 +11,10 @@ export type ProfileStackParamList = {
   EditProfile: undefined;
   Notifications: undefined;
   HelpSupport: undefined;
-  SelectCar: undefined;
+  SelectCar: {
+    returnTo?: 'OrderSummary' | 'Profile';
+    originalParams?: any;
+  } | undefined;
   AddCar: undefined;
 };
 

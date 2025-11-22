@@ -3,15 +3,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import { DEMO_SERVICE_STEPS } from '../../config/demoData';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ServiceProgress'>;
-
-const steps = [
-  { id: 1, title: 'Arrived', subtitle: 'Detailer is preparing equipment', icon: 'location' as const, status: 'completed' },
-  { id: 2, title: 'Cleaning Exterior', subtitle: 'Deep cleaning your car', icon: 'water' as const, status: 'current' },
-  { id: 3, title: 'Detailing Interior', subtitle: 'Interior refresh and detailing', icon: 'sparkles' as const, status: 'upcoming' },
-  { id: 4, title: 'Final Touches', subtitle: 'Adding finishing treatments', icon: 'checkmark' as const, status: 'upcoming' },
-];
 
 export default function ServiceProgressScreen({ navigation }: Props) {
   const handleCompleteService = () => {
@@ -45,7 +40,7 @@ export default function ServiceProgressScreen({ navigation }: Props) {
 
               {/* Steps */}
               <View style={styles.stepsContainer}>
-                {steps.map((step, index) => {
+                {DEMO_SERVICE_STEPS.map((step, index) => {
                   const isCompleted = step.status === 'completed';
                   const isCurrent = step.status === 'current';
                   const isUpcoming = step.status === 'upcoming';
@@ -64,7 +59,7 @@ export default function ServiceProgressScreen({ navigation }: Props) {
                         <Ionicons
                           name={step.icon}
                           size={24}
-                          color={isCurrent || isCompleted ? '#6FF0C4' : '#C6CFD9'}
+                          color={isCurrent || isCompleted ? COLORS.accent.mint : COLORS.text.secondary}
                         />
                       </View>
 
@@ -126,10 +121,10 @@ export default function ServiceProgressScreen({ navigation }: Props) {
               {/* Action Buttons */}
               <View style={styles.actionButtons}>
                 <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
-                  <Ionicons name="call" size={16} color="#F5F7FA" />
+                  <Ionicons name="call" size={16} color={COLORS.text.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
-                  <Ionicons name="chatbubble" size={16} color="#F5F7FA" />
+                  <Ionicons name="chatbubble" size={16} color={COLORS.text.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -157,7 +152,7 @@ export default function ServiceProgressScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -168,14 +163,14 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 8,
   },
   headerSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
     textAlign: 'center',
   },
@@ -198,7 +193,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 2,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: COLORS.border.emphasis,
   },
   stepsContainer: {
     gap: 32,
@@ -216,17 +211,17 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   iconCircleCurrent: {
-    backgroundColor: 'rgba(111,240,196,0.2)',
+    backgroundColor: COLORS.accentBg.mint20,
     borderWidth: 4,
-    borderColor: 'rgba(111,240,196,0.3)',
+    borderColor: COLORS.accentBg.mint30,
   },
   iconCircleCompleted: {
-    backgroundColor: 'rgba(111,240,196,0.1)',
+    backgroundColor: COLORS.accentBg.mint10,
   },
   iconCircleUpcoming: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderWidth: 2,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: COLORS.border.emphasis,
   },
   stepContent: {
     flex: 1,
@@ -239,47 +234,47 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   stepTitleCurrent: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontWeight: '600',
   },
   stepTitleCompleted: {
     color: 'rgba(245,247,250,0.8)',
   },
   stepTitleUpcoming: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
   },
   stepSubtitle: {
     fontSize: 14,
   },
   stepSubtitleCurrent: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
   },
   stepSubtitleMuted: {
     color: 'rgba(198,207,217,0.6)',
   },
   card: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     marginBottom: 16,
   },
   cardCenter: {
     alignItems: 'center',
   },
   estimatedLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
     marginBottom: 8,
   },
   estimatedTime: {
-    color: '#1DA4F3',
+    color: COLORS.accent.blue,
     fontSize: 32,
     fontWeight: '700',
   },
   estimatedFinish: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
     marginTop: 8,
   },
@@ -291,14 +286,14 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: COLORS.accentBg.blue15,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(111,240,196,0.3)',
+    borderColor: COLORS.accentBg.mint30,
   },
   avatarText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '600',
   },
@@ -307,13 +302,13 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   detailerName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 17,
     fontWeight: '600',
     marginBottom: 4,
   },
   detailerStatus: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   actionButtons: {
@@ -324,14 +319,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: COLORS.border.emphasis,
     justifyContent: 'center',
     alignItems: 'center',
   },
   footerNote: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     textAlign: 'center',
     marginTop: 24,
@@ -344,15 +339,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   completeButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },

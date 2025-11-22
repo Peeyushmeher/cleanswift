@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
+import { DEMO_TIP_AMOUNTS, DEMO_RECEIPT_DATA } from '../../config/demoData';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ReceiptRating'>;
-
-const tipAmounts = ['$5', '$10', '$20', 'Custom'];
 
 export default function ReceiptRatingScreen({ navigation }: Props) {
   const { clearBooking } = useBooking();
@@ -42,7 +42,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.successIcon}>
-              <Ionicons name="checkmark" size={40} color="#6FF0C4" />
+              <Ionicons name="checkmark" size={40} color={COLORS.accent.mint} />
             </View>
             <Text style={styles.headerTitle}>
               Your Detail Is Complete
@@ -64,18 +64,18 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
             {/* Service Info */}
             <View style={styles.serviceRow}>
               <View>
-                <Text style={styles.serviceTitle}>Full Exterior Detail</Text>
-                <Text style={styles.serviceTime}>Completed at 2:42 PM</Text>
+                <Text style={styles.serviceTitle}>{DEMO_RECEIPT_DATA.serviceName}</Text>
+                <Text style={styles.serviceTime}>Completed at {DEMO_RECEIPT_DATA.completedAt}</Text>
               </View>
-              <Text style={styles.servicePrice}>$149.00</Text>
+              <Text style={styles.servicePrice}>{DEMO_RECEIPT_DATA.price}</Text>
             </View>
 
             {/* Car Info */}
             <View style={styles.infoRow}>
-              <Ionicons name="car-sport" size={20} color="#C6CFD9" />
+              <Ionicons name="car-sport" size={20} color={COLORS.text.secondary} />
               <View>
-                <Text style={styles.infoTitle}>2021 BMW M4</Text>
-                <Text style={styles.infoSubtitle}>License: ABC-123</Text>
+                <Text style={styles.infoTitle}>{DEMO_RECEIPT_DATA.carModel}</Text>
+                <Text style={styles.infoSubtitle}>License: {DEMO_RECEIPT_DATA.licensePlate}</Text>
               </View>
             </View>
 
@@ -87,7 +87,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
               <View style={styles.detailerInfo}>
                 <Text style={styles.detailerName}>Marcus Thompson</Text>
                 <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={12} color="#6FF0C4" />
+                  <Ionicons name="star" size={12} color={COLORS.accent.mint} />
                   <Text style={styles.ratingText}>4.9</Text>
                 </View>
               </View>
@@ -134,7 +134,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
                   <Ionicons
                     name={star <= rating ? 'star' : 'star-outline'}
                     size={40}
-                    color={star <= rating ? '#6FF0C4' : 'rgba(198,207,217,0.3)'}
+                    color={star <= rating ? COLORS.accent.mint : COLORS.border.strong}
                   />
                 </TouchableOpacity>
               ))}
@@ -145,7 +145,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
           <View style={styles.tipSection}>
             <Text style={styles.sectionTitleLeft}>Add a Tip?</Text>
             <View style={styles.tipGrid}>
-              {tipAmounts.map((amount) => (
+              {DEMO_TIP_AMOUNTS.map((amount) => (
                 <TouchableOpacity
                   key={amount}
                   onPress={() => setSelectedTip(amount)}
@@ -175,7 +175,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
               value={review}
               onChangeText={setReview}
               placeholder="Tell us how Marcus did..."
-              placeholderTextColor="rgba(198,207,217,0.5)"
+              placeholderTextColor={COLORS.text.disabled}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -211,7 +211,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -228,20 +228,20 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(111,240,196,0.1)',
+    backgroundColor: COLORS.accentBg.mint10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 8,
   },
   headerSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
     textAlign: 'center',
   },
@@ -253,11 +253,11 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   receiptCard: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     marginBottom: 24,
   },
   serviceRow: {
@@ -267,17 +267,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   serviceTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
   },
   serviceTime: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   servicePrice: {
-    color: '#1DA4F3',
+    color: COLORS.accent.blue,
     fontSize: 18,
     fontWeight: '600',
   },
@@ -286,28 +286,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(198,207,217,0.1)',
+    borderTopColor: COLORS.border.default,
     gap: 12,
   },
   infoTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '500',
   },
   infoSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
   },
   avatarContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: COLORS.accentBg.blue15,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailerName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '500',
     marginBottom: 2,
@@ -326,13 +326,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 12,
   },
   breakdownSection: {
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(198,207,217,0.1)',
+    borderTopColor: COLORS.border.default,
   },
   breakdownRows: {
     gap: 8,
@@ -343,16 +343,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   priceLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   priceValue: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 14,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: COLORS.border.emphasis,
     marginBottom: 12,
   },
   totalRow: {
@@ -361,12 +361,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 17,
     fontWeight: '600',
   },
   totalValue: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
     fontSize: 24,
     fontWeight: '700',
   },
@@ -374,14 +374,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 16,
   },
   sectionTitleLeft: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
@@ -406,34 +406,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
-    backgroundColor: '#0A1A2F',
+    borderColor: COLORS.border.emphasis,
+    backgroundColor: COLORS.bg.surface,
     marginBottom: 12,
   },
   tipButtonSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
   },
   tipButtonText: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
   },
   tipButtonTextSelected: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
   },
   reviewSection: {
     marginBottom: 24,
   },
   reviewInput: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: COLORS.border.emphasis,
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     minHeight: 100,
   },
@@ -444,24 +444,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   submitButtonDisabled: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     shadowOpacity: 0,
     elevation: 0,
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },
   submitButtonTextDisabled: {
-    color: 'rgba(198,207,217,0.5)',
+    color: COLORS.text.disabled,
   },
 });

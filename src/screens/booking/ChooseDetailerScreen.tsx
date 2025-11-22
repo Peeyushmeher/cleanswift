@@ -6,6 +6,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
 import { useDetailers } from '../../hooks/useDetailers';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseDetailer'>;
 
@@ -44,7 +45,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Choose Your Detailer</Text>
         </View>
@@ -52,7 +53,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
         {/* Loading State */}
         {loading && (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#6FF0C4" />
+            <ActivityIndicator size="large" color={COLORS.accent.mint} />
             <Text style={styles.loadingText}>Loading detailers...</Text>
           </View>
         )}
@@ -60,7 +61,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
         {/* Error State */}
         {error && !loading && (
           <View style={[styles.centerContainer, styles.errorContainer]}>
-            <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
+            <Ionicons name="alert-circle" size={64} color={COLORS.accent.error} />
             <Text style={styles.errorTitle}>Unable to load detailers</Text>
             <Text style={styles.errorMessage}>{error.message}</Text>
           </View>
@@ -91,7 +92,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                   {/* Selection Checkmark */}
                   {isSelected && (
                     <View style={styles.checkmark}>
-                      <Ionicons name="checkmark" size={16} color="#050B12" />
+                      <Ionicons name="checkmark" size={16} color={COLORS.bg.primary} />
                     </View>
                   )}
 
@@ -116,7 +117,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                       {/* Rating */}
                       <View style={styles.ratingRow}>
                         <View style={styles.ratingContainer}>
-                          <Ionicons name="star" size={16} color="#6FF0C4" />
+                          <Ionicons name="star" size={16} color={COLORS.accent.mint} />
                           <Text style={styles.ratingText}>{detailer.rating}</Text>
                         </View>
                         <Text style={styles.reviewsText}>({detailer.review_count} reviews)</Text>
@@ -125,12 +126,12 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                       {/* Distance & ETA */}
                       <View style={styles.infoRow}>
                         <View style={styles.infoItem}>
-                          <Ionicons name="location" size={16} color="#C6CFD9" />
+                          <Ionicons name="location" size={16} color={COLORS.text.secondary} />
                           <Text style={styles.infoText}>N/A</Text>
                           {/* TODO: Replace with real distance when geolocation is implemented */}
                         </View>
                         <View style={styles.infoItem}>
-                          <Ionicons name="time" size={16} color="#1DA4F3" />
+                          <Ionicons name="time" size={16} color={COLORS.accent.blue} />
                           <Text style={styles.etaText}>Estimated arrival: Calculating...</Text>
                           {/* TODO: Replace with real ETA when geolocation is implemented */}
                         </View>
@@ -177,7 +178,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -207,19 +208,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   loadingText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 16,
     marginTop: 16,
   },
   errorTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
     textAlign: 'center',
   },
   errorMessage: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
@@ -235,18 +236,18 @@ const styles = StyleSheet.create({
   },
   detailerCard: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     position: 'relative',
     marginBottom: 16,
   },
   detailerCardSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
-    shadowColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
+    shadowColor: COLORS.shadow.mint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -273,16 +274,16 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: COLORS.accentBg.blue15,
     justifyContent: 'center',
     alignItems: 'center',
   },
   profileAvatarSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
   },
   profileInitials: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 24,
     fontWeight: '600',
   },
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailerName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 8,
@@ -306,13 +307,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   ratingText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '500',
     marginLeft: 4,
   },
   reviewsText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   infoRow: {
@@ -324,12 +325,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   infoText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     marginLeft: 8,
   },
   etaText: {
-    color: '#1DA4F3',
+    color: COLORS.accent.blue,
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 8,
@@ -338,21 +339,21 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 4,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
     borderRadius: 999,
     marginTop: 12,
   },
   experienceText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 12,
   },
   bottomCTA: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: COLORS.border.subtle,
   },
   continueButton: {
     width: '100%',
@@ -361,24 +362,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     shadowOpacity: 0,
     elevation: 0,
   },
   continueButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },
   continueButtonTextDisabled: {
-    color: 'rgba(198,207,217,0.5)',
+    color: COLORS.text.disabled,
   },
 });

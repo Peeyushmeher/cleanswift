@@ -7,6 +7,7 @@ import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useServices } from '../../hooks/useServices';
 import { useServiceAddons } from '../../hooks/useServiceAddons';
 import { useBooking } from '../../contexts/BookingContext';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ServiceSelection'>;
 
@@ -65,7 +66,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
           activeOpacity={0.7}
             style={styles.backButton}
         >
-          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+          <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
         </TouchableOpacity>
           <Text style={styles.headerTitle}>Select a Service</Text>
       </View>
@@ -73,7 +74,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
       {/* Loading State */}
       {loading && (
           <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#6FF0C4" />
+          <ActivityIndicator size="large" color={COLORS.accent.mint} />
             <Text style={styles.loadingText}>Loading services...</Text>
         </View>
       )}
@@ -81,7 +82,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
       {/* Error State */}
       {error && !loading && (
           <View style={[styles.centerContainer, styles.errorContainer]}>
-          <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
+          <Ionicons name="alert-circle" size={64} color={COLORS.accent.error} />
             <Text style={styles.errorTitle}>Unable to load services</Text>
             <Text style={styles.errorMessage}>{error.message}</Text>
         </View>
@@ -115,7 +116,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
                     {/* Selection Checkmark */}
                     {isSelected && (
                         <View style={styles.checkmark}>
-                        <Ionicons name="checkmark" size={16} color="#050B12" />
+                        <Ionicons name="checkmark" size={16} color={COLORS.bg.primary} />
                       </View>
                     )}
 
@@ -125,7 +126,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
                           <Ionicons
                             name={icon}
                             size={48}
-                            color={isSelected ? '#6FF0C4' : '#1DA4F3'}
+                            color={isSelected ? COLORS.accent.mint : COLORS.accent.blue}
                           />
                           {isSelected && (
                             <View style={styles.serviceIconGlow} />
@@ -172,7 +173,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
                               isSelected && styles.addonCheckboxSelected
                             ]}>
                             {isSelected && (
-                              <Ionicons name="checkmark" size={16} color="#050B12" />
+                              <Ionicons name="checkmark" size={16} color={COLORS.bg.primary} />
                             )}
                             </View>
                             <Text style={styles.addonName}>{addon.name}</Text>
@@ -217,7 +218,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -233,11 +234,8 @@ const styles = StyleSheet.create({
     padding: 4,
     marginRight: 16,
   },
-  backButton: {
-    padding: 4,
-  },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -250,19 +248,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   loadingText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 16,
     marginTop: 16,
   },
   errorTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
     textAlign: 'center',
   },
   errorMessage: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
@@ -279,19 +277,19 @@ const styles = StyleSheet.create({
   },
   serviceCard: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     minHeight: 120,
     position: 'relative',
     marginBottom: 16,
   },
   serviceCardSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
-    shadowColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
+    shadowColor: COLORS.shadow.mint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -304,7 +302,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -320,36 +318,36 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
     opacity: 0.3,
   },
   serviceCardText: {
     flex: 1,
   },
   serviceName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 8,
   },
   servicePrice: {
-    color: '#1DA4F3',
+    color: COLORS.accent.blue,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
   },
   servicePriceSelected: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
   },
   serviceDescription: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
   },
   addonsContainer: {
     marginBottom: 32,
   },
   sectionTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 20,
@@ -358,11 +356,11 @@ const styles = StyleSheet.create({
   },
   addonCard: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
@@ -379,31 +377,31 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: 'rgba(198,207,217,0.3)',
+    borderColor: COLORS.border.strong,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   addonCheckboxSelected: {
-    backgroundColor: '#6FF0C4',
-    borderColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
+    borderColor: COLORS.accent.mint,
   },
   addonName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
   },
   addonPrice: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
   },
   bottomCTA: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: COLORS.border.subtle,
   },
   continueButton: {
     width: '100%',
@@ -412,24 +410,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     shadowOpacity: 0,
     elevation: 0,
   },
   continueButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },
   continueButtonTextDisabled: {
-    color: 'rgba(198,207,217,0.5)',
+    color: COLORS.text.disabled,
   },
 });

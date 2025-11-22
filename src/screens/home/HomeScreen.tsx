@@ -7,6 +7,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
+import { COLORS } from '../../theme/colors';
 
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabsParamList, 'Home'>,
@@ -14,11 +15,11 @@ type NavigationProp = CompositeNavigationProp<
 >;
 
 const quickActions = [
-  { icon: 'water' as const, label: 'Quick Wash', color: '#1DA4F3' },
-  { icon: 'sparkles' as const, label: 'Full Detail', color: '#6FF0C4' },
-  { icon: 'leaf' as const, label: 'Interior', color: '#1DA4F3' },
-  { icon: 'star' as const, label: 'Exterior', color: '#6FF0C4' },
-  { icon: 'cube' as const, label: 'Luxury Package', color: '#1DA4F3' },
+  { icon: 'water' as const, label: 'Quick Wash', color: COLORS.accent.blue },
+  { icon: 'sparkles' as const, label: 'Full Detail', color: COLORS.accent.mint },
+  { icon: 'leaf' as const, label: 'Interior', color: COLORS.accent.blue },
+  { icon: 'star' as const, label: 'Exterior', color: COLORS.accent.mint },
+  { icon: 'cube' as const, label: 'Luxury Package', color: COLORS.accent.blue },
 ];
 
 export default function HomeScreen() {
@@ -61,7 +62,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
               style={styles.profileButton}
             >
-              <Ionicons name="person" size={24} color="#6FF0C4" />
+              <Ionicons name="person" size={24} color={COLORS.accent.mint} />
             </TouchableOpacity>
           </View>
 
@@ -74,7 +75,7 @@ export default function HomeScreen() {
             >
               {/* Car Icon */}
               <View style={styles.carIconContainer}>
-                <Ionicons name="car-sport" size={64} color="#6FF0C4" />
+                <Ionicons name="car-sport" size={64} color={COLORS.accent.mint} />
                 <View style={styles.carIconGlow} />
               </View>
 
@@ -140,7 +141,7 @@ export default function HomeScreen() {
               style={styles.upcomingCard}
             >
               <View style={styles.upcomingIconContainer}>
-                <Ionicons name="time" size={24} color="#1DA4F3" />
+                <Ionicons name="time" size={24} color={COLORS.accent.blue} />
               </View>
               <View style={styles.upcomingContent}>
                 <Text style={styles.upcomingTitle}>Full Detail Service</Text>
@@ -157,7 +158,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -177,12 +178,12 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   greeting: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     marginBottom: 10,
   },
   title: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -191,11 +192,11 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: 'rgba(111, 240, 196, 0.4)',
-    backgroundColor: 'rgba(111, 240, 196, 0.05)',
+    borderColor: COLORS.border.accentMint,
+    backgroundColor: COLORS.accentBg.mint5,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#6FF0C4',
+    shadowColor: COLORS.shadow.mint,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
@@ -206,12 +207,12 @@ const styles = StyleSheet.create({
   },
   carCard: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    shadowColor: '#000',
+    borderColor: COLORS.border.subtle,
+    shadowColor: COLORS.shadow.default,
     shadowOffset: { width: 0, height: 20 },
     shadowOpacity: 0.4,
     shadowRadius: 40,
@@ -227,20 +228,20 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
     opacity: 0.2,
   },
   carInfo: {
     marginBottom: 24,
   },
   carName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 6,
   },
   carLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   buttonRow: {
@@ -248,29 +249,29 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
     paddingVertical: 16,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 48,
     marginRight: 6,
-    shadowColor: '#1DA4F3',
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
   },
   primaryButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 16,
     fontWeight: '600',
   },
   secondaryButton: {
     paddingHorizontal: 28,
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderWidth: 1,
-    borderColor: 'rgba(198, 207, 217, 0.2)',
+    borderColor: COLORS.border.emphasis,
     paddingVertical: 16,
     borderRadius: 24,
     justifyContent: 'center',
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   secondaryButtonText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 20,
@@ -298,11 +299,11 @@ const styles = StyleSheet.create({
   },
   quickActionCard: {
     width: 128,
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: COLORS.border.subtle,
     alignItems: 'center',
     marginRight: 12,
   },
@@ -310,7 +311,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   quickActionLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
     textAlign: 'center',
   },
@@ -319,14 +320,14 @@ const styles = StyleSheet.create({
     marginBottom: 96,
   },
   upcomingCard: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(29, 164, 243, 0.2)',
+    borderColor: COLORS.border.accentBlue,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#1DA4F3',
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(29, 164, 243, 0.1)',
+    backgroundColor: COLORS.accentBg.blue10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -345,13 +346,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   upcomingTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 6,
   },
   upcomingSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
 });

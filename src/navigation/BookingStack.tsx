@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
 import BookingDateTimeScreen from '../screens/booking/BookingDateTimeScreen';
+import LocationSelectionScreen from '../screens/booking/LocationSelectionScreen';
 import ChooseDetailerScreen from '../screens/booking/ChooseDetailerScreen';
 import OrderSummaryScreen from '../screens/booking/OrderSummaryScreen';
 import PaymentMethodScreen from '../screens/booking/PaymentMethodScreen';
@@ -14,6 +15,12 @@ export type BookingStackParamList = {
   BookingDateTime: {
     selectedService: string;
     selectedAddons: string[];
+  };
+  LocationSelection: {
+    selectedService: string;
+    selectedAddons: string[];
+    date: string;
+    time: string;
   };
   ChooseDetailer: {
     selectedService: string;
@@ -49,6 +56,7 @@ export default function BookingStack() {
     >
       <Stack.Screen name="ServiceSelection" component={ServiceSelectionScreen} />
       <Stack.Screen name="BookingDateTime" component={BookingDateTimeScreen} />
+      <Stack.Screen name="LocationSelection" component={LocationSelectionScreen} />
       <Stack.Screen name="ChooseDetailer" component={ChooseDetailerScreen} />
       <Stack.Screen name="OrderSummary" component={OrderSummaryScreen} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />

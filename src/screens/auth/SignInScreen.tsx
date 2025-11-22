@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityInd
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { COLORS } from '../../theme/colors';
 
 export default function SignInScreen() {
   const { signIn, signUp } = useAuth();
@@ -90,21 +91,20 @@ export default function SignInScreen() {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#050B12' }} contentContainerStyle={{ flexGrow: 1 }}>
-      <View className="min-h-full flex flex-col px-6 py-12" style={{ minHeight: '100%' }}>
+    <ScrollView style={{ flex: 1, backgroundColor: COLORS.bg.primary }} contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={{ minHeight: '100%', flexDirection: 'column', paddingHorizontal: 24, paddingVertical: 48 }}>
         {/* Header */}
-        <View className="mb-12 pt-8">
+        <View style={{ marginBottom: 48, paddingTop: 32 }}>
           <Text
-            className="text-[#F5F7FA] tracking-wide"
-            style={{ fontSize: 32, fontWeight: '700' }}
+            style={{ color: COLORS.text.primary, fontSize: 32, fontWeight: '700', letterSpacing: 0.5 }}
           >
             Sign In
           </Text>
         </View>
 
         {/* Form */}
-        <View className="flex-1 flex flex-col">
-          <View className="space-y-5">
+        <View style={{ flex: 1, flexDirection: 'column' }}>
+          <View style={{ gap: 20 }}>
             {/* Email Field */}
             <View>
               <TextInput
@@ -115,14 +115,25 @@ export default function SignInScreen() {
                 autoCapitalize="none"
                 autoComplete="email"
                 editable={!loading}
-                placeholderTextColor="#C6CFD9"
-                className="w-full bg-[#0A1A2F] border border-[#C6CFD9]/20 rounded-2xl px-6 py-4 text-[#F5F7FA] placeholder:text-[#C6CFD9] focus:border-[#1DA4F3] focus:outline-none focus:ring-1 focus:ring-[#1DA4F3]/50 transition-all"
-                style={{ fontSize: 16, minHeight: 56, opacity: loading ? 0.5 : 1 }}
+                placeholderTextColor={COLORS.text.secondary}
+                style={{
+                  width: '100%',
+                  backgroundColor: COLORS.bg.surface,
+                  borderWidth: 1,
+                  borderColor: COLORS.border.emphasis,
+                  borderRadius: 16,
+                  paddingHorizontal: 24,
+                  paddingVertical: 16,
+                  color: COLORS.text.primary,
+                  fontSize: 16,
+                  minHeight: 56,
+                  opacity: loading ? 0.5 : 1
+                }}
               />
             </View>
 
             {/* Password Field */}
-            <View className="relative">
+            <View style={{ position: 'relative' }}>
               <TextInput
                 placeholder="Password"
                 value={password}
@@ -131,34 +142,48 @@ export default function SignInScreen() {
                 autoCapitalize="none"
                 autoComplete="password"
                 editable={!loading}
-                placeholderTextColor="#C6CFD9"
-                className="w-full bg-[#0A1A2F] border border-[#C6CFD9]/20 rounded-2xl px-6 py-4 text-[#F5F7FA] placeholder:text-[#C6CFD9] focus:border-[#1DA4F3] focus:outline-none focus:ring-1 focus:ring-[#1DA4F3]/50 transition-all pr-14"
-                style={{ fontSize: 16, minHeight: 56, opacity: loading ? 0.5 : 1 }}
+                placeholderTextColor={COLORS.text.secondary}
+                style={{
+                  width: '100%',
+                  backgroundColor: COLORS.bg.surface,
+                  borderWidth: 1,
+                  borderColor: COLORS.border.emphasis,
+                  borderRadius: 16,
+                  paddingHorizontal: 24,
+                  paddingVertical: 16,
+                  paddingRight: 56,
+                  color: COLORS.text.primary,
+                  fontSize: 16,
+                  minHeight: 56,
+                  opacity: loading ? 0.5 : 1
+                }}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 disabled={loading}
                 activeOpacity={0.7}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors active:scale-95"
-                style={{ transform: [{ translateY: -10 }] }}
+                style={{
+                  position: 'absolute',
+                  right: 20,
+                  top: 18,
+                }}
               >
                 <Ionicons
                   name={showPassword ? 'eye-off' : 'eye'}
                   size={20}
-                  color="#C6CFD9"
+                  color={COLORS.text.secondary}
                 />
               </TouchableOpacity>
             </View>
 
             {/* Forgot Password */}
-            <View className="flex justify-end" style={{ alignItems: 'flex-end' }}>
+            <View style={{ alignItems: 'flex-end' }}>
               <TouchableOpacity
                 onPress={handleForgotPassword}
                 disabled={loading}
                 activeOpacity={0.7}
-                className="text-[#C6CFD9] hover:text-[#6FF0C4] transition-colors active:scale-95"
               >
-                <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>
+                <Text style={{ color: COLORS.text.secondary, fontSize: 14 }}>
                   Forgot Password?
                 </Text>
               </TouchableOpacity>
@@ -169,8 +194,17 @@ export default function SignInScreen() {
               onPress={handleEmailSignIn}
               disabled={loading}
               activeOpacity={0.8}
-              className="w-full bg-[#1DA4F3] text-white py-4 rounded-full transition-all duration-200 active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/20 mt-2"
               style={{
+                width: '100%',
+                backgroundColor: COLORS.accent.blue,
+                paddingVertical: 16,
+                borderRadius: 9999,
+                shadowColor: COLORS.shadow.blue,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 4,
+                marginTop: 8,
                 minHeight: 56,
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -178,9 +212,9 @@ export default function SignInScreen() {
               }}
             >
               {loading ? (
-                <ActivityIndicator color="white" />
+                <ActivityIndicator color={COLORS.text.inverse} />
               ) : (
-                <Text className="text-white" style={{ fontSize: 17, fontWeight: '600' }}>
+                <Text style={{ color: COLORS.text.inverse, fontSize: 17, fontWeight: '600' }}>
                   Sign In
                 </Text>
               )}
@@ -188,30 +222,36 @@ export default function SignInScreen() {
           </View>
 
           {/* Divider */}
-          <View className="flex items-center gap-4 my-10" style={{ flexDirection: 'row' }}>
-            <View className="flex-1 h-px bg-[#C6CFD9]/20" style={{ height: 1 }} />
-            <Text className="text-[#C6CFD9]" style={{ fontSize: 14 }}>OR</Text>
-            <View className="flex-1 h-px bg-[#C6CFD9]/20" style={{ height: 1 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginVertical: 40 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: COLORS.border.emphasis }} />
+            <Text style={{ color: COLORS.text.secondary, fontSize: 14 }}>OR</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: COLORS.border.emphasis }} />
           </View>
 
           {/* Social Sign In */}
-          <View className="space-y-4">
+          <View style={{ gap: 16 }}>
             {/* Apple Sign In */}
             <TouchableOpacity
               onPress={() => handleOAuthSignIn('apple')}
               disabled={loading}
               activeOpacity={0.8}
-              className="w-full bg-black border border-white/10 text-white py-4 rounded-full transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-3"
               style={{
-                minHeight: 56,
-                flexDirection: 'row',
+                width: '100%',
+                backgroundColor: 'black',
                 borderWidth: 1,
                 borderColor: 'rgba(255,255,255,0.1)',
+                paddingVertical: 16,
+                borderRadius: 9999,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                minHeight: 56,
                 opacity: loading ? 0.5 : 1,
               }}
             >
               <Ionicons name="logo-apple" size={20} color="white" />
-              <Text className="text-white" style={{ fontSize: 16, fontWeight: '500' }}>
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '500' }}>
                 Continue with Apple
               </Text>
             </TouchableOpacity>
@@ -221,31 +261,36 @@ export default function SignInScreen() {
               onPress={() => handleOAuthSignIn('google')}
               disabled={loading}
               activeOpacity={0.8}
-              className="w-full bg-white text-black py-4 rounded-full transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-3 border border-[#C6CFD9]/20"
               style={{
-                minHeight: 56,
-                flexDirection: 'row',
+                width: '100%',
+                backgroundColor: 'white',
                 borderWidth: 1,
-                borderColor: 'rgba(198,207,217,0.2)',
+                borderColor: COLORS.border.emphasis,
+                paddingVertical: 16,
+                borderRadius: 9999,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                minHeight: 56,
                 opacity: loading ? 0.5 : 1,
               }}
             >
               <Ionicons name="logo-google" size={20} color="black" />
-              <Text className="text-black" style={{ fontSize: 16, fontWeight: '500' }}>
+              <Text style={{ color: 'black', fontSize: 16, fontWeight: '500' }}>
                 Continue with Google
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Create Account Link */}
-          <View className="text-center mt-10" style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', marginTop: 40 }}>
             <TouchableOpacity
               onPress={handleSignUp}
               disabled={loading}
               activeOpacity={0.7}
-              className="text-[#6FF0C4] hover:text-[#6FF0C4]/80 transition-colors active:scale-95"
             >
-              <Text className="text-[#6FF0C4]" style={{ fontSize: 16, fontWeight: '500' }}>
+              <Text style={{ color: COLORS.accent.mint, fontSize: 16, fontWeight: '500' }}>
                 Create an account
               </Text>
             </TouchableOpacity>

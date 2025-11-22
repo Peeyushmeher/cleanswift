@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { OrdersStackParamList } from '../../navigation/OrdersStack';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrderDetails'>;
 
@@ -24,7 +25,7 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Service Details</Text>
         </View>
@@ -49,7 +50,7 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
           {/* Car Details */}
           <View style={styles.card}>
             <View style={styles.rowStart}>
-              <Ionicons name="car-sport" size={40} color="#6FF0C4" />
+              <Ionicons name="car-sport" size={40} color={COLORS.accent.mint} />
               <View>
                 <Text style={styles.carName}>2022 BMW M4</Text>
                 <Text style={styles.carDetail}>License: ABC-123</Text>
@@ -67,7 +68,7 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
               <View style={styles.flex1}>
                 <Text style={styles.detailerName}>Marcus Thompson</Text>
                 <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={16} color="#6FF0C4" />
+                  <Ionicons name="star" size={16} color={COLORS.accent.mint} />
                   <Text style={styles.ratingScore}>4.9</Text>
                   <Text style={styles.ratingCount}>(142 reviews)</Text>
                 </View>
@@ -80,11 +81,11 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
           <View style={styles.card}>
             <View style={styles.dateTimeContainer}>
               <View style={styles.dateTimeRow}>
-                <Ionicons name="calendar" size={20} color="#C6CFD9" />
+                <Ionicons name="calendar" size={20} color={COLORS.text.secondary} />
                 <Text style={styles.dateTimeText}>Thursday, November 16</Text>
               </View>
               <View style={styles.dateTimeRow}>
-                <Ionicons name="time" size={20} color="#C6CFD9" />
+                <Ionicons name="time" size={20} color={COLORS.text.secondary} />
                 <Text style={styles.dateTimeText}>1:00 PM - 3:00 PM</Text>
               </View>
             </View>
@@ -135,11 +136,11 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
           {/* Download/Share */}
           <View style={styles.actionsRow}>
             <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
-              <Ionicons name="download" size={20} color="#C6CFD9" />
+              <Ionicons name="download" size={20} color={COLORS.text.secondary} />
               <Text style={styles.actionButtonText}>Download</Text>
             </TouchableOpacity>
             <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
-              <Ionicons name="share-social" size={20} color="#C6CFD9" />
+              <Ionicons name="share-social" size={20} color={COLORS.text.secondary} />
               <Text style={styles.actionButtonText}>Share</Text>
             </TouchableOpacity>
           </View>
@@ -163,7 +164,7 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -192,12 +193,12 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 24,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
   },
   // Service Summary
   statusRow: {
@@ -210,21 +211,21 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
   },
   statusText: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
     fontSize: 14,
     fontWeight: '500',
   },
   serviceTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 8,
   },
   completedDate: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
   },
   // Car Details
@@ -234,13 +235,13 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   carName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
   },
   carDetail: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   // Detailer Information
@@ -248,14 +249,14 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: COLORS.accentBg.blue15,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(111,240,196,0.3)',
+    borderColor: COLORS.border.accentMint,
   },
   detailerInitials: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '600',
   },
@@ -263,7 +264,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailerName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
@@ -275,15 +276,15 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   ratingScore: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 14,
   },
   ratingCount: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 12,
   },
   detailerSince: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   // Date & Time
@@ -296,13 +297,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dateTimeText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '500',
   },
   // Payment Summary
   paymentTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
@@ -316,16 +317,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   lineItemLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
   },
   lineItemValue: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: COLORS.border.emphasis,
     marginBottom: 12,
   },
   totalRow: {
@@ -335,19 +336,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   totalLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
   },
   totalValue: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
     fontSize: 24,
     fontWeight: '700',
   },
   metaSection: {
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(198,207,217,0.1)',
+    borderTopColor: COLORS.border.default,
   },
   metaRow: {
     flexDirection: 'row',
@@ -355,11 +356,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   metaLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   metaValue: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 14,
   },
   // Actions Row
@@ -371,18 +372,18 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   actionButtonText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '500',
   },
@@ -391,22 +392,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 32,
     paddingTop: 16,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   bookAgainButton: {
     minHeight: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
     borderRadius: 28,
-    shadowColor: '#1DA4F3',
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   bookAgainText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },

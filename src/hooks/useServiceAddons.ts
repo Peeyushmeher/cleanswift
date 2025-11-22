@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { ServiceAddon } from '../contexts/BookingContext';
+import type { ServiceAddon } from '../types/domain';
 
 interface UseServiceAddonsReturn {
   data: ServiceAddon[];

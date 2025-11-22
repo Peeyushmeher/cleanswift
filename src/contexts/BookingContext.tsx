@@ -1,54 +1,13 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-
-// Types matching our database schema
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration_minutes: number;
-  is_active: boolean;
-  display_order: number;
-}
-
-interface ServiceAddon {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  is_active: boolean;
-  display_order: number;
-}
-
-interface Car {
-  id: string;
-  user_id: string;
-  make: string;
-  model: string;
-  year: string;
-  trim: string | null;
-  license_plate: string;
-  color: string | null;
-  photo_url: string | null;
-  is_primary: boolean;
-}
-
-interface Detailer {
-  id: string;
-  full_name: string;
-  avatar_url: string | null;
-  rating: number;
-  review_count: number;
-  years_experience: number;
-  is_active: boolean;
-}
-
-interface PriceBreakdown {
-  servicePrice: number;
-  addonsTotal: number;
-  taxAmount: number;
-  totalAmount: number;
-}
+import type {
+  Service,
+  ServiceAddon,
+  Car,
+  Detailer,
+  BookingLocation,
+  PaymentMethod,
+  PriceBreakdown,
+} from '../types/domain';
 
 interface BookingContextType {
   // State
@@ -58,6 +17,8 @@ interface BookingContextType {
   selectedDate: Date | null;
   selectedTimeSlot: string | null;
   selectedDetailer: Detailer | null;
+  location: BookingLocation | null;
+  paymentMethod: PaymentMethod | null;
   priceBreakdown: PriceBreakdown;
 
   // Actions
@@ -65,7 +26,11 @@ interface BookingContextType {
   setAddons: (addons: ServiceAddon[]) => void;
   setCar: (car: Car | null) => void;
   setDateTime: (date: Date, timeSlot: string) => void;
+  setDate: (date: Date | null) => void;
+  setTime: (timeSlot: string | null) => void;
   setDetailer: (detailer: Detailer | null) => void;
+  setLocation: (location: BookingLocation | null) => void;
+  setPaymentMethod: (method: PaymentMethod | null) => void;
   calculateTotals: () => void;
   clearBooking: () => void;
 }
@@ -81,6 +46,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedDetailer, setSelectedDetailer] = useState<Detailer | null>(null);
+  const [location, setLocationState] = useState<BookingLocation | null>(null);
+  const [paymentMethod, setPaymentMethodState] = useState<PaymentMethod | null>(null);
   const [priceBreakdown, setPriceBreakdown] = useState<PriceBreakdown>({
     servicePrice: 0,
     addonsTotal: 0,
@@ -120,8 +87,24 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setSelectedTimeSlot(timeSlot);
   }, []);
 
+  const setDate = useCallback((date: Date | null) => {
+    setSelectedDate(date);
+  }, []);
+
+  const setTime = useCallback((timeSlot: string | null) => {
+    setSelectedTimeSlot(timeSlot);
+  }, []);
+
   const setDetailer = useCallback((detailer: Detailer | null) => {
     setSelectedDetailer(detailer);
+  }, []);
+
+  const setLocation = useCallback((loc: BookingLocation | null) => {
+    setLocationState(loc);
+  }, []);
+
+  const setPaymentMethod = useCallback((method: PaymentMethod | null) => {
+    setPaymentMethodState(method);
   }, []);
 
   const clearBooking = useCallback(() => {
@@ -131,6 +114,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setSelectedDate(null);
     setSelectedTimeSlot(null);
     setSelectedDetailer(null);
+    setLocationState(null);
+    setPaymentMethodState(null);
     setPriceBreakdown({
       servicePrice: 0,
       addonsTotal: 0,
@@ -151,12 +136,18 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     selectedDate,
     selectedTimeSlot,
     selectedDetailer,
+    location,
+    paymentMethod,
     priceBreakdown,
     setService,
     setAddons,
     setCar,
     setDateTime,
+    setDate,
+    setTime,
     setDetailer,
+    setLocation,
+    setPaymentMethod,
     calculateTotals,
     clearBooking,
   };
@@ -173,4 +164,4 @@ export function useBooking() {
 }
 
 // Export types for use in other files
-export type { Service, ServiceAddon, Car, Detailer, PriceBreakdown };
+export type { Service, ServiceAddon, Car, Detailer, PriceBreakdown, BookingLocation, PaymentMethod };

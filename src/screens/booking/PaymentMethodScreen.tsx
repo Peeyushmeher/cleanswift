@@ -7,20 +7,17 @@ import { useStripe } from '@stripe/stripe-react-native';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
 import {
   createPaymentIntent,
   updateBookingPaymentStatus,
   createBooking,
   createBookingAddons,
 } from '../../services/paymentService';
+import { getPrimaryCar } from '../../services/carsService';
+import { DEMO_SAVED_CARDS } from '../../config/demoData';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PaymentMethod'>;
-
-const savedCards = [
-  { id: '1', type: 'visa', last4: '2741', expiry: '10/27' },
-  { id: '2', type: 'mastercard', last4: '8392', expiry: '03/26' },
-];
 
 export default function PaymentMethodScreen({ navigation, route }: Props) {
   const {
@@ -31,6 +28,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     selectedDate,
     selectedTimeSlot,
     selectedDetailer,
+    location,
   } = useBooking();
   const { user } = useAuth();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -50,6 +48,22 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         return;
       }
 
+      // Validate location is set
+      if (!location) {
+        Alert.alert(
+          'Location Required',
+          'Please provide your service location before proceeding.',
+          [
+            {
+              text: 'Add Location',
+              onPress: () => navigation.goBack(),
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
       // Format scheduled date and time
       const scheduledDate = selectedDate.toISOString().split('T')[0];
       const scheduledTime = selectedTimeSlot;
@@ -59,16 +73,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
 
       if (!finalCarId) {
         console.log('No car selected, fetching user primary car...');
-        const { data: primaryCar, error: carError } = await supabase
-          .from('cars')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_primary', true)
-          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
-
-        if (carError) {
-          console.error('Error fetching primary car:', carError);
-        }
+        const primaryCar = await getPrimaryCar(user.id);
 
         if (primaryCar) {
           finalCarId = primaryCar.id;
@@ -110,14 +115,14 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         service_price: priceBreakdown.servicePrice,
         addons_total: priceBreakdown.addonsTotal,
         tax_amount: priceBreakdown.taxAmount,
-        // TODO: Wire address from user profile or location selection flow
-        address_line1: 'Customer address TBD', // TODO: get from user profile
-        address_line2: null,
-        city: 'Toronto', // TODO: get from user profile
-        province: 'ON', // TODO: get from user profile
-        postal_code: 'M1M 1M1', // TODO: get from user profile
-        latitude: null,
-        longitude: null,
+        // Use location from BookingContext
+        address_line1: location.address_line1,
+        address_line2: location.address_line2 || null,
+        city: location.city,
+        province: location.province,
+        postal_code: location.postal_code,
+        latitude: location.lat || null,
+        longitude: location.lng || null,
         location_notes: null,
       });
 
@@ -198,6 +203,121 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     navigation.navigate('AddPaymentCard');
   };
 
+  const handleTestBooking = async () => {
+    if (isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+
+      // Validate required booking data
+      if (!user || !selectedService || !selectedDate || !selectedTimeSlot) {
+        Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
+        return;
+      }
+
+      // Validate location is set
+      if (!location) {
+        Alert.alert(
+          'Location Required',
+          'Please provide your service location before proceeding.',
+          [
+            {
+              text: 'Add Location',
+              onPress: () => navigation.goBack(),
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
+      // Format scheduled date and time
+      const scheduledDate = selectedDate.toISOString().split('T')[0];
+      const scheduledTime = selectedTimeSlot;
+
+      // Determine car_id: use selectedCar OR fetch user's primary car
+      let finalCarId = selectedCar?.id || null;
+
+      if (!finalCarId) {
+        console.log('No car selected, fetching user primary car...');
+        const primaryCar = await getPrimaryCar(user.id);
+
+        if (primaryCar) {
+          finalCarId = primaryCar.id;
+          console.log('Using primary car for booking:', finalCarId);
+        }
+      } else {
+        console.log('Using selected car for booking:', finalCarId);
+      }
+
+      // If still no car, show error and don't proceed
+      if (!finalCarId) {
+        Alert.alert(
+          'Vehicle Required',
+          'Please add a vehicle to your profile before booking a service.',
+          [
+            {
+              text: 'Add Vehicle',
+              onPress: () => {
+                navigation.getParent()?.navigate('Profile');
+              },
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
+      // Create booking record WITHOUT payment processing
+      const bookingId = await createBooking({
+        user_id: user.id,
+        service_id: selectedService.id,
+        car_id: finalCarId,
+        detailer_id: selectedDetailer?.id || null,
+        scheduled_date: scheduledDate,
+        scheduled_time_start: scheduledTime,
+        total_amount: priceBreakdown.totalAmount,
+        service_price: priceBreakdown.servicePrice,
+        addons_total: priceBreakdown.addonsTotal,
+        tax_amount: priceBreakdown.taxAmount,
+        // Use location from BookingContext
+        address_line1: location.address_line1,
+        address_line2: location.address_line2 || null,
+        city: location.city,
+        province: location.province,
+        postal_code: location.postal_code,
+        latitude: location.lat || null,
+        longitude: location.lng || null,
+        location_notes: 'Test booking - payment skipped',
+      });
+
+      // Create booking addons if any
+      if (selectedAddons.length > 0) {
+        const addonData = selectedAddons.map((addon) => ({
+          id: addon.id,
+          price: addon.price,
+        }));
+        await createBookingAddons(bookingId, addonData);
+      }
+
+      console.log('Test booking created successfully:', bookingId);
+      Alert.alert('Success', 'Test booking created! Payment skipped for testing.', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate('ServiceProgress'),
+        },
+      ]);
+    } catch (error) {
+      console.error('Test booking error:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return `$${amount.toFixed(2)}`;
   };
@@ -212,7 +332,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Payment Method</Text>
         </View>
@@ -250,7 +370,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
 
           {/* Saved Cards */}
           <View style={styles.cardsList}>
-            {savedCards.map((card) => {
+            {DEMO_SAVED_CARDS.map((card) => {
               const isSelected = selectedCard === card.id;
 
               return (
@@ -265,7 +385,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 >
                   {isSelected && (
                     <View style={styles.cardCheckmark}>
-                      <Ionicons name="checkmark" size={12} color="#050B12" />
+                      <Ionicons name="checkmark" size={12} color={COLORS.bg.primary} />
                     </View>
                   )}
 
@@ -291,7 +411,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           >
             <View style={styles.addCardContent}>
               <View style={styles.addCardIcon}>
-                <Ionicons name="add" size={20} color="#6FF0C4" />
+                <Ionicons name="add" size={20} color={COLORS.accent.mint} />
               </View>
               <Text style={styles.addCardText}>Add New Card</Text>
             </View>
@@ -351,6 +471,17 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 : 'Save'}
             </Text>
           </TouchableOpacity>
+
+          {/* Test Booking Button - Skip Payment */}
+          <TouchableOpacity
+            onPress={handleTestBooking}
+            activeOpacity={0.8}
+            disabled={isProcessing}
+            style={styles.testButton}
+          >
+            <Ionicons name="flask" size={16} color={COLORS.text.secondary} />
+            <Text style={styles.testButtonText}>Test Booking (Skip Payment)</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </View>
@@ -360,7 +491,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -377,7 +508,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -389,7 +520,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   securityText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 24,
@@ -408,15 +539,15 @@ const styles = StyleSheet.create({
   },
   applePayButtonSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
-    shadowColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
+    shadowColor: COLORS.shadow.mint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   applePayText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 12,
@@ -429,10 +560,10 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: COLORS.border.emphasis,
   },
   dividerText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     marginHorizontal: 16,
   },
@@ -441,18 +572,18 @@ const styles = StyleSheet.create({
   },
   cardOption: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     position: 'relative',
     marginBottom: 12,
   },
   cardOptionSelected: {
     borderWidth: 2,
-    borderColor: '#6FF0C4',
-    shadowColor: '#6FF0C4',
+    borderColor: COLORS.accent.mint,
+    shadowColor: COLORS.shadow.mint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -465,7 +596,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -478,22 +609,22 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   cardNumber: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
   },
   cardExpiry: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   addCardButton: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(111,240,196,0.3)',
+    borderColor: COLORS.accentBg.mint30,
     borderStyle: 'dashed',
     marginBottom: 32,
   },
@@ -506,22 +637,22 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(111,240,196,0.1)',
+    backgroundColor: COLORS.accentBg.mint10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   addCardText: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
     fontSize: 16,
     fontWeight: '500',
   },
   priceSummary: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
   },
   priceRows: {
   },
@@ -531,16 +662,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   priceLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
   },
   priceValue: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
   },
   priceDivider: {
     height: 1,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: COLORS.border.emphasis,
     marginVertical: 12,
   },
   totalRow: {
@@ -549,12 +680,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
   },
   totalValue: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
     fontSize: 24,
     fontWeight: '700',
   },
@@ -562,9 +693,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: COLORS.border.subtle,
   },
   completeButton: {
     width: '100%',
@@ -573,20 +704,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   completeButtonDisabled: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     opacity: 0.6,
   },
   completeButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
+  },
+  testButton: {
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: 12,
+    backgroundColor: 'rgba(10,26,47,0.5)',
+    borderWidth: 1,
+    borderColor: COLORS.border.strong,
+  },
+  testButtonText: {
+    color: COLORS.text.secondary,
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
   },
 });

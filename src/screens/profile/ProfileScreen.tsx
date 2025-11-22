@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
 
@@ -76,7 +77,7 @@ export default function ProfileScreen({ navigation }: Props) {
           <View style={styles.profileRow}>
             {/* Profile Photo */}
             <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={40} color="#6FF0C4" />
+              <Ionicons name="person" size={40} color={COLORS.accent.mint} />
             </View>
 
             {/* User Info */}
@@ -92,7 +93,7 @@ export default function ProfileScreen({ navigation }: Props) {
               activeOpacity={0.7}
               style={styles.editButton}
             >
-              <Ionicons name="settings" size={20} color="#6FF0C4" />
+              <Ionicons name="settings" size={20} color={COLORS.accent.mint} />
             </TouchableOpacity>
           </View>
         </View>
@@ -111,13 +112,13 @@ export default function ProfileScreen({ navigation }: Props) {
               style={styles.ordersCard}
             >
               <View style={styles.ordersIconContainer}>
-                <Ionicons name="cube" size={24} color="#1DA4F3" />
+                <Ionicons name="cube" size={24} color={COLORS.accent.blue} />
               </View>
               <View style={styles.ordersContent}>
                 <Text style={styles.ordersTitle}>Your Orders</Text>
                 <Text style={styles.ordersSubtitle}>View booking history & receipts</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+              <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} />
             </TouchableOpacity>
           </View>
 
@@ -143,9 +144,9 @@ export default function ProfileScreen({ navigation }: Props) {
                         !isLast && styles.menuItemWithBorder,
                       ]}
                     >
-                      <Ionicons name={item.icon} size={20} color="#C6CFD9" />
+                      <Ionicons name={item.icon} size={20} color={COLORS.text.secondary} />
                       <Text style={styles.menuItemLabel}>{item.label}</Text>
-                      <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+                      <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} />
                     </TouchableOpacity>
                   );
                 })}
@@ -159,7 +160,7 @@ export default function ProfileScreen({ navigation }: Props) {
             activeOpacity={0.8}
             style={styles.logoutButton}
           >
-            <Ionicons name="log-out" size={20} color="#C6CFD9" />
+            <Ionicons name="log-out" size={20} color={COLORS.text.secondary} />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -171,7 +172,7 @@ export default function ProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -190,28 +191,28 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: COLORS.accentBg.blue15,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(111,240,196,0.4)',
+    borderColor: COLORS.border.accentMint,
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 6,
   },
   userEmail: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
     marginBottom: 4,
   },
   userPhone: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
   },
   editButton: {
@@ -230,10 +231,10 @@ const styles = StyleSheet.create({
   ordersCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     paddingHorizontal: 24,
     paddingVertical: 20,
     gap: 16,
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(29,164,243,0.1)',
+    backgroundColor: COLORS.accentBg.blue10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -250,20 +251,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ordersTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   ordersSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   menuSection: {
     marginBottom: 32,
   },
   sectionTitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.8,
@@ -272,10 +273,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   menuCard: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     overflow: 'hidden',
   },
   menuItem: {
@@ -288,11 +289,11 @@ const styles = StyleSheet.create({
   },
   menuItemWithBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(198,207,217,0.1)',
+    borderBottomColor: COLORS.border.default,
   },
   menuItemLabel: {
     flex: 1,
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -300,17 +301,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     paddingHorizontal: 24,
     paddingVertical: 16,
     minHeight: 56,
     gap: 12,
   },
   logoutText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 16,
     fontWeight: '500',
   },

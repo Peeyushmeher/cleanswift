@@ -81,6 +81,18 @@ export default function MainTabs() {
         options={{
           tabBarLabel: 'Profile',
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Prevent default behavior
+            e.preventDefault();
+
+            // Reset Profile stack to root screen
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Profile', params: { screen: 'Profile' } }],
+            });
+          },
+        })}
       />
     </Tab.Navigator>
   );

@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { OrdersStackParamList } from '../../navigation/OrdersStack';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrdersHistory'>;
 
@@ -58,30 +59,30 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return '#6FF0C4';
+        return COLORS.accent.mint;
       case 'scheduled':
-        return '#1DA4F3';
+        return COLORS.accent.blue;
       case 'in-progress':
-        return '#6FF0C4';
+        return COLORS.accent.mint;
       case 'canceled':
-        return '#C6CFD9';
+        return COLORS.text.secondary;
       default:
-        return '#C6CFD9';
+        return COLORS.text.secondary;
     }
   };
 
   const getStatusBgColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return '#6FF0C4';
+        return COLORS.accent.mint;
       case 'scheduled':
-        return '#1DA4F3';
+        return COLORS.accent.blue;
       case 'in-progress':
-        return '#6FF0C4';
+        return COLORS.accent.mint;
       case 'canceled':
-        return '#C6CFD9';
+        return COLORS.text.secondary;
       default:
-        return '#C6CFD9';
+        return COLORS.text.secondary;
     }
   };
 
@@ -95,7 +96,7 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Your Bookings</Text>
         </View>
@@ -118,7 +119,7 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
                 <View style={styles.orderContent}>
                   {/* Car Icon */}
                   <View style={styles.carIconContainer}>
-                    <Ionicons name="car-sport" size={24} color="#1DA4F3" />
+                    <Ionicons name="car-sport" size={24} color={COLORS.accent.blue} />
                   </View>
 
                   {/* Order Info */}
@@ -155,7 +156,7 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
                   </View>
 
                   {/* Chevron */}
-                  <Ionicons name="chevron-forward" size={20} color="#C6CFD9" style={styles.chevron} />
+                  <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} style={styles.chevron} />
                 </View>
               </TouchableOpacity>
             ))}
@@ -163,7 +164,7 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
         ) : (
           /* Empty State */
           <View style={styles.emptyState}>
-            <Ionicons name="car-sport" size={64} color="#C6CFD9" style={styles.emptyIcon} />
+            <Ionicons name="car-sport" size={64} color={COLORS.text.secondary} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>No Bookings Yet</Text>
             <Text style={styles.emptySubtitle}>
               Your past detailing sessions will appear here.
@@ -179,7 +180,7 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -211,11 +212,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   orderCard: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
   },
   orderContent: {
     flexDirection: 'row',
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(29,164,243,0.1)',
+    backgroundColor: COLORS.accentBg.blue10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -240,19 +241,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   serviceName: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 17,
     fontWeight: '600',
     flex: 1,
   },
   price: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   carDetails: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     marginBottom: 8,
   },
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   date: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   statusContainer: {
@@ -292,14 +293,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 8,
   },
   emptySubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
     textAlign: 'center',
   },

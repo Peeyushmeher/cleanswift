@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'OrderSummary'>;
 
@@ -62,7 +63,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Order Summary</Text>
         </View>
@@ -101,7 +102,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardRow}>
-                  <Ionicons name="car-sport" size={40} color="#6FF0C4" />
+                  <Ionicons name="car-sport" size={40} color={COLORS.accent.mint} />
                   <View style={styles.cardContent}>
                     <Text style={styles.cardTitle}>
                       {selectedCar.year} {selectedCar.make} {selectedCar.model}
@@ -113,7 +114,16 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate('Profile', { screen: 'SelectCar' })}
+                  onPress={() => {
+                    // Cross-stack navigation to Profile → SelectCar
+                    navigation.getParent()?.navigate('Profile', {
+                      screen: 'SelectCar',
+                      params: {
+                        returnTo: 'OrderSummary',
+                        originalParams: route.params,
+                      },
+                    });
+                  }}
                 >
                   <Text style={styles.changeLink}>Change</Text>
                 </TouchableOpacity>
@@ -134,7 +144,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                   <View style={styles.cardContent}>
                     <Text style={styles.cardTitle}>{selectedDetailer.full_name}</Text>
                     <View style={styles.ratingRow}>
-                      <Ionicons name="star" size={16} color="#6FF0C4" />
+                      <Ionicons name="star" size={16} color={COLORS.accent.mint} />
                       <Text style={styles.ratingText}>{selectedDetailer.rating}</Text>
                       <Text style={styles.reviewsText}>
                         ({selectedDetailer.review_count} reviews)
@@ -145,12 +155,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate('ChooseDetailer', {
-                    selectedService: route.params.selectedService,
-                    selectedAddons: route.params.selectedAddons,
-                    date: route.params.date,
-                    time: route.params.time,
-                  })}
+                  onPress={() => navigation.goBack()}
                 >
                   <Text style={styles.changeLink}>Change</Text>
                 </TouchableOpacity>
@@ -163,7 +168,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardRow}>
-                  <Ionicons name="calendar" size={40} color="#1DA4F3" />
+                  <Ionicons name="calendar" size={40} color={COLORS.accent.blue} />
                   <View style={styles.cardContent}>
                     <Text style={styles.cardTitle}>{formatDate(selectedDate)}</Text>
                     <Text style={styles.cardSubtitle}>{formatTime(selectedTimeSlot)}</Text>
@@ -172,8 +177,8 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate('BookingDateTime', {
-                    selectedService: route.params.selectedService,
-                    selectedAddons: route.params.selectedAddons,
+                    selectedService: selectedService?.id || '',
+                    selectedAddons: selectedAddons.map(a => a.id),
                   })}
                 >
                   <Text style={styles.changeLink}>Change</Text>
@@ -242,7 +247,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -259,7 +264,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -271,11 +276,11 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   card: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     marginBottom: 16,
   },
   cardHeader: {
@@ -297,22 +302,22 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   cardTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
   },
   cardSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   servicePrice: {
-    color: '#1DA4F3',
+    color: COLORS.accent.blue,
     fontSize: 18,
     fontWeight: '600',
   },
   changeLink: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -320,14 +325,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: COLORS.accentBg.blue15,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(111,240,196,0.3)',
+    borderColor: COLORS.border.accentMint,
   },
   avatarText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
   },
@@ -337,17 +342,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   ratingText: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 14,
     marginLeft: 4,
   },
   reviewsText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 12,
     marginLeft: 4,
   },
   sectionTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
@@ -360,16 +365,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   priceLabel: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
   },
   priceValue: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 15,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: COLORS.border.emphasis,
     marginVertical: 16,
   },
   totalRow: {
@@ -378,12 +383,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
   },
   totalValue: {
-    color: '#6FF0C4',
+    color: COLORS.accent.mint,
     fontSize: 24,
     fontWeight: '700',
   },
@@ -391,9 +396,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: COLORS.border.subtle,
   },
   continueButton: {
     width: '100%',
@@ -402,15 +407,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },
