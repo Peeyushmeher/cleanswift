@@ -1,12 +1,12 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Svg, { Path } from 'react-native-svg';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
-interface LiveTrackingScreenProps {
-  onComplete: () => void;
-}
+type Props = NativeStackScreenProps<BookingStackParamList, 'LiveTracking'>;
 
-export default function LiveTrackingScreen({ onComplete }: LiveTrackingScreenProps) {
+export default function LiveTrackingScreen({ navigation }: Props) {
   return (
     <View className="fixed inset-0 bg-[#050B12] flex flex-col">
       {/* Map Area (Simulated) */}
@@ -190,7 +190,7 @@ export default function LiveTrackingScreen({ onComplete }: LiveTrackingScreenPro
       {/* Demo: Auto-transition after 3 seconds */}
       <View className="fixed top-4 right-4" style={{ position: 'absolute', top: 16, right: 16 }}>
         <TouchableOpacity
-          onPress={onComplete}
+          onPress={() => navigation.navigate('ReceiptRating')}
           activeOpacity={0.8}
           className="px-4 py-2 bg-[#1DA4F3] text-white rounded-full"
           style={{

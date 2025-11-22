@@ -214,6 +214,11 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     navigation.navigate('AddPaymentCard');
   };
 
+  const handleSkipPayment = () => {
+    // Skip payment for testing purposes
+    navigation.navigate('ServiceProgress');
+  };
+
   const formatCurrency = (amount: number) => {
     return `$${amount.toFixed(2)}`;
   };
@@ -367,6 +372,15 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 ? 'Complete Payment'
                 : 'Save'}
             </Text>
+          </TouchableOpacity>
+
+          {/* Skip Payment for Testing */}
+          <TouchableOpacity
+            onPress={handleSkipPayment}
+            activeOpacity={0.8}
+            style={styles.skipButton}
+          >
+            <Text style={styles.skipButtonText}>Skip Payment (Testing)</Text>
           </TouchableOpacity>
           </View>
         </View>
@@ -620,5 +634,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
+  },
+  skipButton: {
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 48,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(198,207,217,0.3)',
+    marginTop: 12,
+  },
+  skipButtonText: {
+    color: '#C6CFD9',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
