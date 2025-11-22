@@ -27,14 +27,38 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== create-payment-intent Edge Function called ===');
+    console.log('Method:', req.method);
+
     // Get JWT token from Authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      console.error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Parse request body
-    const { booking_id, amount }: PaymentIntentRequest = await req.json();
+    let requestBody: PaymentIntentRequest;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body. Expected JSON.' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const { booking_id, amount } = requestBody;
 
     // Validate required fields
     if (!booking_id || !amount) {
@@ -125,41 +149,81 @@ serve(async (req) => {
 
     console.log('Creating PaymentIntent for booking:', booking_id);
     console.log('Amount:', amount, 'CAD');
+    console.log('Amount (cents):', Math.round(amount * 100));
     console.log('User ID:', booking.user_id);
 
     // Create Stripe PaymentIntent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
-      currency: 'cad',
-      automatic_payment_methods: {
-        enabled: true,
-      },
-      metadata: {
-        booking_id: booking_id,
-        user_id: booking.user_id,
-      },
-      description: `CleanSwift Booking ${booking_id.slice(0, 8)}`,
-    });
+    let paymentIntent;
+    try {
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: 'cad',
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          booking_id: booking_id,
+          user_id: booking.user_id,
+        },
+        description: `CleanSwift Booking ${booking_id.slice(0, 8)}`,
+      });
+    } catch (stripeError) {
+      console.error('Stripe API error:', stripeError);
+      if (stripeError instanceof Stripe.errors.StripeError) {
+        return new Response(
+          JSON.stringify({
+            error: `Stripe error: ${stripeError.message}`,
+            code: stripeError.type,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      throw stripeError; // Re-throw if not a Stripe error
+    }
 
-    console.log('PaymentIntent created:', paymentIntent.id);
+    console.log('✅ PaymentIntent created successfully');
+    console.log('  PaymentIntent ID:', paymentIntent.id);
+    console.log('  Status:', paymentIntent.status);
+    console.log('  Amount:', paymentIntent.amount, 'cents');
+
+    // Validate that client_secret exists
+    if (!paymentIntent.client_secret) {
+      console.error('❌ PaymentIntent created but client_secret is missing!');
+      return new Response(
+        JSON.stringify({ error: 'PaymentIntent created but client_secret is missing' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     const response: PaymentIntentResponse = {
-      client_secret: paymentIntent.client_secret!,
+      client_secret: paymentIntent.client_secret,
       payment_intent_id: paymentIntent.id,
     };
 
+    console.log('✅ Returning response with client_secret and payment_intent_id');
     return new Response(JSON.stringify(response), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in create-payment-intent:', error);
+    console.error('❌ Unhandled error in create-payment-intent:', error);
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
 
     // Handle Stripe-specific errors
     if (error instanceof Stripe.errors.StripeError) {
+      console.error('Stripe error type:', error.type);
+      console.error('Stripe error code:', error.code);
       return new Response(
         JSON.stringify({
           error: `Payment service error: ${error.message}`,
+          code: error.type,
         }),
         {
           status: 500,
@@ -168,9 +232,13 @@ serve(async (req) => {
       );
     }
 
+    // Handle other known error types
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('Returning error response:', errorMessage);
+
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
+        error: errorMessage,
       }),
       {
         status: 500,

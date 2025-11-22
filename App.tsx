@@ -15,7 +15,11 @@ export default function App() {
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
   if (!stripePublishableKey) {
-    console.error('EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set in environment variables');
+    console.error('⚠️ EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set in environment variables');
+    console.error('⚠️ Payment functionality will not work without this key');
+    console.error('⚠️ Set it in your .env file or app.json config');
+  } else {
+    console.log('✅ Stripe publishable key loaded');
   }
 
   return (

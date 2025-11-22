@@ -149,12 +149,31 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       }
 
       // Step 3: Create PaymentIntent via Edge Function
-      const { client_secret, payment_intent_id } = await createPaymentIntent(
+      console.log('🔄 Step 3: Creating PaymentIntent...');
+      console.log(`  Booking ID: ${bookingId}`);
+      console.log(`  Amount: $${priceBreakdown.totalAmount.toFixed(2)} CAD`);
+
+      const paymentIntentResponse = await createPaymentIntent(
         bookingId,
         priceBreakdown.totalAmount
       );
 
+      const { client_secret, payment_intent_id } = paymentIntentResponse;
+
+      if (!client_secret) {
+        console.error('❌ Missing client_secret from PaymentIntent response');
+        Alert.alert('Error', 'Failed to initialize payment. Please try again.');
+        return;
+      }
+
+      // Handle missing payment_intent_id gracefully (shouldn't happen, but be safe)
+      const safePaymentIntentId = payment_intent_id || 'unknown';
+
+      console.log('✅ PaymentIntent created');
+      console.log(`  Payment Intent ID: ${safePaymentIntentId}`);
+
       // Step 4: Initialize PaymentSheet
+      console.log('🔄 Step 4: Initializing PaymentSheet...');
       const { error: initError } = await initPaymentSheet({
         merchantDisplayName: 'CleanSwift',
         paymentIntentClientSecret: client_secret,
@@ -165,49 +184,104 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       });
 
       if (initError) {
-        console.error('PaymentSheet init error:', initError);
-        Alert.alert('Error', 'Failed to initialize payment. Please try again.');
+        console.error('❌ PaymentSheet init error:', initError);
+        Alert.alert(
+          'Payment Error',
+          'Failed to initialize payment. Please check your internet connection and try again.'
+        );
         return;
       }
 
+      console.log('✅ PaymentSheet initialized successfully');
+
       // Step 5: Present PaymentSheet
+      console.log('🔄 Step 5: Presenting PaymentSheet to user...');
       const { error: presentError } = await presentPaymentSheet();
 
       if (presentError) {
         // User cancelled or payment failed
         if (presentError.code === 'Canceled') {
-          console.log('Payment cancelled by user');
+          console.log('ℹ️ Payment cancelled by user');
+          // Don't show alert for user cancellation - it's expected behavior
         } else {
-          console.error('Payment error:', presentError);
-          Alert.alert('Payment Failed', presentError.message || 'Payment could not be processed.');
+          console.error('❌ Payment error:', presentError);
+          console.error('  Error code:', presentError.code);
+          console.error('  Error message:', presentError.message);
 
-          // Update booking status to failed
-          await updateBookingPaymentStatus({
-            booking_id: bookingId,
-            payment_intent_id: payment_intent_id,
-            payment_status: 'failed',
-          });
+          // Show user-friendly error message
+          let errorMessage = 'Payment could not be processed.';
+          if (presentError.message) {
+            errorMessage = presentError.message;
+          } else if (presentError.code) {
+            errorMessage = `Payment error: ${presentError.code}`;
+          }
+
+          Alert.alert('Payment Failed', errorMessage);
+
+          // Log payment failure
+          try {
+            await updateBookingPaymentStatus({
+              booking_id: bookingId,
+              payment_intent_id: safePaymentIntentId,
+              payment_status: 'failed',
+            });
+          } catch (updateError) {
+            console.error('Failed to log payment failure:', updateError);
+            // Don't block user - payment already failed
+          }
         }
         return;
       }
 
-      // Step 6: Payment successful - update booking status
-      await updateBookingPaymentStatus({
-        booking_id: bookingId,
-        payment_intent_id: payment_intent_id,
-        payment_status: 'paid',
-      });
+      // Step 6: Payment successful
+      console.log('✅ Payment successful!');
+      console.log(`  Booking ID: ${bookingId}`);
+      console.log(`  Payment Intent ID: ${safePaymentIntentId}`);
+
+      // Update booking payment status (logs payment info)
+      try {
+        await updateBookingPaymentStatus({
+          booking_id: bookingId,
+          payment_intent_id: safePaymentIntentId,
+          payment_status: 'paid',
+        });
+      } catch (updateError) {
+        console.error('Failed to log payment success:', updateError);
+        // Don't block navigation - payment succeeded in Stripe
+        console.warn('Payment succeeded in Stripe but failed to log. Payment Intent:', safePaymentIntentId);
+      }
 
       // Step 7: Navigate to success screen
+      console.log('🔄 Step 7: Navigating to ServiceProgress screen...');
       navigation.navigate('ServiceProgress');
     } catch (error) {
-      console.error('Payment error:', error);
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
-      );
+      console.error('❌ Payment flow error:', error);
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      
+      if (error instanceof Error) {
+        console.error('  Error message:', error.message);
+        console.error('  Error stack:', error.stack);
+        
+        // Handle specific error types
+        if (error.message.includes('session') || error.message.includes('sign in')) {
+          errorMessage = 'Please sign in to continue with payment.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('booking')) {
+          errorMessage = 'Failed to create booking. Please try again.';
+        } else if (error.message.includes('payment')) {
+          errorMessage = 'Payment service error. Please try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsProcessing(false);
+      console.log('🔄 Payment flow completed (success or error)');
     }
   };
 
