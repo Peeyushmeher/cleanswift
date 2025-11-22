@@ -21,7 +21,7 @@ const Tab = createBottomTabNavigator<MainTabsParamList>();
 
 // Brand accent color
 const BRAND_ACCENT = '#32CE7A';
-const INACTIVE_ICON_COLOR = '#9CA3AF';
+const INACTIVE_ICON_COLOR = '#C6CFD9';
 const ACTIVE_ICON_SIZE = 24;
 const INACTIVE_ICON_SIZE = 24;
 const BUBBLE_SIZE = 44;
@@ -63,7 +63,7 @@ export default function MainTabs() {
           left: 16,
           right: 16,
           height: 65,
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backgroundColor: '#0A1A2F',
           borderRadius: 35,
           borderTopWidth: 0,
           borderWidth: 0,
@@ -73,10 +73,17 @@ export default function MainTabs() {
             width: 0,
             height: 4,
           },
-          shadowOpacity: 0.15,
+          shadowOpacity: 0.3,
           shadowRadius: 12,
-          paddingHorizontal: 8,
-          paddingVertical: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 0,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
+        tabBarItemStyle: {
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
         },
         tabBarIcon: ({ focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
