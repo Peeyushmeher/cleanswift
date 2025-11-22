@@ -9,11 +9,6 @@ type Props = NativeStackScreenProps<OrdersStackParamList, 'OrderDetails'>;
 export default function OrderDetailsScreen({ navigation, route }: Props) {
   const { orderId } = route.params;
 
-  const handleBookAgain = () => {
-    // Navigate to booking flow
-    // @ts-ignore - Navigate to different tab stack
-    navigation.navigate('Book');
-  };
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -144,17 +139,6 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           </View>
         </ScrollView>
-
-        {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
-          <TouchableOpacity
-            onPress={handleBookAgain}
-            activeOpacity={0.8}
-            style={styles.bookAgainButton}
-          >
-            <Text style={styles.bookAgainText}>Book Again</Text>
-          </TouchableOpacity>
-        </View>
       </SafeAreaView>
     </View>
   );
@@ -189,7 +173,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   card: {
     backgroundColor: '#0A1A2F',
@@ -385,29 +369,5 @@ const styles = StyleSheet.create({
     color: '#F5F7FA',
     fontSize: 15,
     fontWeight: '500',
-  },
-  // Bottom CTA
-  bottomCTA: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    paddingTop: 16,
-    backgroundColor: '#050B12',
-  },
-  bookAgainButton: {
-    minHeight: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1DA4F3',
-    borderRadius: 28,
-    shadowColor: '#1DA4F3',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  bookAgainText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
   },
 });
