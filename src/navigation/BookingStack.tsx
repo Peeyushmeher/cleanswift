@@ -1,14 +1,14 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
+import AddPaymentCardScreen from '../screens/booking/AddPaymentCardScreen';
 import BookingDateTimeScreen from '../screens/booking/BookingDateTimeScreen';
 import LocationSelectionScreen from '../screens/booking/LocationSelectionScreen';
 import ChooseDetailerScreen from '../screens/booking/ChooseDetailerScreen';
+import LiveTrackingScreen from '../screens/booking/LiveTrackingScreen';
 import OrderSummaryScreen from '../screens/booking/OrderSummaryScreen';
 import PaymentMethodScreen from '../screens/booking/PaymentMethodScreen';
-import AddPaymentCardScreen from '../screens/booking/AddPaymentCardScreen';
-import LiveTrackingScreen from '../screens/booking/LiveTrackingScreen';
-import ServiceProgressScreen from '../screens/booking/ServiceProgressScreen';
 import ReceiptRatingScreen from '../screens/booking/ReceiptRatingScreen';
+import ServiceProgressScreen from '../screens/booking/ServiceProgressScreen';
+import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
 
 export type BookingStackParamList = {
   ServiceSelection: undefined;

@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   securityText: {
     color: COLORS.text.secondary,

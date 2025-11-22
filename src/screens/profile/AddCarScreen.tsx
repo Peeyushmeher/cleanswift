@@ -1,17 +1,14 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
-import { useAuth } from '../../contexts/AuthContext';
-import { createCar } from '../../services/carsService';
-import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'AddCar'>;
 
 export default function AddCarScreen({ navigation }: Props) {
-  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -20,46 +17,11 @@ export default function AddCarScreen({ navigation }: Props) {
     license: '',
     color: '',
   });
-  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!user) {
-      Alert.alert('Error', 'You must be signed in to add a car.');
-      return;
-    }
-
-    if (isSaving) return;
-
-    try {
-      setIsSaving(true);
-
-      // Create car using carsService
-      await createCar(user.id, {
-        make: formData.make.trim(),
-        model: formData.model.trim(),
-        year: formData.year.trim(),
-        trim: formData.trim.trim() || null,
-        license_plate: formData.license.trim(),
-        color: formData.color.trim() || null,
-        is_primary: true, // New cars are set as primary by default
-      });
-
-      console.log('Car saved successfully');
-      Alert.alert('Success', 'Your car has been added!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
-    } catch (error) {
-      console.error('Error saving car:', error);
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to save car. Please try again.'
-      );
-    } finally {
-      setIsSaving(false);
-    }
+  const handleSubmit = () => {
+    // TODO: Implement save logic
+    console.log('Save car:', formData);
+    navigation.goBack();
   };
 
   const updateField = (field: string, value: string) => {
@@ -67,7 +29,6 @@ export default function AddCarScreen({ navigation }: Props) {
   };
 
   const isFormValid = formData.make && formData.model && formData.year && formData.license;
-  const isButtonDisabled = !isFormValid || isSaving;
 
   return (
     <View style={styles.container}>
@@ -79,7 +40,7 @@ export default function AddCarScreen({ navigation }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add a Car</Text>
         </View>
@@ -98,7 +59,7 @@ export default function AddCarScreen({ navigation }: Props) {
             >
               <View style={styles.photoUploadContent}>
                 <View style={styles.photoUploadIconContainer}>
-                  <Ionicons name="cloud-upload" size={32} color={COLORS.accent.blue} />
+                  <Ionicons name="cloud-upload" size={32} color="#1DA4F3" />
                 </View>
                 <Text style={styles.photoUploadText}>Add Photo (Optional)</Text>
               </View>
@@ -114,7 +75,7 @@ export default function AddCarScreen({ navigation }: Props) {
                 placeholder="e.g., BMW"
                 value={formData.make}
                 onChangeText={(value) => updateField('make', value)}
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -126,7 +87,7 @@ export default function AddCarScreen({ navigation }: Props) {
                 placeholder="e.g., M4"
                 value={formData.model}
                 onChangeText={(value) => updateField('model', value)}
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -139,7 +100,7 @@ export default function AddCarScreen({ navigation }: Props) {
                 value={formData.year}
                 onChangeText={(value) => updateField('year', value)}
                 keyboardType="numeric"
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -153,7 +114,7 @@ export default function AddCarScreen({ navigation }: Props) {
                 placeholder="e.g., Competition Package"
                 value={formData.trim}
                 onChangeText={(value) => updateField('trim', value)}
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -166,7 +127,7 @@ export default function AddCarScreen({ navigation }: Props) {
                 value={formData.license}
                 onChangeText={(value) => updateField('license', value)}
                 autoCapitalize="characters"
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -180,7 +141,7 @@ export default function AddCarScreen({ navigation }: Props) {
                 placeholder="e.g., Black Sapphire Metallic"
                 value={formData.color}
                 onChangeText={(value) => updateField('color', value)}
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -188,25 +149,27 @@ export default function AddCarScreen({ navigation }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
+        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+          <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleSubmit}
-            disabled={isButtonDisabled}
-            activeOpacity={isButtonDisabled ? 1 : 0.8}
+            disabled={!isFormValid}
+            activeOpacity={isFormValid ? 0.8 : 1}
             style={[
               styles.saveButton,
-              isButtonDisabled && styles.saveButtonDisabled,
+              !isFormValid && styles.saveButtonDisabled,
             ]}
           >
             <Text
               style={[
                 styles.saveButtonText,
-                isButtonDisabled && styles.saveButtonTextDisabled,
+                !isFormValid && styles.saveButtonTextDisabled,
               ]}
             >
-              {isSaving ? 'Saving...' : 'Save Car'}
+              Save Car
             </Text>
           </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -216,7 +179,7 @@ export default function AddCarScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#050B12',
   },
   safeArea: {
     flex: 1,
@@ -233,7 +196,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
   },
@@ -242,19 +205,19 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   photoUploadSection: {
     marginBottom: 32,
   },
   photoUploadCard: {
     width: '100%',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 24,
     paddingVertical: 32,
     paddingHorizontal: 32,
     borderWidth: 2,
-    borderColor: COLORS.border.emphasis,
+    borderColor: 'rgba(198,207,217,0.2)',
     borderStyle: 'dashed',
   },
   photoUploadContent: {
@@ -265,12 +228,12 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: COLORS.accentBg.blue10,
+    backgroundColor: 'rgba(29,164,243,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   photoUploadText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 15,
   },
   formFields: {
@@ -280,54 +243,70 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
     fontWeight: '500',
     paddingHorizontal: 4,
   },
   optionalLabel: {
-    color: COLORS.text.disabled,
+    color: 'rgba(198,207,217,0.5)',
   },
   input: {
     width: '100%',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderWidth: 1,
-    borderColor: COLORS.border.emphasis,
+    borderColor: 'rgba(198,207,217,0.2)',
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 16,
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
     paddingTop: 16,
-    backgroundColor: COLORS.bg.primary,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   saveButton: {
     minHeight: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.accent.blue,
+    backgroundColor: '#1DA4F3',
     borderRadius: 28,
-    shadowColor: COLORS.shadow.blue,
+    shadowColor: '#1DA4F3',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     shadowOpacity: 0,
     elevation: 0,
   },
   saveButtonText: {
-    color: COLORS.text.inverse,
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
   },
   saveButtonTextDisabled: {
-    color: COLORS.text.disabled,
+    color: 'rgba(198,207,217,0.5)',
   },
 });

@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BookingStackParamList } from '../../navigation/BookingStack';
-import { useServices } from '../../hooks/useServices';
-import { useServiceAddons } from '../../hooks/useServiceAddons';
+import { useLayoutEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
-import { COLORS } from '../../theme/colors';
+import { useServiceAddons } from '../../hooks/useServiceAddons';
+import { useServices } from '../../hooks/useServices';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ServiceSelection'>;
 
@@ -25,9 +25,25 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
   const { data: services, loading: servicesLoading, error: servicesError } = useServices();
   const { data: addons, loading: addonsLoading, error: addonsError } = useServiceAddons();
   const { setService, setAddons } = useBooking();
+  const parentNavigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+
+  useLayoutEffect(() => {
+    const parent = parentNavigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+      });
+    }
+  }, [parentNavigation]);
 
   const toggleAddOn = (id: string) => {
     setSelectedAddonIds(prev =>
@@ -66,7 +82,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
           activeOpacity={0.7}
             style={styles.backButton}
         >
-          <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
+          <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
         </TouchableOpacity>
           <Text style={styles.headerTitle}>Select a Service</Text>
       </View>
@@ -74,7 +90,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
       {/* Loading State */}
       {loading && (
           <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.accent.mint} />
+          <ActivityIndicator size="large" color="#6FF0C4" />
             <Text style={styles.loadingText}>Loading services...</Text>
         </View>
       )}
@@ -82,7 +98,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
       {/* Error State */}
       {error && !loading && (
           <View style={[styles.centerContainer, styles.errorContainer]}>
-          <Ionicons name="alert-circle" size={64} color={COLORS.accent.error} />
+          <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
             <Text style={styles.errorTitle}>Unable to load services</Text>
             <Text style={styles.errorMessage}>{error.message}</Text>
         </View>
@@ -116,7 +132,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
                     {/* Selection Checkmark */}
                     {isSelected && (
                         <View style={styles.checkmark}>
-                        <Ionicons name="checkmark" size={16} color={COLORS.bg.primary} />
+                        <Ionicons name="checkmark" size={16} color="#050B12" />
                       </View>
                     )}
 
@@ -126,7 +142,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
                           <Ionicons
                             name={icon}
                             size={48}
-                            color={isSelected ? COLORS.accent.mint : COLORS.accent.blue}
+                            color={isSelected ? '#6FF0C4' : '#1DA4F3'}
                           />
                           {isSelected && (
                             <View style={styles.serviceIconGlow} />
@@ -173,7 +189,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
                               isSelected && styles.addonCheckboxSelected
                             ]}>
                             {isSelected && (
-                              <Ionicons name="checkmark" size={16} color={COLORS.bg.primary} />
+                              <Ionicons name="checkmark" size={16} color="#050B12" />
                             )}
                             </View>
                             <Text style={styles.addonName}>{addon.name}</Text>
@@ -190,7 +206,8 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
           </ScrollView>
 
           {/* Bottom CTA */}
-            <View style={styles.bottomCTA}>
+            <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+              <View style={styles.buttonSafeArea}>
             <TouchableOpacity
               onPress={handleContinue}
               disabled={!selectedServiceId}
@@ -207,6 +224,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
                 Continue
               </Text>
             </TouchableOpacity>
+              </View>
           </View>
         </>
       )}
@@ -218,7 +236,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#050B12',
   },
   safeArea: {
     flex: 1,
@@ -235,7 +253,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
   },
@@ -248,19 +266,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   loadingText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 16,
     marginTop: 16,
   },
   errorTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
     textAlign: 'center',
   },
   errorMessage: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
@@ -277,19 +295,19 @@ const styles = StyleSheet.create({
   },
   serviceCard: {
     width: '100%',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.05)',
     minHeight: 120,
     position: 'relative',
     marginBottom: 16,
   },
   serviceCardSelected: {
     borderWidth: 2,
-    borderColor: COLORS.accent.mint,
-    shadowColor: COLORS.shadow.mint,
+    borderColor: '#6FF0C4',
+    shadowColor: '#6FF0C4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -302,7 +320,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: COLORS.accent.mint,
+    backgroundColor: '#6FF0C4',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -318,36 +336,36 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.accent.mint,
+    backgroundColor: '#6FF0C4',
     opacity: 0.3,
   },
   serviceCardText: {
     flex: 1,
   },
   serviceName: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 8,
   },
   servicePrice: {
-    color: COLORS.accent.blue,
+    color: '#1DA4F3',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
   },
   servicePriceSelected: {
-    color: COLORS.accent.mint,
+    color: '#6FF0C4',
   },
   serviceDescription: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 15,
   },
   addonsContainer: {
     marginBottom: 32,
   },
   sectionTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 20,
@@ -356,11 +374,11 @@ const styles = StyleSheet.create({
   },
   addonCard: {
     width: '100%',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.05)',
     minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
@@ -377,31 +395,45 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: COLORS.border.strong,
+    borderColor: 'rgba(198,207,217,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   addonCheckboxSelected: {
-    backgroundColor: COLORS.accent.mint,
-    borderColor: COLORS.accent.mint,
+    backgroundColor: '#6FF0C4',
+    borderColor: '#6FF0C4',
   },
   addonName: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 16,
     fontWeight: '500',
   },
   addonPrice: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 15,
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-    backgroundColor: COLORS.bg.primary,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.subtle,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     width: '100%',
@@ -410,24 +442,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: COLORS.accent.blue,
-    shadowColor: COLORS.shadow.blue,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     shadowOpacity: 0,
     elevation: 0,
   },
   continueButtonText: {
-    color: COLORS.text.inverse,
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
   },
   continueButtonTextDisabled: {
-    color: COLORS.text.disabled,
+    color: 'rgba(198,207,217,0.5)',
   },
 });

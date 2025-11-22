@@ -1,19 +1,35 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useLayoutEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
 import { useDetailers } from '../../hooks/useDetailers';
-import { COLORS } from '../../theme/colors';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseDetailer'>;
 
 export default function ChooseDetailerScreen({ navigation, route }: Props) {
   const { setDetailer } = useBooking();
+  const parentNavigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { data: detailers, loading, error } = useDetailers();
   const [selectedDetailerId, setSelectedDetailerId] = useState<string>('');
+
+  useLayoutEffect(() => {
+    const parent = parentNavigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+      });
+    }
+  }, [parentNavigation]);
 
   const handleContinue = () => {
     if (!selectedDetailerId) return;
@@ -45,7 +61,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Choose Your Detailer</Text>
         </View>
@@ -53,7 +69,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
         {/* Loading State */}
         {loading && (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={COLORS.accent.mint} />
+            <ActivityIndicator size="large" color="#6FF0C4" />
             <Text style={styles.loadingText}>Loading detailers...</Text>
           </View>
         )}
@@ -61,7 +77,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
         {/* Error State */}
         {error && !loading && (
           <View style={[styles.centerContainer, styles.errorContainer]}>
-            <Ionicons name="alert-circle" size={64} color={COLORS.accent.error} />
+            <Ionicons name="alert-circle" size={64} color="#FF6B6B" />
             <Text style={styles.errorTitle}>Unable to load detailers</Text>
             <Text style={styles.errorMessage}>{error.message}</Text>
           </View>
@@ -92,7 +108,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                   {/* Selection Checkmark */}
                   {isSelected && (
                     <View style={styles.checkmark}>
-                      <Ionicons name="checkmark" size={16} color={COLORS.bg.primary} />
+                      <Ionicons name="checkmark" size={16} color="#050B12" />
                     </View>
                   )}
 
@@ -117,7 +133,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                       {/* Rating */}
                       <View style={styles.ratingRow}>
                         <View style={styles.ratingContainer}>
-                          <Ionicons name="star" size={16} color={COLORS.accent.mint} />
+                          <Ionicons name="star" size={16} color="#6FF0C4" />
                           <Text style={styles.ratingText}>{detailer.rating}</Text>
                         </View>
                         <Text style={styles.reviewsText}>({detailer.review_count} reviews)</Text>
@@ -126,12 +142,12 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                       {/* Distance & ETA */}
                       <View style={styles.infoRow}>
                         <View style={styles.infoItem}>
-                          <Ionicons name="location" size={16} color={COLORS.text.secondary} />
+                          <Ionicons name="location" size={16} color="#C6CFD9" />
                           <Text style={styles.infoText}>N/A</Text>
                           {/* TODO: Replace with real distance when geolocation is implemented */}
                         </View>
                         <View style={styles.infoItem}>
-                          <Ionicons name="time" size={16} color={COLORS.accent.blue} />
+                          <Ionicons name="time" size={16} color="#1DA4F3" />
                           <Text style={styles.etaText}>Estimated arrival: Calculating...</Text>
                           {/* TODO: Replace with real ETA when geolocation is implemented */}
                         </View>
@@ -150,7 +166,8 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
+        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+          <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}
             disabled={!selectedDetailerId}
@@ -167,6 +184,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
               Continue
             </Text>
           </TouchableOpacity>
+          </View>
         </View>
         </>
         )}
@@ -178,7 +196,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#050B12',
   },
   safeArea: {
     flex: 1,
@@ -195,7 +213,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
   },
@@ -208,19 +226,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   loadingText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 16,
     marginTop: 16,
   },
   errorTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
     textAlign: 'center',
   },
   errorMessage: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
@@ -236,18 +254,18 @@ const styles = StyleSheet.create({
   },
   detailerCard: {
     width: '100%',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.05)',
     position: 'relative',
     marginBottom: 16,
   },
   detailerCardSelected: {
     borderWidth: 2,
-    borderColor: COLORS.accent.mint,
-    shadowColor: COLORS.shadow.mint,
+    borderColor: '#6FF0C4',
+    shadowColor: '#6FF0C4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -260,7 +278,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: COLORS.accent.mint,
+    backgroundColor: '#6FF0C4',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -274,16 +292,16 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: COLORS.accentBg.blue15,
+    backgroundColor: 'rgba(29,164,243,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   profileAvatarSelected: {
     borderWidth: 2,
-    borderColor: COLORS.accent.mint,
+    borderColor: '#6FF0C4',
   },
   profileInitials: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 24,
     fontWeight: '600',
   },
@@ -291,7 +309,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailerName: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 8,
@@ -307,13 +325,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   ratingText: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 15,
     fontWeight: '500',
     marginLeft: 4,
   },
   reviewsText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
   },
   infoRow: {
@@ -325,12 +343,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   infoText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
     marginLeft: 8,
   },
   etaText: {
-    color: COLORS.accent.blue,
+    color: '#1DA4F3',
     fontSize: 14,
     fontWeight: '500',
     marginLeft: 8,
@@ -339,21 +357,35 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 4,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#050B12',
     borderRadius: 999,
     marginTop: 12,
   },
   experienceText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 12,
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-    backgroundColor: COLORS.bg.primary,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.subtle,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     width: '100%',
@@ -362,24 +394,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: COLORS.accent.blue,
-    shadowColor: COLORS.shadow.blue,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     shadowOpacity: 0,
     elevation: 0,
   },
   continueButtonText: {
-    color: COLORS.text.inverse,
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
   },
   continueButtonTextDisabled: {
-    color: COLORS.text.disabled,
+    color: 'rgba(198,207,217,0.5)',
   },
 });

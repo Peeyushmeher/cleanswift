@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   receiptCard: {
     backgroundColor: COLORS.bg.surface,

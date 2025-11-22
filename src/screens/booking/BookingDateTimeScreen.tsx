@@ -1,19 +1,55 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useLayoutEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
-import { DEMO_DATES, DEMO_TIME_SLOTS } from '../../config/demoData';
-import { COLORS } from '../../theme/colors';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'BookingDateTime'>;
 
+const dates = [
+  { day: 'Mon', date: 13, available: false },
+  { day: 'Tue', date: 14, available: false },
+  { day: 'Wed', date: 15, available: false },
+  { day: 'Thu', date: 16, available: true },
+  { day: 'Fri', date: 17, available: true },
+  { day: 'Sat', date: 18, available: true },
+  { day: 'Sun', date: 19, available: true },
+];
+
+const timeSlots = [
+  { time: '8:00 AM', available: true },
+  { time: '9:30 AM', available: true },
+  { time: '11:00 AM', available: true },
+  { time: '1:00 PM', available: true },
+  { time: '3:30 PM', available: true },
+  { time: '5:00 PM', available: false },
+  { time: '6:30 PM', available: false },
+  { time: '8:00 PM', available: false },
+];
+
 export default function BookingDateTimeScreen({ navigation, route }: Props) {
   const { setDateTime } = useBooking();
+  const parentNavigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState<number | null>(16);
   const [selectedTime, setSelectedTime] = useState<string>('');
+
+  useLayoutEffect(() => {
+    const parent = parentNavigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+      });
+    }
+  }, [parentNavigation]);
 
   const handleContinue = () => {
     if (!selectedDate || !selectedTime) return;
@@ -26,8 +62,8 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
     // Update BookingContext
     setDateTime(bookingDate, selectedTime);
 
-    // Navigate to next screen (LocationSelection)
-    navigation.navigate('LocationSelection', {
+    // Navigate to next screen
+    navigation.navigate('ChooseDetailer', {
       selectedService: route.params.selectedService,
       selectedAddons: route.params.selectedAddons,
       date: selectedDate.toString(),
@@ -47,7 +83,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Choose Date & Time</Text>
         </View>
@@ -61,7 +97,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
           {/* Date Picker */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="calendar" size={20} color={COLORS.accent.mint} />
+              <Ionicons name="calendar" size={20} color="#6FF0C4" />
               <Text style={styles.sectionTitle}>Select Date</Text>
             </View>
             <ScrollView
@@ -69,7 +105,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.dateScrollContent}
             >
-              {DEMO_DATES.map((date) => {
+              {dates.map((date) => {
                 const isSelected = selectedDate === date.date;
                 const isAvailable = date.available;
 
@@ -103,11 +139,11 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
           {/* Time Slot Grid */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="time" size={20} color={COLORS.accent.blue} />
+              <Ionicons name="time" size={20} color="#1DA4F3" />
               <Text style={styles.sectionTitle}>Select Time</Text>
             </View>
             <View style={styles.timeGrid}>
-              {DEMO_TIME_SLOTS.map((slot) => {
+              {timeSlots.map((slot) => {
                 const isSelected = selectedTime === slot.time;
                 const isAvailable = slot.available;
 
@@ -138,7 +174,8 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
+        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+          <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}
             disabled={!isReady}
@@ -155,6 +192,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
               Continue
             </Text>
           </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -164,7 +202,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#050B12',
   },
   safeArea: {
     flex: 1,
@@ -181,7 +219,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
   },
@@ -201,7 +239,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 8,
@@ -213,39 +251,39 @@ const styles = StyleSheet.create({
     width: 80,
     paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     marginRight: 12,
   },
   dateCardSelected: {
     borderWidth: 2,
-    borderColor: COLORS.accent.mint,
-    backgroundColor: COLORS.bg.surfaceSelected,
-    shadowColor: COLORS.shadow.mint,
+    borderColor: '#6FF0C4',
+    backgroundColor: '#071C33',
+    shadowColor: '#6FF0C4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   dateCardDisabled: {
-    backgroundColor: COLORS.special.surfaceFaded,
+    backgroundColor: 'rgba(10,26,47,0.3)',
     opacity: 0.4,
   },
   dateDayLabel: {
     fontSize: 12,
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     marginBottom: 4,
     textAlign: 'center',
   },
   dateDayLabelSelected: {
-    color: COLORS.accent.mint,
+    color: '#6FF0C4',
   },
   dateNumber: {
     fontSize: 24,
     fontWeight: '600',
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     textAlign: 'center',
   },
   timeGrid: {
@@ -258,9 +296,9 @@ const styles = StyleSheet.create({
     minHeight: 56,
     paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 6,
@@ -268,36 +306,50 @@ const styles = StyleSheet.create({
   },
   timeCardSelected: {
     borderWidth: 2,
-    borderColor: COLORS.accent.mint,
-    backgroundColor: COLORS.bg.surfaceSelected,
-    shadowColor: COLORS.shadow.mint,
+    borderColor: '#6FF0C4',
+    backgroundColor: '#071C33',
+    shadowColor: '#6FF0C4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   timeCardDisabled: {
-    backgroundColor: COLORS.special.surfaceFaded,
+    backgroundColor: 'rgba(10,26,47,0.3)',
     opacity: 0.4,
   },
   timeText: {
     fontSize: 16,
     fontWeight: '500',
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
   },
   timeTextSelected: {
-    color: COLORS.accent.mint,
+    color: '#6FF0C4',
   },
   timeTextDisabled: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-    backgroundColor: COLORS.bg.primary,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.subtle,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     width: '100%',
@@ -306,24 +358,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: COLORS.accent.blue,
-    shadowColor: COLORS.shadow.blue,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: COLORS.bg.surfaceDisabled,
+    backgroundColor: '#071326',
     shadowOpacity: 0,
     elevation: 0,
   },
   continueButtonText: {
-    color: COLORS.text.inverse,
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
   },
   continueButtonTextDisabled: {
-    color: COLORS.text.disabledAlt,
+    color: '#5F7290',
   },
 });

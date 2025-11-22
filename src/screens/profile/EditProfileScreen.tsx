@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
-import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('Peeyush Yerremsetty');
   const [email, setEmail] = useState('meherpeeyush@gmail.com');
   const [phone, setPhone] = useState('437-989-6480');
@@ -31,7 +31,7 @@ export default function EditProfileScreen({ navigation }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
+            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Profile</Text>
         </View>
@@ -46,13 +46,13 @@ export default function EditProfileScreen({ navigation }: Props) {
           <View style={styles.photoSection}>
             <View style={styles.photoContainer}>
               <View style={styles.avatar}>
-                <Ionicons name="person" size={48} color={COLORS.accent.mint} />
+                <Ionicons name="person" size={48} color="#6FF0C4" />
               </View>
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.cameraButton}
               >
-                <Ionicons name="camera" size={16} color={COLORS.bg.primary} />
+                <Ionicons name="camera" size={16} color="#050B12" />
               </TouchableOpacity>
             </View>
             <Text style={styles.photoHint}>Tap to change photo</Text>
@@ -66,7 +66,7 @@ export default function EditProfileScreen({ navigation }: Props) {
               <TextInput
                 value={name}
                 onChangeText={setName}
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -80,7 +80,7 @@ export default function EditProfileScreen({ navigation }: Props) {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -93,7 +93,7 @@ export default function EditProfileScreen({ navigation }: Props) {
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
                 autoComplete="tel"
-                placeholderTextColor={COLORS.text.disabled}
+                placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />
             </View>
@@ -108,7 +108,8 @@ export default function EditProfileScreen({ navigation }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
+        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+          <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleSave}
             disabled={!isFormValid}
@@ -127,6 +128,7 @@ export default function EditProfileScreen({ navigation }: Props) {
               Save Changes
             </Text>
           </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -136,7 +138,7 @@ export default function EditProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#050B12',
   },
   safeArea: {
     flex: 1,
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
   },
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   photoSection: {
     alignItems: 'center',
@@ -175,11 +177,11 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: COLORS.accentBg.blue15,
+    backgroundColor: 'rgba(29,164,243,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: COLORS.border.accentMint,
+    borderColor: 'rgba(111,240,196,0.3)',
   },
   cameraButton: {
     position: 'absolute',
@@ -188,17 +190,17 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.accent.mint,
+    backgroundColor: '#6FF0C4',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.shadow.default,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   photoHint: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
     marginTop: 12,
   },
@@ -209,61 +211,77 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
     fontWeight: '500',
     paddingHorizontal: 4,
   },
   input: {
     width: '100%',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderWidth: 1,
-    borderColor: COLORS.border.emphasis,
+    borderColor: 'rgba(198,207,217,0.2)',
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 16,
   },
   dangerZone: {
     marginTop: 48,
     paddingTop: 32,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border.default,
+    borderTopColor: 'rgba(198,207,217,0.1)',
   },
   deleteText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
     paddingTop: 16,
-    backgroundColor: COLORS.bg.primary,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   saveButton: {
     minHeight: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.accent.blue,
+    backgroundColor: '#1DA4F3',
     borderRadius: 28,
-    shadowColor: COLORS.shadow.blue,
+    shadowColor: '#1DA4F3',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   saveButtonDisabled: {
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     shadowOpacity: 0,
     elevation: 0,
   },
   saveButtonText: {
-    color: COLORS.text.inverse,
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
   },
   saveButtonTextDisabled: {
-    color: COLORS.text.disabled,
+    color: 'rgba(198,207,217,0.5)',
   },
 });
