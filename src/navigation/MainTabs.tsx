@@ -1,10 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigatorScreenParams } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, withSpring, useSharedValue } from 'react-native-reanimated';
 import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/home/HomeScreen';
 import BookingStack, { BookingStackParamList } from './BookingStack';
 import OrdersStack from './OrdersStack';
@@ -63,7 +63,7 @@ export default function MainTabs() {
           left: 24,
           right: 24,
           height: 60,
-          backgroundColor: '#0A1A2F',
+          backgroundColor: 'rgba(10, 26, 47, 0.85)',
           borderRadius: 30,
           borderTopWidth: 0,
           borderWidth: 0,
