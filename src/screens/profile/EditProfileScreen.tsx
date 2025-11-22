@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
@@ -8,6 +8,7 @@ import { ProfileStackParamList } from '../../navigation/ProfileStack';
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('Peeyush Yerremsetty');
   const [email, setEmail] = useState('meherpeeyush@gmail.com');
   const [phone, setPhone] = useState('437-989-6480');
@@ -107,7 +108,8 @@ export default function EditProfileScreen({ navigation }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
+        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+          <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleSave}
             disabled={!isFormValid}
@@ -126,6 +128,7 @@ export default function EditProfileScreen({ navigation }: Props) {
               Save Changes
             </Text>
           </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   photoSection: {
     alignItems: 'center',
@@ -235,10 +238,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
     paddingTop: 16,
-    backgroundColor: '#050B12',
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   saveButton: {
     minHeight: 56,

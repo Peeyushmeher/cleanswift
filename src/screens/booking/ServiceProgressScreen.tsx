@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   timelineContainer: {
     marginBottom: 32,

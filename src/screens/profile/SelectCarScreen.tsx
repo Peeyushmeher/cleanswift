@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
@@ -32,6 +32,7 @@ const savedCars = [
 ];
 
 export default function SelectCarScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [selectedCar, setSelectedCar] = useState<string>('1');
 
   const handleContinue = () => {
@@ -122,7 +123,8 @@ export default function SelectCarScreen({ navigation }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
+        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+          <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}
             activeOpacity={0.8}
@@ -130,6 +132,7 @@ export default function SelectCarScreen({ navigation }: Props) {
           >
             <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   cardsContainer: {
     gap: 16,
@@ -244,10 +247,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
     paddingTop: 16,
-    backgroundColor: '#050B12',
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     minHeight: 56,
