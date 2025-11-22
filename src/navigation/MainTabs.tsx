@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/home/HomeScreen';
@@ -48,80 +48,113 @@ function AnimatedBubble({ focused, children }: { focused: boolean; children: Rea
   );
 }
 
-export default function MainTabs() {
+// Custom transparent tab bar
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 8);
 
   return (
+    <View
+      style={[
+        styles.tabBarContainer,
+        {
+          bottom: bottomPadding,
+        },
+      ]}
+      pointerEvents="box-none"
+      collapsable={false}
+    >
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name, route.params);
+          }
+        };
+
+        const onLongPress = () => {
+          navigation.emit({
+            type: 'tabLongPress',
+            target: route.key,
+          });
+        };
+
+        let iconName: keyof typeof Ionicons.glyphMap;
+        if (route.name === 'Home') {
+          iconName = 'home-outline';
+        } else if (route.name === 'Book') {
+          iconName = 'calendar-outline';
+        } else if (route.name === 'Orders') {
+          iconName = 'cube-outline';
+        } else if (route.name === 'Profile') {
+          iconName = 'person-outline';
+        } else {
+          iconName = 'help-outline';
+        }
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={styles.tabBarItem}
+          >
+            {isFocused ? (
+              <AnimatedBubble focused={isFocused}>
+                <Ionicons name={iconName} size={ACTIVE_ICON_SIZE} color="#FFFFFF" />
+              </AnimatedBubble>
+            ) : (
+              <View style={styles.inactiveIconContainer}>
+                <Ionicons name={iconName} size={INACTIVE_ICON_SIZE} color={INACTIVE_ICON_COLOR} />
+              </View>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+export default function MainTabs() {
+  return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
           position: 'absolute',
-          bottom: bottomPadding,
-          left: 24,
-          right: 24,
-          height: 60,
-          backgroundColor: 'rgba(10, 26, 47, 0.85)',
-          borderRadius: 30,
+          backgroundColor: 'transparent',
           borderTopWidth: 0,
           borderWidth: 0,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: 4,
-          },
-          shadowOpacity: 0.3,
-          shadowRadius: 12,
-          paddingHorizontal: 8,
-          paddingTop: 8,
-          paddingBottom: 8,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 0,
+          opacity: 0,
+          zIndex: -1,
+          ...Platform.select({
+            android: {
+              backgroundColor: 'transparent',
+              elevation: 0,
+            },
+            ios: {
+              backgroundColor: 'transparent',
+            },
+          }),
         },
-        tabBarItemStyle: {
-          justifyContent: 'center',
-          alignItems: 'center',
-          flex: 1,
-        },
-        tabBarIcon: ({ focused }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          if (route.name === 'Home') {
-            iconName = 'home-outline';
-          } else if (route.name === 'Book') {
-            iconName = 'calendar-outline';
-          } else if (route.name === 'Orders') {
-            iconName = 'cube-outline';
-          } else if (route.name === 'Profile') {
-            iconName = 'person-outline';
-          } else {
-            iconName = 'help-outline';
-          }
-
-          if (focused) {
-            return (
-              <AnimatedBubble focused={focused}>
-                <Ionicons
-                  name={iconName}
-                  size={ACTIVE_ICON_SIZE}
-                  color="#FFFFFF"
-                />
-              </AnimatedBubble>
-            );
-          }
-
-          return (
-            <View style={styles.inactiveIconContainer}>
-              <Ionicons
-                name={iconName}
-                size={INACTIVE_ICON_SIZE}
-                color={INACTIVE_ICON_COLOR}
-              />
-            </View>
-          );
-        },
-      })}
+        tabBarBackground: () => null,
+      }}
+      tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Book" component={BookingStack} />
@@ -132,6 +165,28 @@ export default function MainTabs() {
 }
 
 const styles = StyleSheet.create({
+  tabBarContainer: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    height: 60,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+    borderRadius: 30,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    zIndex: 1000,
+    elevation: 0,
+    overflow: 'visible',
+  },
+  tabBarItem: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+  },
   activeBubble: {
     width: BUBBLE_SIZE,
     height: BUBBLE_SIZE,

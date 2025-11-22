@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackScreenProps, useNavigation } from '@react-navigation/native';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { useBooking } from '../../contexts/BookingContext';
 
@@ -31,8 +31,24 @@ const timeSlots = [
 
 export default function BookingDateTimeScreen({ navigation, route }: Props) {
   const { setDateTime } = useBooking();
+  const parentNavigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState<number | null>(16);
   const [selectedTime, setSelectedTime] = useState<string>('');
+
+  useLayoutEffect(() => {
+    const parent = parentNavigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+      });
+    }
+  }, [parentNavigation]);
 
   const handleContinue = () => {
     if (!selectedDate || !selectedTime) return;
@@ -157,7 +173,8 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={styles.bottomCTA}>
+        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+          <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}
             disabled={!isReady}
@@ -174,6 +191,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
               Continue
             </Text>
           </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -311,12 +329,26 @@ const styles = StyleSheet.create({
     color: '#C6CFD9',
   },
   bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  },
+  buttonSafeArea: {
     paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-    backgroundColor: '#050B12',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
   },
   continueButton: {
     width: '100%',

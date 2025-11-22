@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   securityText: {
     color: '#C6CFD9',
