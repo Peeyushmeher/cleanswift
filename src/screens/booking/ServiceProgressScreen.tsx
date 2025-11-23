@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
@@ -14,6 +14,8 @@ const steps = [
 ];
 
 export default function ServiceProgressScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  
   const handleCompleteService = () => {
     navigation.navigate('ReceiptRating');
   };
@@ -140,7 +142,12 @@ export default function ServiceProgressScreen({ navigation }: Props) {
             We'll notify you once the detailing is complete.
           </Text>
 
-          {/* Complete Service Button */}
+          {/* Spacer for bottom button */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+
+        {/* Bottom CTA */}
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <TouchableOpacity
             onPress={handleCompleteService}
             activeOpacity={0.8}
@@ -148,7 +155,7 @@ export default function ServiceProgressScreen({ navigation }: Props) {
           >
             <Text style={styles.completeButtonText}>Complete Service</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -336,6 +343,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
     marginBottom: 24,
+  },
+  bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   completeButton: {
     width: '100%',

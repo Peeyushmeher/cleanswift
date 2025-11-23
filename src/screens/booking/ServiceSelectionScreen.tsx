@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
@@ -21,15 +21,16 @@ const getServiceIcon = (serviceName: string): keyof typeof Ionicons.glyphMap => 
   return 'sparkles'; // default
 };
 
-export default function ServiceSelectionScreen({ navigation }: Props) {
+export default function ServiceSelectionScreen({ navigation, route }: Props) {
   const { data: services, loading: servicesLoading, error: servicesError } = useServices();
   const { data: addons, loading: addonsLoading, error: addonsError } = useServiceAddons();
-  const { setService, setAddons } = useBooking();
+  const { setService, setAddons, selectedService } = useBooking();
   const parentNavigation = useNavigation();
   const insets = useSafeAreaInsets();
 
-  const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [selectedServiceId, setSelectedServiceId] = useState<string>(selectedService?.id || '');
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const isRebook = Boolean(route?.params?.rebookFromBookingId);
 
   useLayoutEffect(() => {
     const parent = parentNavigation.getParent();
@@ -44,6 +45,12 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
       });
     }
   }, [parentNavigation]);
+
+  useEffect(() => {
+    if (selectedService?.id) {
+      setSelectedServiceId(selectedService.id);
+    }
+  }, [selectedService?.id]);
 
   const toggleAddOn = (id: string) => {
     setSelectedAddonIds(prev =>
@@ -63,7 +70,8 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
     setAddons(selectedAddonsData);
 
     // Navigate to next screen with IDs
-    navigation.navigate('BookingDateTime', {
+    // Use CombinedSelectionScreen instead of separate BookingDateTime/ChooseDetailer screens
+    navigation.navigate('CombinedSelection', {
       selectedService: selectedServiceId,
       selectedAddons: selectedAddonIds,
     });
@@ -113,6 +121,16 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
             >
+            {isRebook && (
+              <View style={styles.rebookBanner}>
+                <Ionicons name="refresh" size={18} color="#6FF0C4" />
+                <View style={styles.rebookBannerCopy}>
+                  <Text style={styles.rebookBannerTitle}>We saved your last picks</Text>
+                  <Text style={styles.rebookBannerSubtitle}>Review the service, then choose a new time.</Text>
+                </View>
+              </View>
+            )}
+
             {/* Service Cards */}
               <View style={styles.servicesContainer}>
               {services.map((service) => {
@@ -206,7 +224,7 @@ export default function ServiceSelectionScreen({ navigation }: Props) {
           </ScrollView>
 
           {/* Bottom CTA */}
-            <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+            <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
               <View style={styles.buttonSafeArea}>
             <TouchableOpacity
               onPress={handleContinue}
@@ -363,6 +381,29 @@ const styles = StyleSheet.create({
   },
   addonsContainer: {
     marginBottom: 32,
+  },
+  rebookBanner: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(111,240,196,0.3)',
+    backgroundColor: 'rgba(111,240,196,0.08)',
+    marginBottom: 24,
+  },
+  rebookBannerCopy: {
+    flex: 1,
+  },
+  rebookBannerTitle: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  rebookBannerSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 13,
   },
   sectionTitle: {
     color: '#F5F7FA',

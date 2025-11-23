@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ReceiptRating'>;
 
@@ -12,6 +12,7 @@ const tipAmounts = ['$5', '$10', '$20', 'Custom'];
 
 export default function ReceiptRatingScreen({ navigation }: Props) {
   const { clearBooking } = useBooking();
+  const insets = useSafeAreaInsets();
   const [rating, setRating] = useState(0);
   const [selectedTip, setSelectedTip] = useState('');
   const [review, setReview] = useState('');
@@ -183,7 +184,12 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
             />
           </View>
 
-          {/* Bottom CTA */}
+          {/* Spacer for bottom button */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+
+        {/* Bottom CTA */}
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <TouchableOpacity
             onPress={handleSubmitRating}
             disabled={rating === 0}
@@ -202,7 +208,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
               Submit Rating
             </Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -436,6 +442,24 @@ const styles = StyleSheet.create({
     color: '#F5F7FA',
     fontSize: 16,
     minHeight: 100,
+  },
+  bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   submitButton: {
     width: '100%',

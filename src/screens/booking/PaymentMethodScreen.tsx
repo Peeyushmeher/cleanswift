@@ -1,19 +1,18 @@
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useStripe, isPlatformPaySupported } from '@stripe/stripe-react-native';
-import { useEffect, useLayoutEffect, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../contexts/AuthContext';
-import { useBooking } from '../../contexts/BookingContext';
-import { supabase } from '../../lib/supabase';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useBooking } from '../../contexts/BookingContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import {
-  createBooking,
-  createBookingAddons,
   createPaymentIntent,
   updateBookingPaymentStatus,
+  createBooking,
+  createBookingAddons,
 } from '../../services/paymentService';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PaymentMethod'>;
@@ -24,8 +23,6 @@ const savedCards = [
 ];
 
 export default function PaymentMethodScreen({ navigation, route }: Props) {
-  const parentNavigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const {
     priceBreakdown,
     selectedService,
@@ -34,23 +31,11 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     selectedDate,
     selectedTimeSlot,
     selectedDetailer,
+    selectedLocation,
   } = useBooking();
-
-  useLayoutEffect(() => {
-    const parent = parentNavigation.getParent();
-    if (parent) {
-      parent.setOptions({
-        tabBarStyle: {
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-      });
-    }
-  }, [parentNavigation]);
   const { user } = useAuth();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const insets = useSafeAreaInsets();
   const [selectedCard, setSelectedCard] = useState<string>('apple-pay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
@@ -83,7 +68,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       setIsProcessing(true);
 
       // Validate required booking data
-      if (!user || !selectedService || !selectedDate || !selectedTimeSlot) {
+      if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
         Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
         return;
       }
@@ -148,15 +133,15 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         service_price: priceBreakdown.servicePrice,
         addons_total: priceBreakdown.addonsTotal,
         tax_amount: priceBreakdown.taxAmount,
-        // TODO: Wire address from user profile or location selection flow
-        address_line1: 'Customer address TBD', // TODO: get from user profile
-        address_line2: null,
-        city: 'Toronto', // TODO: get from user profile
-        province: 'ON', // TODO: get from user profile
-        postal_code: 'M1M 1M1', // TODO: get from user profile
-        latitude: null,
-        longitude: null,
-        location_notes: null,
+        // Use location from BookingContext
+        address_line1: selectedLocation.address_line1,
+        address_line2: selectedLocation.address_line2 || null,
+        city: selectedLocation.city,
+        province: selectedLocation.province,
+        postal_code: selectedLocation.postal_code,
+        latitude: selectedLocation.latitude || null,
+        longitude: selectedLocation.longitude || null,
+        location_notes: selectedLocation.location_notes || null,
       });
 
       // Step 2: Create booking addons if any
@@ -170,31 +155,12 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       }
 
       // Step 3: Create PaymentIntent via Edge Function
-      console.log('🔄 Step 3: Creating PaymentIntent...');
-      console.log(`  Booking ID: ${bookingId}`);
-      console.log(`  Amount: $${priceBreakdown.totalAmount.toFixed(2)} CAD`);
-
-      const paymentIntentResponse = await createPaymentIntent(
+      const { client_secret, payment_intent_id } = await createPaymentIntent(
         bookingId,
         priceBreakdown.totalAmount
       );
 
-      const { client_secret, payment_intent_id } = paymentIntentResponse;
-
-      if (!client_secret) {
-        console.error('❌ Missing client_secret from PaymentIntent response');
-        Alert.alert('Error', 'Failed to initialize payment. Please try again.');
-        return;
-      }
-
-      // Handle missing payment_intent_id gracefully (shouldn't happen, but be safe)
-      const safePaymentIntentId = payment_intent_id || 'unknown';
-
-      console.log('✅ PaymentIntent created');
-      console.log(`  Payment Intent ID: ${safePaymentIntentId}`);
-
       // Step 4: Initialize PaymentSheet
-      console.log('🔄 Step 4: Initializing PaymentSheet...');
       const paymentSheetConfig: any = {
         merchantDisplayName: 'CleanSwift',
         paymentIntentClientSecret: client_secret,
@@ -204,123 +170,147 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         returnURL: 'cleanswift://payment-complete',
       };
 
-      // PaymentSheet will automatically show Apple Pay if available on iOS
-      // No explicit configuration needed - Stripe handles it automatically
+      // Enable Apple Pay if available and selected
       if (Platform.OS === 'ios' && isApplePayAvailable && selectedCard === 'apple-pay') {
-        console.log('🍎 Apple Pay will appear as first option in PaymentSheet');
+        paymentSheetConfig.applePay = {
+          merchantCountryCode: 'US',
+        };
+        console.log('🍎 Apple Pay enabled in PaymentSheet');
       }
 
       const { error: initError } = await initPaymentSheet(paymentSheetConfig);
 
       if (initError) {
-        console.error('❌ PaymentSheet init error:', initError);
-        Alert.alert(
-          'Payment Error',
-          'Failed to initialize payment. Please check your internet connection and try again.'
-        );
+        console.error('PaymentSheet init error:', initError);
+        Alert.alert('Error', 'Failed to initialize payment. Please try again.');
         return;
       }
 
-      console.log('✅ PaymentSheet initialized successfully');
-
       // Step 5: Present PaymentSheet
-      console.log('🔄 Step 5: Presenting PaymentSheet to user...');
       const { error: presentError } = await presentPaymentSheet();
 
       if (presentError) {
         // User cancelled or payment failed
         if (presentError.code === 'Canceled') {
-          console.log('ℹ️ Payment cancelled by user');
-          // Don't show alert for user cancellation - it's expected behavior
+          console.log('Payment cancelled by user');
         } else {
-          console.error('❌ Payment error:', presentError);
-          console.error('  Error code:', presentError.code);
-          console.error('  Error message:', presentError.message);
+          console.error('Payment error:', presentError);
+          Alert.alert('Payment Failed', presentError.message || 'Payment could not be processed.');
 
-          // Show user-friendly error message
-          let errorMessage = 'Payment could not be processed.';
-          if (presentError.message) {
-            errorMessage = presentError.message;
-          } else if (presentError.code) {
-            errorMessage = `Payment error: ${presentError.code}`;
-          }
-
-          Alert.alert('Payment Failed', errorMessage);
-
-          // Log payment failure
-          try {
-            await updateBookingPaymentStatus({
-              booking_id: bookingId,
-              payment_intent_id: safePaymentIntentId,
-              payment_status: 'failed',
-            });
-          } catch (updateError) {
-            console.error('Failed to log payment failure:', updateError);
-            // Don't block user - payment already failed
-          }
+          // Update booking status to failed
+          await updateBookingPaymentStatus({
+            booking_id: bookingId,
+            payment_intent_id: payment_intent_id,
+            payment_status: 'failed',
+          });
         }
         return;
       }
 
-      // Step 6: Payment successful
-      console.log('✅ Payment successful!');
-      console.log(`  Booking ID: ${bookingId}`);
-      console.log(`  Payment Intent ID: ${safePaymentIntentId}`);
-
-      // Update booking payment status (logs payment info)
-      try {
-        await updateBookingPaymentStatus({
-          booking_id: bookingId,
-          payment_intent_id: safePaymentIntentId,
-          payment_status: 'paid',
-        });
-      } catch (updateError) {
-        console.error('Failed to log payment success:', updateError);
-        // Don't block navigation - payment succeeded in Stripe
-        console.warn('Payment succeeded in Stripe but failed to log. Payment Intent:', safePaymentIntentId);
-      }
+      // Step 6: Payment successful - update booking status
+      await updateBookingPaymentStatus({
+        booking_id: bookingId,
+        payment_intent_id: payment_intent_id,
+        payment_status: 'paid',
+      });
 
       // Step 7: Navigate to success screen
-      console.log('🔄 Step 7: Navigating to ServiceProgress screen...');
       navigation.navigate('ServiceProgress');
     } catch (error) {
-      console.error('❌ Payment flow error:', error);
-      
-      // Provide user-friendly error messages
-      let errorMessage = 'An unexpected error occurred. Please try again.';
-      
-      if (error instanceof Error) {
-        console.error('  Error message:', error.message);
-        console.error('  Error stack:', error.stack);
-        
-        // Handle specific error types
-        if (error.message.includes('session') || error.message.includes('sign in')) {
-          errorMessage = 'Please sign in to continue with payment.';
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
-          errorMessage = 'Network error. Please check your internet connection and try again.';
-        } else if (error.message.includes('booking')) {
-          errorMessage = 'Failed to create booking. Please try again.';
-        } else if (error.message.includes('payment')) {
-          errorMessage = 'Payment service error. Please try again.';
-        } else {
-          errorMessage = error.message;
+      console.error('Payment error:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleTestSkipPayment = async () => {
+    if (isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+
+      // Validate required booking data
+      if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
+        Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
+        return;
+      }
+
+      // Format scheduled date and time
+      const scheduledDate = selectedDate.toISOString().split('T')[0];
+      const scheduledTime = selectedTimeSlot;
+
+      // Determine car_id: use selectedCar OR fetch user's primary car
+      let finalCarId = selectedCar?.id || null;
+
+      if (!finalCarId) {
+        const { data: primaryCar } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_primary', true)
+          .maybeSingle();
+
+        if (primaryCar) {
+          finalCarId = primaryCar.id;
         }
       }
 
-      Alert.alert('Error', errorMessage);
+      if (!finalCarId) {
+        Alert.alert('Vehicle Required', 'Please add a vehicle to your profile before booking a service.');
+        return;
+      }
+
+      // Create booking record (skip payment)
+      const bookingId = await createBooking({
+        user_id: user.id,
+        service_id: selectedService.id,
+        car_id: finalCarId,
+        detailer_id: selectedDetailer?.id || null,
+        scheduled_date: scheduledDate,
+        scheduled_time_start: scheduledTime,
+        total_amount: priceBreakdown.totalAmount,
+        service_price: priceBreakdown.servicePrice,
+        addons_total: priceBreakdown.addonsTotal,
+        tax_amount: priceBreakdown.taxAmount,
+        address_line1: selectedLocation.address_line1,
+        address_line2: selectedLocation.address_line2 || null,
+        city: selectedLocation.city,
+        province: selectedLocation.province,
+        postal_code: selectedLocation.postal_code,
+        latitude: selectedLocation.latitude || null,
+        longitude: selectedLocation.longitude || null,
+        location_notes: selectedLocation.location_notes || null,
+      });
+
+      // Create booking addons if any
+      if (selectedAddons.length > 0) {
+        const addonData = selectedAddons.map((addon) => ({
+          id: addon.id,
+          price: addon.price,
+        }));
+        await createBookingAddons(bookingId, addonData);
+      }
+
+      // Skip payment and navigate directly to success screen
+      console.log('🧪 TEST: Skipping payment flow');
+      navigation.navigate('ServiceProgress');
+    } catch (error) {
+      console.error('Test skip payment error:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      );
     } finally {
       setIsProcessing(false);
-      console.log('🔄 Payment flow completed (success or error)');
     }
   };
 
   const handleAddCard = () => {
     navigation.navigate('AddPaymentCard');
-  };
-
-  const handleSkipPayment = () => {
-    // Skip payment for testing purposes
-    navigation.navigate('ServiceProgress');
   };
 
   const formatCurrency = (amount: number) => {
@@ -481,8 +471,20 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
-          <View style={styles.buttonSafeArea}>
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
+          {/* Test Skip Payment Button */}
+          <TouchableOpacity
+            onPress={handleTestSkipPayment}
+            activeOpacity={0.8}
+            disabled={isProcessing}
+            style={[styles.testSkipButton, isProcessing && styles.testSkipButtonDisabled]}
+          >
+            <Text style={styles.testSkipButtonText}>
+              {isProcessing ? 'Processing...' : 'Test Skip Payment'}
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Complete Payment Button */}
           <TouchableOpacity
             onPress={handleCompletePayment}
             activeOpacity={0.8}
@@ -497,16 +499,6 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 : 'Save'}
             </Text>
           </TouchableOpacity>
-
-          {/* Skip Payment for Testing */}
-          <TouchableOpacity
-            onPress={handleSkipPayment}
-            activeOpacity={0.8}
-            style={styles.skipButton}
-          >
-            <Text style={styles.skipButtonText}>Skip Payment (Testing)</Text>
-          </TouchableOpacity>
-          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -552,7 +544,7 @@ const styles = StyleSheet.create({
   },
   applePayButton: {
     width: '100%',
-    height: 48,
+    height: 56,
     backgroundColor: '#000000',
     borderRadius: 24,
     borderWidth: 1,
@@ -586,7 +578,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A1A2F',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: 'rgba(255,255,255,0.05)',
     marginBottom: 24,
   },
   applePayUnavailableText: {
@@ -736,6 +728,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 16,
     backgroundColor: 'transparent',
     elevation: 0,
     shadowColor: 'transparent',
@@ -746,12 +740,28 @@ const styles = StyleSheet.create({
     borderTopColor: 'transparent',
     borderWidth: 0,
     borderColor: 'transparent',
+    gap: 12,
   },
-  buttonSafeArea: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: 'transparent',
+  testSkipButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 48,
+    backgroundColor: '#6FF0C4',
+    borderWidth: 1,
+    borderColor: '#6FF0C4',
+  },
+  testSkipButtonDisabled: {
+    backgroundColor: '#0A1A2F',
+    opacity: 0.6,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  testSkipButtonText: {
+    color: '#050B12',
+    fontSize: 15,
+    fontWeight: '600',
   },
   completeButton: {
     width: '100%',
@@ -775,22 +785,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
-  },
-  skipButton: {
-    width: '100%',
-    paddingVertical: 12,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 48,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.3)',
-    marginTop: 12,
-  },
-  skipButtonText: {
-    color: '#C6CFD9',
-    fontSize: 15,
-    fontWeight: '500',
   },
 });

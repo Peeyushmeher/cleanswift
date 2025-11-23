@@ -19,6 +19,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
     selectedDetailer,
     selectedDate,
     selectedTimeSlot,
+    selectedLocation,
     priceBreakdown,
   } = useBooking();
 
@@ -194,7 +195,36 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate('BookingDateTime', {
+                  onPress={() => navigation.navigate('CombinedSelection', {
+                    selectedService: route.params.selectedService,
+                    selectedAddons: route.params.selectedAddons,
+                  })}
+                >
+                  <Text style={styles.changeLink}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Location Card */}
+          {selectedLocation && (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="location" size={40} color="#6FF0C4" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{selectedLocation.address_line1}</Text>
+                    <Text style={styles.cardSubtitle}>
+                      {selectedLocation.city}, {selectedLocation.province} {selectedLocation.postal_code}
+                    </Text>
+                    {selectedLocation.location_notes && (
+                      <Text style={styles.cardSubtitle}>Notes: {selectedLocation.location_notes}</Text>
+                    )}
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('CombinedSelection', {
                     selectedService: route.params.selectedService,
                     selectedAddons: route.params.selectedAddons,
                   })}
@@ -248,7 +278,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}

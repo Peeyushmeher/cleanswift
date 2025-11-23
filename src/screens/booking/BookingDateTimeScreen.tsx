@@ -174,7 +174,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}

@@ -1,143 +1,294 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { OrdersStackParamList } from '../../navigation/OrdersStack';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useMemo } from 'react';
+import type { OrdersStackParamList } from '../../navigation/OrdersStack';
+import type { MainTabsParamList } from '../../navigation/MainTabs';
+import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
+import { useBooking } from '../../contexts/BookingContext';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrderDetails'>;
+type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
+
+const STATUS_META: Record<string, { label: string; dot: string }> = {
+  completed: { label: 'Completed', dot: '#6FF0C4' },
+  scheduled: { label: 'Scheduled', dot: '#1DA4F3' },
+  in_progress: { label: 'In progress', dot: '#1DA4F3' },
+  canceled: { label: 'Canceled', dot: '#C6CFD9' },
+};
+
+const formatDate = (booking: BookingHistoryItem | null | undefined) => {
+  if (!booking) return 'Date pending';
+  const dateObj = new Date(`${booking.scheduled_date}T${booking.scheduled_time_start}`);
+  if (Number.isNaN(dateObj.getTime())) return booking.scheduled_date;
+  return dateObj.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const formatTimeRange = (booking: BookingHistoryItem | null | undefined) => {
+  if (!booking) return 'Select a time';
+  const start = new Date(`${booking.scheduled_date}T${booking.scheduled_time_start}`);
+  const end = booking.scheduled_time_end
+    ? new Date(`${booking.scheduled_date}T${booking.scheduled_time_end}`)
+    : null;
+  if (Number.isNaN(start.getTime())) return booking.scheduled_time_start;
+  const startText = start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  const endText = end
+    ? end.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    : 'TBD';
+  return `${startText} - ${endText}`;
+};
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
 export default function OrderDetailsScreen({ navigation, route }: Props) {
-  const { orderId } = route.params;
+  const { orderId, booking: bookingParam } = route.params;
+  const { data: bookings, loading, error, refetch } = useBookings();
+  const booking = useMemo(
+    () => bookingParam ?? bookings.find((entry) => entry.id === orderId),
+    [bookingParam, bookings, orderId],
+  );
+  const tabsNavigation = useNavigation<TabsNav>();
+  const { clearBooking, setService, setDetailer, setCar, setLocation } = useBooking();
+
+  const rebookAvailable = booking?.status === 'completed' && Boolean(booking?.detailer);
+
+  const handleRebook = () => {
+    if (!booking || !booking.detailer) return;
+    clearBooking();
+    if (booking.service) {
+      setService(booking.service);
+    }
+    if (booking.car) {
+      setCar(booking.car);
+    }
+    setDetailer(booking.detailer);
+    setLocation({
+      address_line1: booking.address_line1,
+      address_line2: booking.address_line2,
+      city: booking.city,
+      province: booking.province,
+      postal_code: booking.postal_code,
+      latitude: null,
+      longitude: null,
+      location_notes: booking.location_notes,
+    });
+    tabsNavigation.navigate('Book', {
+      screen: 'ServiceSelection',
+      params: {
+        rebookFromBookingId: booking.id,
+      },
+    });
+  };
+
+  const renderDetailerCard = () => {
+    if (!booking?.detailer) {
+      return (
+        <View style={styles.card}>
+          <Text style={styles.sectionHeading}>Assigned Detailer</Text>
+          <Text style={styles.emptyCopy}>We’ll assign a pro once you reschedule.</Text>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.card}>
+        <View style={styles.rowStart}>
+          <View style={styles.detailerAvatar}>
+            <Text style={styles.detailerInitials}>{getInitials(booking.detailer.full_name)}</Text>
+          </View>
+          <View style={styles.flex1}>
+            <Text style={styles.detailerName}>{booking.detailer.full_name}</Text>
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={16} color="#6FF0C4" />
+              <Text style={styles.ratingScore}>{booking.detailer.rating.toFixed(1)}</Text>
+              <Text style={styles.ratingCount}>({booking.detailer.review_count} reviews)</Text>
+            </View>
+            <Text style={styles.detailerSince}>{booking.detailer.years_experience}+ years experience</Text>
+          </View>
+        </View>
+        {rebookAvailable && (
+          <TouchableOpacity onPress={handleRebook} activeOpacity={0.85} style={styles.rebookButton}>
+            <Ionicons name="refresh" size={18} color="#6FF0C4" />
+            <Text style={styles.rebookButtonText}>Book again with this detailer</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  const renderCarCard = () => {
+    if (!booking?.car) {
+      return null;
+    }
+    const { year, make, model, license_plate, color } = booking.car;
+    return (
+      <View style={styles.card}>
+        <View style={styles.rowStart}>
+          <Ionicons name="car-sport" size={40} color="#6FF0C4" />
+          <View>
+            <Text style={styles.carName}>
+              {year} {make} {model}
+            </Text>
+            <Text style={styles.carDetail}>License: {license_plate}</Text>
+            {color && <Text style={styles.carDetail}>{color}</Text>}
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderPaymentCard = () => {
+    if (!booking) return null;
+    return (
+      <View style={styles.card}>
+        <Text style={styles.paymentTitle}>Payment Summary</Text>
+        <View style={styles.lineItemsContainer}>
+          <View style={styles.lineItem}>
+            <Text style={styles.lineItemLabel}>{booking.service?.name || 'Detailing Service'}</Text>
+            <Text style={styles.lineItemValue}>${booking.service_price.toFixed(2)}</Text>
+          </View>
+          {booking.addons_total > 0 && (
+            <View style={styles.lineItem}>
+              <Text style={styles.lineItemLabel}>Add-ons</Text>
+              <Text style={styles.lineItemValue}>${booking.addons_total.toFixed(2)}</Text>
+            </View>
+          )}
+          <View style={styles.lineItem}>
+            <Text style={styles.lineItemLabel}>HST</Text>
+            <Text style={styles.lineItemValue}>${booking.tax_amount.toFixed(2)}</Text>
+          </View>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={styles.totalValue}>${booking.total_amount.toFixed(2)}</Text>
+        </View>
+        <View style={styles.metaSection}>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Receipt ID</Text>
+            <Text style={styles.metaValue}>{booking.receipt_id}</Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Status</Text>
+            <Text style={styles.metaValue}>{STATUS_META[booking.status]?.label ?? booking.status}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderBody = () => {
+    if (!booking && loading) {
+      return (
+        <View style={styles.centerState}>
+          <ActivityIndicator size="large" color="#6FF0C4" />
+          <Text style={styles.loadingText}>Loading booking...</Text>
+        </View>
+      );
+    }
+
+    if (!booking && error) {
+      return (
+        <View style={styles.centerState}>
+          <Ionicons name="alert-circle" size={48} color="#FF6B6B" />
+          <Text style={styles.loadingText}>{error.message}</Text>
+          <TouchableOpacity onPress={refetch} style={styles.retryButton} activeOpacity={0.85}>
+            <Text style={styles.retryButtonText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (!booking) {
+      return (
+        <View style={styles.centerState}>
+          <Text style={styles.loadingText}>We couldn’t find that booking.</Text>
+        </View>
+      );
+    }
+
+    const status = STATUS_META[booking.status] ?? STATUS_META.scheduled;
+
+    return (
+      <>
+        <View style={styles.card}>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusDot, { backgroundColor: status.dot }]} />
+            <Text style={styles.statusText}>{status.label}</Text>
+          </View>
+          <Text style={styles.serviceTitle}>{booking.service?.name || 'Detailing Service'}</Text>
+          <Text style={styles.completedDate}>
+            {formatDate(booking)} · {formatTimeRange(booking)}
+          </Text>
+          {rebookAvailable && (
+            <TouchableOpacity onPress={handleRebook} style={styles.primaryButton} activeOpacity={0.9}>
+              <Text style={styles.primaryButtonText}>Book again with this detailer</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {renderCarCard()}
+        {renderDetailerCard()}
+
+        <View style={styles.card}>
+          <View style={styles.dateTimeContainer}>
+            <View style={styles.dateTimeRow}>
+              <Ionicons name="calendar" size={20} color="#C6CFD9" />
+              <Text style={styles.dateTimeText}>{formatDate(booking)}</Text>
+            </View>
+            <View style={styles.dateTimeRow}>
+              <Ionicons name="time" size={20} color="#C6CFD9" />
+              <Text style={styles.dateTimeText}>{formatTimeRange(booking)}</Text>
+            </View>
+            <View style={styles.dateTimeRow}>
+              <Ionicons name="location" size={20} color="#C6CFD9" />
+              <Text style={styles.dateTimeText}>
+                {booking.address_line1}, {booking.city}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {renderPaymentCard()}
+
+        <View style={styles.actionsRow}>
+          <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
+            <Ionicons name="download" size={20} color="#C6CFD9" />
+            <Text style={styles.actionButtonText}>Download</Text>
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
+            <Ionicons name="share-social" size={20} color="#C6CFD9" />
+            <Text style={styles.actionButtonText}>Share</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-            style={styles.backButton}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Service Details</Text>
         </View>
 
-        {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Service Summary */}
-          <View style={styles.card}>
-            <View style={styles.statusRow}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>Completed</Text>
-            </View>
-
-            <Text style={styles.serviceTitle}>Full Exterior Detail</Text>
-            <Text style={styles.completedDate}>Completed on Nov 16 at 2:42 PM</Text>
-          </View>
-
-          {/* Car Details */}
-          <View style={styles.card}>
-            <View style={styles.rowStart}>
-              <Ionicons name="car-sport" size={40} color="#6FF0C4" />
-              <View>
-                <Text style={styles.carName}>2022 BMW M4</Text>
-                <Text style={styles.carDetail}>License: ABC-123</Text>
-                <Text style={styles.carDetail}>Black Sapphire Metallic</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Detailer Information */}
-          <View style={styles.card}>
-            <View style={styles.rowStart}>
-              <View style={styles.detailerAvatar}>
-                <Text style={styles.detailerInitials}>MT</Text>
-              </View>
-              <View style={styles.flex1}>
-                <Text style={styles.detailerName}>Marcus Thompson</Text>
-                <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={16} color="#6FF0C4" />
-                  <Text style={styles.ratingScore}>4.9</Text>
-                  <Text style={styles.ratingCount}>(142 reviews)</Text>
-                </View>
-                <Text style={styles.detailerSince}>Detailer since 2021</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Date & Time */}
-          <View style={styles.card}>
-            <View style={styles.dateTimeContainer}>
-              <View style={styles.dateTimeRow}>
-                <Ionicons name="calendar" size={20} color="#C6CFD9" />
-                <Text style={styles.dateTimeText}>Thursday, November 16</Text>
-              </View>
-              <View style={styles.dateTimeRow}>
-                <Ionicons name="time" size={20} color="#C6CFD9" />
-                <Text style={styles.dateTimeText}>1:00 PM - 3:00 PM</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Payment Summary */}
-          <View style={styles.card}>
-            <Text style={styles.paymentTitle}>Payment Summary</Text>
-
-            <View style={styles.lineItemsContainer}>
-              <View style={styles.lineItem}>
-                <Text style={styles.lineItemLabel}>Full Exterior Detail</Text>
-                <Text style={styles.lineItemValue}>$149.00</Text>
-              </View>
-              <View style={styles.lineItem}>
-                <Text style={styles.lineItemLabel}>Wax Finish</Text>
-                <Text style={styles.lineItemValue}>$25.00</Text>
-              </View>
-              <View style={styles.lineItem}>
-                <Text style={styles.lineItemLabel}>Interior Refresh</Text>
-                <Text style={styles.lineItemValue}>$15.00</Text>
-              </View>
-              <View style={styles.lineItem}>
-                <Text style={styles.lineItemLabel}>HST</Text>
-                <Text style={styles.lineItemValue}>$24.57</Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>$213.57</Text>
-            </View>
-
-            <View style={styles.metaSection}>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Payment Method</Text>
-                <Text style={styles.metaValue}>Visa •••• 2741</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Receipt ID</Text>
-                <Text style={styles.metaValue}>8F3D-21B7</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Download/Share */}
-          <View style={styles.actionsRow}>
-            <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
-              <Ionicons name="download" size={20} color="#C6CFD9" />
-              <Text style={styles.actionButtonText}>Download</Text>
-            </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.8} style={styles.actionButton}>
-              <Ionicons name="share-social" size={20} color="#C6CFD9" />
-              <Text style={styles.actionButtonText}>Share</Text>
-            </TouchableOpacity>
-          </View>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {renderBody()}
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -175,6 +326,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 120,
   },
+  centerState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 64,
+  },
+  loadingText: {
+    color: '#C6CFD9',
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#1DA4F3',
+  },
+  retryButtonText: {
+    color: '#1DA4F3',
+    fontWeight: '600',
+  },
   card: {
     backgroundColor: '#0A1A2F',
     borderRadius: 24,
@@ -209,6 +382,18 @@ const styles = StyleSheet.create({
   },
   completedDate: {
     color: '#C6CFD9',
+    fontSize: 15,
+  },
+  primaryButton: {
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 20,
+    backgroundColor: '#1DA4F3',
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
     fontSize: 15,
   },
   // Car Details
@@ -267,6 +452,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   detailerSince: {
+    color: '#C6CFD9',
+    fontSize: 14,
+  },
+  rebookButton: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(111,240,196,0.4)',
+    backgroundColor: 'rgba(111,240,196,0.1)',
+  },
+  rebookButtonText: {
+    color: '#6FF0C4',
+    fontWeight: '600',
+  },
+  sectionHeading: {
+    color: '#F5F7FA',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptyCopy: {
     color: '#C6CFD9',
     fontSize: 14,
   },

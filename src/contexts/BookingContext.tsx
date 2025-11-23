@@ -50,6 +50,17 @@ interface PriceBreakdown {
   totalAmount: number;
 }
 
+interface BookingLocation {
+  address_line1: string;
+  address_line2?: string | null;
+  city: string;
+  province: string;
+  postal_code: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_notes?: string | null;
+}
+
 interface BookingContextType {
   // State
   selectedService: Service | null;
@@ -58,6 +69,7 @@ interface BookingContextType {
   selectedDate: Date | null;
   selectedTimeSlot: string | null;
   selectedDetailer: Detailer | null;
+  selectedLocation: BookingLocation | null;
   priceBreakdown: PriceBreakdown;
 
   // Actions
@@ -66,6 +78,7 @@ interface BookingContextType {
   setCar: (car: Car | null) => void;
   setDateTime: (date: Date, timeSlot: string) => void;
   setDetailer: (detailer: Detailer | null) => void;
+  setLocation: (location: BookingLocation | null) => void;
   calculateTotals: () => void;
   clearBooking: () => void;
 }
@@ -81,6 +94,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedDetailer, setSelectedDetailer] = useState<Detailer | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<BookingLocation | null>(null);
   const [priceBreakdown, setPriceBreakdown] = useState<PriceBreakdown>({
     servicePrice: 0,
     addonsTotal: 0,
@@ -124,6 +138,10 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setSelectedDetailer(detailer);
   }, []);
 
+  const setLocation = useCallback((location: BookingLocation | null) => {
+    setSelectedLocation(location);
+  }, []);
+
   const clearBooking = useCallback(() => {
     setSelectedService(null);
     setSelectedAddons([]);
@@ -131,6 +149,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setSelectedDate(null);
     setSelectedTimeSlot(null);
     setSelectedDetailer(null);
+    setSelectedLocation(null);
     setPriceBreakdown({
       servicePrice: 0,
       addonsTotal: 0,
@@ -151,12 +170,14 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     selectedDate,
     selectedTimeSlot,
     selectedDetailer,
+    selectedLocation,
     priceBreakdown,
     setService,
     setAddons,
     setCar,
     setDateTime,
     setDetailer,
+    setLocation,
     calculateTotals,
     clearBooking,
   };
@@ -173,4 +194,4 @@ export function useBooking() {
 }
 
 // Export types for use in other files
-export type { Service, ServiceAddon, Car, Detailer, PriceBreakdown };
+export type { Service, ServiceAddon, Car, Detailer, PriceBreakdown, BookingLocation };
