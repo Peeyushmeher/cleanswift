@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useStripe } from '@stripe/stripe-react-native';
-import { useLayoutEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useStripe, isPlatformPaySupported } from '@stripe/stripe-react-native';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBooking } from '../../contexts/BookingContext';
@@ -53,7 +53,28 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [selectedCard, setSelectedCard] = useState<string>('apple-pay');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
   const showPriceSummary = route.params?.showPrice ?? true;
+
+  // Check if Apple Pay is available on the device
+  useEffect(() => {
+    const checkApplePayAvailability = async () => {
+      if (Platform.OS === 'ios') {
+        try {
+          const supported = await isPlatformPaySupported();
+          setIsApplePayAvailable(supported);
+          console.log('🍎 Apple Pay available:', supported);
+        } catch (error) {
+          console.error('Error checking Apple Pay availability:', error);
+          setIsApplePayAvailable(false);
+        }
+      } else {
+        setIsApplePayAvailable(false);
+      }
+    };
+
+    checkApplePayAvailability();
+  }, []);
 
   const handleCompletePayment = async () => {
     if (isProcessing) return;
@@ -174,14 +195,22 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
 
       // Step 4: Initialize PaymentSheet
       console.log('🔄 Step 4: Initializing PaymentSheet...');
-      const { error: initError } = await initPaymentSheet({
+      const paymentSheetConfig: any = {
         merchantDisplayName: 'CleanSwift',
         paymentIntentClientSecret: client_secret,
         defaultBillingDetails: {
           email: user.email,
         },
         returnURL: 'cleanswift://payment-complete',
-      });
+      };
+
+      // PaymentSheet will automatically show Apple Pay if available on iOS
+      // No explicit configuration needed - Stripe handles it automatically
+      if (Platform.OS === 'ios' && isApplePayAvailable && selectedCard === 'apple-pay') {
+        console.log('🍎 Apple Pay will appear as first option in PaymentSheet');
+      }
+
+      const { error: initError } = await initPaymentSheet(paymentSheetConfig);
 
       if (initError) {
         console.error('❌ PaymentSheet init error:', initError);
@@ -325,17 +354,37 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           </Text>
 
           {/* Apple Pay */}
-          <TouchableOpacity
-            onPress={() => setSelectedCard('apple-pay')}
-            activeOpacity={0.8}
-            style={[
-              styles.applePayButton,
-              selectedCard === 'apple-pay' && styles.applePayButtonSelected,
-            ]}
-          >
-            <Ionicons name="logo-apple" size={24} color="white" />
-            <Text style={styles.applePayText}>Apple Pay</Text>
-          </TouchableOpacity>
+          {Platform.OS === 'ios' && isApplePayAvailable && (
+            <TouchableOpacity
+              onPress={async () => {
+                setSelectedCard('apple-pay');
+                console.log('🍎 Apple Pay selected - triggering payment flow');
+                // Directly trigger payment when Apple Pay button is tapped
+                await handleCompletePayment();
+              }}
+              activeOpacity={0.8}
+              disabled={isProcessing}
+              style={[
+                styles.applePayButton,
+                selectedCard === 'apple-pay' && styles.applePayButtonSelected,
+                isProcessing && styles.applePayButtonDisabled,
+              ]}
+            >
+              <Ionicons name="logo-apple" size={24} color="white" />
+              <Text style={styles.applePayText}>
+                {isProcessing ? 'Processing...' : 'Pay with Apple Pay'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          
+          {/* Show message if Apple Pay not available */}
+          {Platform.OS === 'ios' && !isApplePayAvailable && (
+            <View style={styles.applePayUnavailableContainer}>
+              <Text style={styles.applePayUnavailableText}>
+                Apple Pay is not available on this device
+              </Text>
+            </View>
+          )}
 
           {/* Divider */}
           <View style={styles.dividerContainer}>
@@ -522,11 +571,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  applePayButtonDisabled: {
+    opacity: 0.6,
+  },
   applePayText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 12,
+  },
+  applePayUnavailableContainer: {
+    width: '100%',
+    padding: 16,
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(198,207,217,0.2)',
+    marginBottom: 24,
+  },
+  applePayUnavailableText: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    textAlign: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',
