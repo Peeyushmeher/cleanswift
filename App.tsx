@@ -8,6 +8,13 @@ import './global.css';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { BookingProvider } from './src/contexts/BookingContext';
 import RootNavigator from './src/navigation/RootNavigator';
+import { useBookingNotifications } from './src/hooks/useBookingNotifications';
+
+// Component to initialize notifications
+function NotificationListener() {
+  useBookingNotifications();
+  return null;
+}
 
 export default function App() {
   console.log('=== App.tsx rendering ===');
@@ -34,6 +41,7 @@ export default function App() {
       >
         <AuthProvider>
           <BookingProvider>
+            <NotificationListener />
             <View style={{ flex: 1 }}>
               <RootNavigator />
               <StatusBar style="light" />

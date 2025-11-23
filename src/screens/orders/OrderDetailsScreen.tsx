@@ -9,15 +9,24 @@ import type { OrdersStackParamList } from '../../navigation/OrdersStack';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
 import { useBooking } from '../../contexts/BookingContext';
+import { updateBookingStatus } from '../../lib/bookings';
+import { useState } from 'react';
+import { Alert } from 'react-native';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrderDetails'>;
 type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
 
 const STATUS_META: Record<string, { label: string; dot: string }> = {
-  completed: { label: 'Completed', dot: '#6FF0C4' },
-  scheduled: { label: 'Scheduled', dot: '#1DA4F3' },
+  pending: { label: 'Pending', dot: '#FFA500' },
+  requires_payment: { label: 'Payment Required', dot: '#FFA500' },
+  paid: { label: 'Paid', dot: '#1DA4F3' },
+  offered: { label: 'Offered', dot: '#1DA4F3' },
+  accepted: { label: 'Accepted', dot: '#1DA4F3' },
   in_progress: { label: 'In progress', dot: '#1DA4F3' },
-  canceled: { label: 'Canceled', dot: '#C6CFD9' },
+  completed: { label: 'Completed', dot: '#6FF0C4' },
+  cancelled: { label: 'Cancelled', dot: '#C6CFD9' },
+  canceled: { label: 'Cancelled', dot: '#C6CFD9' }, // Legacy support
+  no_show: { label: 'No Show', dot: '#C6CFD9' },
 };
 
 const formatDate = (booking: BookingHistoryItem | null | undefined) => {
@@ -62,8 +71,41 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
   );
   const tabsNavigation = useNavigation<TabsNav>();
   const { clearBooking, setService, setDetailer, setCar, setLocation } = useBooking();
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const rebookAvailable = booking?.status === 'completed' && Boolean(booking?.detailer);
+  
+  // Check if booking can be cancelled by user
+  const canCancel = booking && ['pending', 'requires_payment', 'paid'].includes(booking.status) && !booking.detailer;
+
+  const handleCancel = () => {
+    if (!booking) return;
+
+    Alert.alert(
+      'Cancel Booking',
+      'Are you sure you want to cancel this booking?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsCancelling(true);
+              await updateBookingStatus(booking.id, 'cancelled');
+              await refetch();
+              Alert.alert('Success', 'Booking cancelled successfully');
+            } catch (err) {
+              const errorMessage = err instanceof Error ? err.message : 'Failed to cancel booking';
+              Alert.alert('Error', errorMessage);
+            } finally {
+              setIsCancelling(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleRebook = () => {
     if (!booking || !booking.detailer) return;
@@ -237,6 +279,18 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
               <Text style={styles.primaryButtonText}>Book again with this detailer</Text>
             </TouchableOpacity>
           )}
+          {canCancel && (
+            <TouchableOpacity 
+              onPress={handleCancel} 
+              style={styles.cancelButton} 
+              activeOpacity={0.9}
+              disabled={isCancelling}
+            >
+              <Text style={styles.cancelButtonText}>
+                {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {renderCarCard()}
@@ -393,6 +447,20 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  cancelButton: {
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,107,107,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,0.3)',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#FF6B6B',
     fontWeight: '600',
     fontSize: 15,
   },

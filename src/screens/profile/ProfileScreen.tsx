@@ -2,9 +2,14 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import type { MainTabsParamList } from '../../navigation/MainTabs';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
+type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
 
 const menuSections = [
   {
@@ -33,6 +38,9 @@ const menuSections = [
 ];
 
 export default function ProfileScreen({ navigation }: Props) {
+  const { profile } = useUserProfile();
+  const tabsNavigation = useNavigation<TabsNav>();
+
   const handleAction = (action: string) => {
     switch (action) {
       case 'edit-profile':

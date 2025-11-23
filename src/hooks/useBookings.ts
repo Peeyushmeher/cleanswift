@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Car, Detailer, Service } from '../contexts/BookingContext';
 import { supabase } from '../lib/supabase';
 
-export type BookingStatus = 'scheduled' | 'in_progress' | 'completed' | 'canceled';
+export type BookingStatus = 'pending' | 'requires_payment' | 'paid' | 'offered' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
 
 export interface BookingHistoryItem {
   id: string;

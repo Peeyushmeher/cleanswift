@@ -67,86 +67,95 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     try {
       setIsProcessing(true);
 
-      // Validate required booking data
-      if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
-        Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
-        return;
-      }
+      // Check if booking was already created (from OrderSummaryScreen via RPC)
+      let bookingId: string;
 
-      // Format scheduled date and time
-      const scheduledDate = selectedDate.toISOString().split('T')[0];
-      const scheduledTime = selectedTimeSlot;
-
-      // Determine car_id: use selectedCar OR fetch user's primary car
-      let finalCarId = selectedCar?.id || null;
-
-      if (!finalCarId) {
-        console.log('No car selected, fetching user primary car...');
-        const { data: primaryCar, error: carError } = await supabase
-          .from('cars')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_primary', true)
-          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
-
-        if (carError) {
-          console.error('Error fetching primary car:', carError);
-        }
-
-        if (primaryCar) {
-          finalCarId = primaryCar.id;
-          console.log('Using primary car for booking:', finalCarId);
-        }
+      if (route.params?.bookingId) {
+        // Booking already created via RPC, use the provided ID
+        bookingId = route.params.bookingId;
+        console.log('Using existing booking ID from RPC:', bookingId);
       } else {
-        console.log('Using selected car for booking:', finalCarId);
-      }
+        // Fallback: Create booking using old method (for backward compatibility)
+        // This should not happen in normal flow, but kept for safety
+        console.warn('No booking ID in route params, falling back to old createBooking method');
 
-      // If still no car, show error and don't proceed
-      if (!finalCarId) {
-        Alert.alert(
-          'Vehicle Required',
-          'Please add a vehicle to your profile before booking a service.',
-          [
-            {
-              text: 'Add Vehicle',
-              onPress: () => {
-                // Navigate to Profile tab where user can add cars
-                // Assuming MainTabs has a Profile tab
-                navigation.getParent()?.navigate('Profile');
+        // Validate required booking data
+        if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
+          Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
+          return;
+        }
+
+        // Format scheduled date and time
+        const scheduledDate = selectedDate.toISOString().split('T')[0];
+        const scheduledTime = selectedTimeSlot;
+
+        // Determine car_id: use selectedCar OR fetch user's primary car
+        let finalCarId = selectedCar?.id || null;
+
+        if (!finalCarId) {
+          console.log('No car selected, fetching user primary car...');
+          const { data: primaryCar, error: carError } = await supabase
+            .from('cars')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('is_primary', true)
+            .maybeSingle();
+
+          if (carError) {
+            console.error('Error fetching primary car:', carError);
+          }
+
+          if (primaryCar) {
+            finalCarId = primaryCar.id;
+            console.log('Using primary car for booking:', finalCarId);
+          }
+        } else {
+          console.log('Using selected car for booking:', finalCarId);
+        }
+
+        // If still no car, show error and don't proceed
+        if (!finalCarId) {
+          Alert.alert(
+            'Vehicle Required',
+            'Please add a vehicle to your profile before booking a service.',
+            [
+              {
+                text: 'Add Vehicle',
+                onPress: () => {
+                  navigation.getParent()?.navigate('Profile');
+                },
               },
-            },
-            { text: 'Cancel', style: 'cancel' },
-          ]
-        );
-        return;
+              { text: 'Cancel', style: 'cancel' },
+            ]
+          );
+          return;
+        }
+
+        // Step 1: Create booking record in Supabase (old method)
+        bookingId = await createBooking({
+          user_id: user.id,
+          service_id: selectedService.id,
+          car_id: finalCarId,
+          detailer_id: selectedDetailer?.id || null,
+          scheduled_date: scheduledDate,
+          scheduled_time_start: scheduledTime,
+          total_amount: priceBreakdown.totalAmount,
+          service_price: priceBreakdown.servicePrice,
+          addons_total: priceBreakdown.addonsTotal,
+          tax_amount: priceBreakdown.taxAmount,
+          address_line1: selectedLocation.address_line1,
+          address_line2: selectedLocation.address_line2 || null,
+          city: selectedLocation.city,
+          province: selectedLocation.province,
+          postal_code: selectedLocation.postal_code,
+          latitude: selectedLocation.latitude || null,
+          longitude: selectedLocation.longitude || null,
+          location_notes: selectedLocation.location_notes || null,
+        });
       }
 
-      // Step 1: Create booking record in Supabase
-      const bookingId = await createBooking({
-        user_id: user.id,
-        service_id: selectedService.id,
-        car_id: finalCarId, // Now guaranteed to be a valid UUID
-        detailer_id: selectedDetailer?.id || null,
-        scheduled_date: scheduledDate,
-        scheduled_time_start: scheduledTime, // Fixed: was 'scheduled_time'
-        total_amount: priceBreakdown.totalAmount,
-        service_price: priceBreakdown.servicePrice,
-        addons_total: priceBreakdown.addonsTotal,
-        tax_amount: priceBreakdown.taxAmount,
-        // Use location from BookingContext
-        address_line1: selectedLocation.address_line1,
-        address_line2: selectedLocation.address_line2 || null,
-        city: selectedLocation.city,
-        province: selectedLocation.province,
-        postal_code: selectedLocation.postal_code,
-        latitude: selectedLocation.latitude || null,
-        longitude: selectedLocation.longitude || null,
-        location_notes: selectedLocation.location_notes || null,
-      });
-
-      // Step 2: Create booking addons if any
+      // Step 2: Create booking addons if any (still needed even if booking created via RPC)
       if (selectedAddons.length > 0) {
-        // Map to { id, price } format expected by createBookingAddons
         const addonData = selectedAddons.map((addon) => ({
           id: addon.id,
           price: addon.price,
@@ -155,15 +164,14 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       }
 
       // Step 3: Create PaymentIntent via Edge Function
-      const { client_secret, payment_intent_id } = await createPaymentIntent(
-        bookingId,
-        priceBreakdown.totalAmount
-      );
+      // Amount is computed server-side from booking's total_amount for security
+      console.log('📞 Calling createPaymentIntent with bookingId:', bookingId);
+      const paymentIntentResponse = await createPaymentIntent(bookingId);
 
       // Step 4: Initialize PaymentSheet
       const paymentSheetConfig: any = {
         merchantDisplayName: 'CleanSwift',
-        paymentIntentClientSecret: client_secret,
+        paymentIntentClientSecret: paymentIntentResponse.paymentIntentClientSecret,
         defaultBillingDetails: {
           email: user.email,
         },
@@ -198,9 +206,9 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           Alert.alert('Payment Failed', presentError.message || 'Payment could not be processed.');
 
           // Update booking status to failed
+          // Note: The Edge Function already stores stripe_payment_intent_id in the booking
           await updateBookingPaymentStatus({
             booking_id: bookingId,
-            payment_intent_id: payment_intent_id,
             payment_status: 'failed',
           });
         }
@@ -208,9 +216,9 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       }
 
       // Step 6: Payment successful - update booking status
+      // Note: The Edge Function already stores stripe_payment_intent_id in the booking
       await updateBookingPaymentStatus({
         booking_id: bookingId,
-        payment_intent_id: payment_intent_id,
         payment_status: 'paid',
       });
 

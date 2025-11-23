@@ -14,10 +14,16 @@ type Props = NativeStackScreenProps<OrdersStackParamList, 'OrdersHistory'>;
 type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
 
 const STATUS_COLORS: Record<string, string> = {
+  pending: '#FFA500',
+  requires_payment: '#FFA500',
+  paid: '#1DA4F3',
+  offered: '#1DA4F3',
+  accepted: '#1DA4F3',
+  in_progress: '#1DA4F3',
   completed: '#6FF0C4',
-  scheduled: '#1DA4F3',
-  in_progress: '#6FF0C4',
-  canceled: '#C6CFD9',
+  cancelled: '#C6CFD9',
+  canceled: '#C6CFD9', // Legacy support
+  no_show: '#C6CFD9',
 };
 
 const formatDateLabel = (date: string, time?: string | null) => {

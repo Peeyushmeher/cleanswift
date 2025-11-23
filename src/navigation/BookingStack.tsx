@@ -39,6 +39,8 @@ export type BookingStackParamList = {
   };
   PaymentMethod: {
     showPrice?: boolean;
+    bookingId?: string;
+    totalPriceCents?: number;
   };
   AddPaymentCard: undefined;
   LiveTracking: undefined;
