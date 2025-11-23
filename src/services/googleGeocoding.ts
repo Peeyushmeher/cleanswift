@@ -4,10 +4,15 @@
  * Requires EXPO_PUBLIC_GOOGLE_MAPS_API_KEY environment variable
  */
 
-const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+const rawApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const normalizedKey = rawApiKey.trim();
+const PLACEHOLDER_VALUES = new Set(['', 'your_api_key_here', 'YOUR_API_KEY_HERE']);
 
-if (!GOOGLE_MAPS_API_KEY) {
-  console.warn('⚠️ EXPO_PUBLIC_GOOGLE_MAPS_API_KEY is not set. Geocoding features will not work.');
+export const isGoogleMapsConfigured = !PLACEHOLDER_VALUES.has(normalizedKey);
+const GOOGLE_MAPS_API_KEY = isGoogleMapsConfigured ? normalizedKey : '';
+
+if (!isGoogleMapsConfigured) {
+  console.warn('⚠️ Google Maps API key is not configured. Geocoding features are disabled until a valid EXPO_PUBLIC_GOOGLE_MAPS_API_KEY is provided.');
 }
 
 export interface GeocodeResult {

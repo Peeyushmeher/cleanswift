@@ -4,6 +4,7 @@ import { autocompletePlaces, getPlaceDetails, type AutocompletePrediction, type 
 interface UseAddressAutocompleteOptions {
   debounceMs?: number;
   minInputLength?: number;
+  enabled?: boolean;
 }
 
 interface UseAddressAutocompleteReturn {
@@ -22,7 +23,7 @@ interface UseAddressAutocompleteReturn {
 export function useAddressAutocomplete(
   options: UseAddressAutocompleteOptions = {}
 ): UseAddressAutocompleteReturn {
-  const { debounceMs = 300, minInputLength = 3 } = options;
+  const { debounceMs = 300, minInputLength = 3, enabled = true } = options;
 
   const [suggestions, setSuggestions] = useState<AutocompletePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +32,12 @@ export function useAddressAutocomplete(
 
   const searchAddress = useCallback(
     (input: string) => {
+      if (!enabled) {
+        setSuggestions([]);
+        setIsLoading(false);
+        return;
+      }
+
       // Clear previous timer
       if (debounceTimer) {
         clearTimeout(debounceTimer);
@@ -64,10 +71,14 @@ export function useAddressAutocomplete(
 
       setDebounceTimer(timer);
     },
-    [debounceMs, minInputLength, debounceTimer]
+    [debounceMs, minInputLength, debounceTimer, enabled]
   );
 
   const selectPlace = useCallback(async (placeId: string): Promise<PlaceDetailsResult | null> => {
+    if (!enabled) {
+      return null;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -81,7 +92,7 @@ export function useAddressAutocomplete(
       setIsLoading(false);
       return null;
     }
-  }, []);
+  }, [enabled]);
 
   const clearSuggestions = useCallback(() => {
     setSuggestions([]);

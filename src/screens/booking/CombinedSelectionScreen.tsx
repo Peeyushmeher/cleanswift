@@ -9,7 +9,7 @@ import { useBooking, type BookingLocation, type Detailer } from '../../contexts/
 import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 import { useDetailers } from '../../hooks/useDetailers';
 import { BookingStackParamList } from '../../navigation/BookingStack';
-import { geocodeAddress } from '../../services/googleGeocoding';
+import { geocodeAddress, isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import {
   normalizePostalCode,
   normalizeProvince,
@@ -70,6 +70,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   const initialDate = selectedDate || today;
   const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth());
   const [currentYear, setCurrentYear] = useState(initialDate.getFullYear());
+  const geocodingEnabled = isGoogleMapsConfigured;
   const [profileDetailer, setProfileDetailer] = useState<Detailer | null>(null);
   const [profileVisible, setProfileVisible] = useState(false);
   const [locationData, setLocationData] = useState<Partial<BookingLocation>>({
@@ -100,7 +101,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     searchAddress,
     selectPlace,
     clearSuggestions,
-  } = useAddressAutocomplete({ debounceMs: 300, minInputLength: 3 });
+  } = useAddressAutocomplete({ debounceMs: 300, minInputLength: 3, enabled: geocodingEnabled });
 
   // Refs for managing autocomplete dropdown visibility
   const addressInputRef = useRef<TextInput>(null);
@@ -132,7 +133,39 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
 
   const closeProfile = () => setProfileVisible(false);
 
-  const handleContinue = async () => {
+  const finalizeSelection = (
+    normalizedProvince: string,
+    normalizedPostalCode: string,
+    coordinates: { latitude: number | null; longitude: number | null }
+  ) => {
+    const selectedDetailerData = detailers.find((d) => d.id === selectedDetailerId);
+    if (!selectedDetailerData || !selectedDateValue) {
+      return;
+    }
+
+    setDetailer(selectedDetailerData);
+    setDateTime(selectedDateValue, selectedTime);
+    setLocation({
+      address_line1: locationData.address_line1!,
+      address_line2: locationData.address_line2 || null,
+      city: locationData.city!,
+      province: normalizedProvince,
+      postal_code: normalizedPostalCode,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      location_notes: locationData.location_notes || null,
+    });
+
+    navigation.navigate('OrderSummary', {
+      selectedService: route.params.selectedService,
+      selectedAddons: route.params.selectedAddons,
+      date: selectedDateValue.getDate().toString(),
+      time: selectedTime,
+      detailerId: selectedDetailerId,
+    });
+  };
+
+  const handleContinue = async ({ skipGeocode = false }: { skipGeocode?: boolean } = {}) => {
     // Validate all selections
     if (!selectedDetailerId || !selectedDateValue || !selectedTime) {
       return;
@@ -155,56 +188,44 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
       return;
     }
 
+    const normalizedProvince = normalizeProvince(locationData.province || '');
+    const normalizedPostalCode = normalizePostalCode(locationData.postal_code || '');
+
     setValidationErrors({});
-    setIsGeocoding(true);
     setGeocodeError(null);
 
-    try {
-      // Build full address string for geocoding
-      const normalizedProvince = normalizeProvince(locationData.province || '');
-      const normalizedPostalCode = normalizePostalCode(locationData.postal_code || '');
-      const fullAddress = `${locationData.address_line1}, ${locationData.city}, ${normalizedProvince} ${normalizedPostalCode}, Canada`;
+    const shouldAttemptGeocode = geocodingEnabled && !skipGeocode;
 
-      // Geocode the address
-      const geocodeResult = await geocodeAddress(fullAddress);
+    if (shouldAttemptGeocode) {
+      setIsGeocoding(true);
+      try {
+        // Build full address string for geocoding
+        const fullAddress = `${locationData.address_line1}, ${locationData.city}, ${normalizedProvince} ${normalizedPostalCode}, Canada`;
 
-      // Find selected detailer
-      const selectedDetailerData = detailers.find(d => d.id === selectedDetailerId);
-      if (!selectedDetailerData) {
+        // Geocode the address
+        const geocodeResult = await geocodeAddress(fullAddress);
+
+        finalizeSelection(normalizedProvince, normalizedPostalCode, {
+          latitude: geocodeResult.latitude,
+          longitude: geocodeResult.longitude,
+        });
         setIsGeocoding(false);
-        return;
+      } catch (error) {
+        setIsGeocoding(false);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to verify address. Please check and try again.';
+        setGeocodeError(errorMessage);
+        Alert.alert('Address Verification Failed', errorMessage);
       }
-
-      // Update BookingContext with geocoded data
-      setDetailer(selectedDetailerData);
-      setDateTime(selectedDateValue, selectedTime);
-      setLocation({
-        address_line1: locationData.address_line1!,
-        address_line2: locationData.address_line2 || null,
-        city: locationData.city!,
-        province: normalizedProvince,
-        postal_code: normalizedPostalCode,
-        latitude: geocodeResult.latitude,
-        longitude: geocodeResult.longitude,
-        location_notes: locationData.location_notes || null,
+    } else {
+      finalizeSelection(normalizedProvince, normalizedPostalCode, {
+        latitude: null,
+        longitude: null,
       });
-
-      setIsGeocoding(false);
-
-      // Navigate to OrderSummary
-      navigation.navigate('OrderSummary', {
-        selectedService: route.params.selectedService,
-        selectedAddons: route.params.selectedAddons,
-        date: selectedDateValue.getDate().toString(),
-        time: selectedTime,
-        detailerId: selectedDetailerId,
-      });
-    } catch (error) {
-      setIsGeocoding(false);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to verify address. Please check and try again.';
-      setGeocodeError(errorMessage);
-      Alert.alert('Address Verification Failed', errorMessage);
     }
+  };
+
+  const handleBypassVerification = () => {
+    handleContinue({ skipGeocode: true });
   };
 
   const isReady =
@@ -335,6 +356,17 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
           >
             <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
           </TouchableOpacity>
+
+          {!geocodingEnabled && (
+            <TouchableOpacity
+              style={styles.skipVerificationButton}
+              activeOpacity={0.8}
+              onPress={handleBypassVerification}
+            >
+              <Ionicons name="warning" size={18} color="#FFA500" />
+              <Text style={styles.skipVerificationButtonText}>Skip address verification (testing)</Text>
+            </TouchableOpacity>
+          )}
           <Text style={styles.headerTitle}>Plan Your Wash</Text>
         </View>
 
@@ -697,12 +729,10 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                         value={locationData.address_line1}
                         onChangeText={(text) => {
                           setLocationData({ ...locationData, address_line1: text });
-                          // Clear validation error when user types
                           if (validationErrors.address_line1) {
                             setValidationErrors({ ...validationErrors, address_line1: undefined });
                           }
-                          // Trigger autocomplete
-                          if (text.length >= 3) {
+                          if (geocodingEnabled && text.length >= 3) {
                             setShowAutocomplete(true);
                             searchAddress(text);
                           } else {
@@ -711,7 +741,11 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                           }
                         }}
                         onFocus={() => {
-                          if (locationData.address_line1 && locationData.address_line1.length >= 3) {
+                          if (
+                            geocodingEnabled &&
+                            locationData.address_line1 &&
+                            locationData.address_line1.length >= 3
+                          ) {
                             setShowAutocomplete(true);
                             searchAddress(locationData.address_line1);
                           }
@@ -733,9 +767,14 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                     {geocodeError && (
                       <Text style={styles.errorText}>{geocodeError}</Text>
                     )}
+                    {!geocodingEnabled && (
+                      <Text style={styles.warningText}>
+                        Dev note: address verification is disabled until EXPO_PUBLIC_GOOGLE_MAPS_API_KEY is set.
+                      </Text>
+                    )}
 
                     {/* Autocomplete Suggestions Dropdown */}
-                    {showAutocomplete && suggestions.length > 0 && (
+                    {geocodingEnabled && showAutocomplete && suggestions.length > 0 && (
                       <View style={styles.autocompleteDropdown}>
                         {suggestions.map((suggestion) => (
                           <TouchableOpacity
@@ -878,7 +917,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
         {/* Bottom Summary & CTA */}
         <View style={[styles.bottomSummary, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <TouchableOpacity
-            onPress={handleContinue}
+            onPress={() => handleContinue()}
             disabled={!isReady || isGeocoding}
             activeOpacity={isReady && !isGeocoding ? 0.8 : 1}
             style={[styles.continueButton, (!isReady || isGeocoding) && styles.continueButtonDisabled]}
@@ -1482,5 +1521,30 @@ const styles = StyleSheet.create({
   autocompleteSecondaryText: {
     color: '#C6CFD9',
     fontSize: 13,
+  },
+  warningText: {
+    color: '#FFA500',
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 4,
+    fontStyle: 'italic',
+  },
+  skipVerificationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,165,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,165,0,0.4)',
+    marginBottom: 16,
+  },
+  skipVerificationButtonText: {
+    color: '#FFA500',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
