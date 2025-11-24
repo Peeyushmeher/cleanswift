@@ -66,6 +66,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   const [calendarExpanded, setCalendarExpanded] = useState(true);
   const [timeDropdownOpen, setTimeDropdownOpen] = useState(false);
   const [locationExpanded, setLocationExpanded] = useState(false);
+  const [detailerExpanded, setDetailerExpanded] = useState(false);
   const today = new Date();
   const initialDate = selectedDate || today;
   const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth());
@@ -138,12 +139,21 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     normalizedPostalCode: string,
     coordinates: { latitude: number | null; longitude: number | null }
   ) => {
-    const selectedDetailerData = detailers.find((d) => d.id === selectedDetailerId);
-    if (!selectedDetailerData || !selectedDateValue) {
+    if (!selectedDateValue) {
       return;
     }
 
-    setDetailer(selectedDetailerData);
+    // Only set detailer if one is selected (for rebooking scenarios)
+    if (selectedDetailerId) {
+      const selectedDetailerData = detailers.find((d) => d.id === selectedDetailerId);
+      if (selectedDetailerData) {
+        setDetailer(selectedDetailerData);
+      }
+    } else {
+      // Clear detailer for new bookings (will be auto-assigned after payment)
+      setDetailer(null);
+    }
+
     setDateTime(selectedDateValue, selectedTime);
     setLocation({
       address_line1: locationData.address_line1!,
@@ -161,13 +171,13 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
       selectedAddons: route.params.selectedAddons,
       date: selectedDateValue.getDate().toString(),
       time: selectedTime,
-      detailerId: selectedDetailerId,
+      ...(selectedDetailerId && { detailerId: selectedDetailerId }),
     });
   };
 
   const handleContinue = async ({ skipGeocode = false }: { skipGeocode?: boolean } = {}) => {
-    // Validate all selections
-    if (!selectedDetailerId || !selectedDateValue || !selectedTime) {
+    // Validate required selections (detailer is optional - will be auto-assigned after payment)
+    if (!selectedDateValue || !selectedTime) {
       return;
     }
 
@@ -229,7 +239,6 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   };
 
   const isReady =
-    !!selectedDetailerId &&
     !!selectedDateValue &&
     !!selectedTime &&
     !!locationData.address_line1 &&
@@ -237,9 +246,8 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     !!locationData.province &&
     !!locationData.postal_code;
 
-  // Progress calculation
+  // Progress calculation (detailer step is optional)
   const stepsCompleted = [
-    !!selectedDetailerId,
     !!selectedDateValue && !!selectedTime,
     !!(locationData.address_line1 && locationData.city && locationData.province && locationData.postal_code),
   ].filter(Boolean).length;
@@ -375,9 +383,8 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
           {/* Numbered Steps */}
           <View style={styles.progressSteps}>
             {[
-              { id: 1, label: 'Detailer', completed: !!selectedDetailerId },
-              { id: 2, label: 'Time', completed: !!(selectedDateValue && selectedTime) },
-              { id: 3, label: 'Location', completed: !!(locationData.address_line1 && locationData.city && locationData.province && locationData.postal_code) },
+              { id: 1, label: 'Time', completed: !!(selectedDateValue && selectedTime) },
+              { id: 2, label: 'Location', completed: !!(locationData.address_line1 && locationData.city && locationData.province && locationData.postal_code) },
             ].map((step, index) => (
               <View key={step.id} style={styles.progressStep}>
                 <View
@@ -408,11 +415,11 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBarBackground}>
               <View
-                style={[styles.progressBarFill, { width: `${(stepsCompleted / 3) * 100}%` }]}
+                style={[styles.progressBarFill, { width: `${(stepsCompleted / 2) * 100}%` }]}
               />
             </View>
             <Text style={styles.progressBarText}>
-              {stepsCompleted} of 3 completed
+              {stepsCompleted} of 2 completed
             </Text>
           </View>
         </View>
@@ -423,120 +430,6 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Detailer Selection Card */}
-          <View style={styles.mainCard}>
-            <View style={styles.cardHeader}>
-              <View style={styles.cardHeaderLeft}>
-                {selectedDetailerId && (
-                  <View style={styles.cardCheckmark}>
-                    <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
-                  </View>
-                )}
-                <Text style={styles.cardTitle}>Choose Your Detailer</Text>
-              </View>
-            </View>
-            
-            {selectedDetailerId && selectedDetailerData ? (
-              <View style={styles.selectedDetailerContent}>
-                <View style={styles.detailerAvatarLarge}>
-                  <Text style={styles.detailerInitialsLarge}>
-                    {selectedDetailerData.full_name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')}
-                  </Text>
-                </View>
-                <View style={styles.detailerInfo}>
-                  <Text style={styles.detailerNameMain}>{selectedDetailerData.full_name}</Text>
-                  <View style={styles.ratingInfo}>
-                    <Text style={styles.ratingValueMain}>{selectedDetailerData.rating}</Text>
-                    <Text style={styles.reviewsCountMain}>{selectedDetailerData.review_count} reviews</Text>
-                  </View>
-                </View>
-                <View style={styles.selectedDetailerActions}>
-                  <TouchableOpacity
-                    onPress={() => handleShowProfile(selectedDetailerData)}
-                    activeOpacity={0.8}
-                    style={styles.infoPill}
-                  >
-                    <Ionicons name="information-circle-outline" size={16} color="#6FF0C4" />
-                    <Text style={styles.infoPillText}>Profile</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => setSelectedDetailerId('')}
-                    activeOpacity={0.8}
-                    style={styles.changeButton}
-                  >
-                    <Text style={styles.changeButtonText}>Change</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.detailerSelectionContent}>
-                {detailersLoading && (
-                  <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color="#6FF0C4" />
-                  </View>
-                )}
-
-                {detailersError && !detailersLoading && (
-                  <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle" size={32} color="#FF6B6B" />
-                    <Text style={styles.errorTextCenter}>{detailersError.message}</Text>
-                  </View>
-                )}
-
-                {!detailersLoading && !detailersError && (
-                  <View style={styles.detailersListCompact}>
-                    {detailers.map((detailer) => {
-                      const isSelected = selectedDetailerId === detailer.id;
-                      return (
-                        <TouchableOpacity
-                          key={detailer.id}
-                          onPress={() => setSelectedDetailerId(detailer.id)}
-                          activeOpacity={0.8}
-                          style={[
-                            styles.detailerItem,
-                            isSelected && styles.detailerItemSelected,
-                          ]}
-                        >
-                          <View style={styles.detailerItemAvatar}>
-                            <Text style={styles.detailerItemInitials}>
-                              {detailer.full_name
-                                .split(' ')
-                                .map((n) => n[0])
-                                .join('')}
-                            </Text>
-                          </View>
-                          <View style={styles.detailerItemInfo}>
-                            <View style={styles.detailerItemHeader}>
-                              <Text style={styles.detailerItemName}>{detailer.full_name}</Text>
-                              <TouchableOpacity
-                                onPress={() => handleShowProfile(detailer)}
-                                activeOpacity={0.7}
-                                style={styles.detailerInfoButton}
-                              >
-                                <Ionicons name="information-circle-outline" size={18} color="#C6CFD9" />
-                              </TouchableOpacity>
-                            </View>
-                            <View style={styles.detailerItemRating}>
-                              <Ionicons name="star" size={14} color="#6FF0C4" />
-                              <Text style={styles.detailerItemRatingText}>{detailer.rating}</Text>
-                              <Text style={styles.detailerItemReviews}>({detailer.review_count} reviews)</Text>
-                            </View>
-                          </View>
-                          {isSelected && (
-                            <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            )}
-          </View>
-
           {/* Date & Time Selection Card */}
           <View style={styles.mainCard}>
             <View style={styles.cardHeader}>
@@ -910,6 +803,143 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             )}
           </TouchableOpacity>
 
+          {/* Detailer Selection Card (Optional) */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setDetailerExpanded(!detailerExpanded)}
+            style={styles.mainCard}
+          >
+            <View style={styles.cardHeader}>
+              <View style={styles.cardHeaderLeft}>
+                {selectedDetailerId && (
+                  <View style={styles.cardCheckmark}>
+                    <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
+                  </View>
+                )}
+                <Ionicons name="person-circle" size={24} color="#1DA4F3" style={styles.cardIcon} />
+                <View style={styles.cardHeaderContent}>
+                  <Text style={styles.cardTitle}>Choose Your Detailer (Optional)</Text>
+                  {selectedDetailerId && selectedDetailerData && (
+                    <Text style={styles.cardSubtitle}>
+                      {selectedDetailerData.full_name}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {/* Detailer Selection Content (Expanded) */}
+            {detailerExpanded && (
+              <View style={styles.expandedContent}>
+                {selectedDetailerId && selectedDetailerData ? (
+                  <View style={styles.selectedDetailerContent}>
+                    <View style={styles.detailerAvatarLarge}>
+                      <Text style={styles.detailerInitialsLarge}>
+                        {selectedDetailerData.full_name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
+                      </Text>
+                    </View>
+                    <View style={styles.detailerInfo}>
+                      <Text style={styles.detailerNameMain}>{selectedDetailerData.full_name}</Text>
+                      <View style={styles.ratingInfo}>
+                        <Text style={styles.ratingValueMain}>{selectedDetailerData.rating}</Text>
+                        <Text style={styles.reviewsCountMain}>{selectedDetailerData.review_count} reviews</Text>
+                      </View>
+                    </View>
+                    <View style={styles.selectedDetailerActions}>
+                      <TouchableOpacity
+                        onPress={() => handleShowProfile(selectedDetailerData)}
+                        activeOpacity={0.8}
+                        style={styles.infoPill}
+                      >
+                        <Ionicons name="information-circle-outline" size={16} color="#6FF0C4" />
+                        <Text style={styles.infoPillText}>Profile</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setSelectedDetailerId('')}
+                        activeOpacity={0.8}
+                        style={styles.changeButton}
+                      >
+                        <Text style={styles.changeButtonText}>Change</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.detailerSelectionContent}>
+                    {detailersLoading && (
+                      <View style={styles.centerContainer}>
+                        <ActivityIndicator size="large" color="#6FF0C4" />
+                      </View>
+                    )}
+
+                    {detailersError && !detailersLoading && (
+                      <View style={styles.errorContainer}>
+                        <Ionicons name="alert-circle" size={32} color="#FF6B6B" />
+                        <Text style={styles.errorTextCenter}>{detailersError.message}</Text>
+                      </View>
+                    )}
+
+                    {!detailersLoading && !detailersError && (
+                      <View style={styles.detailersListCompact}>
+                        {detailers.map((detailer) => {
+                          const isSelected = selectedDetailerId === detailer.id;
+                          return (
+                            <TouchableOpacity
+                              key={detailer.id}
+                              onPress={(e) => {
+                                e.stopPropagation();
+                                setSelectedDetailerId(detailer.id);
+                              }}
+                              activeOpacity={0.8}
+                              style={[
+                                styles.detailerItem,
+                                isSelected && styles.detailerItemSelected,
+                              ]}
+                            >
+                              <View style={styles.detailerItemAvatar}>
+                                <Text style={styles.detailerItemInitials}>
+                                  {detailer.full_name
+                                    .split(' ')
+                                    .map((n) => n[0])
+                                    .join('')}
+                                </Text>
+                              </View>
+                              <View style={styles.detailerItemInfo}>
+                                <View style={styles.detailerItemHeader}>
+                                  <Text style={styles.detailerItemName}>{detailer.full_name}</Text>
+                                  <TouchableOpacity
+                                    onPress={(e) => {
+                                      e.stopPropagation();
+                                      handleShowProfile(detailer);
+                                    }}
+                                    activeOpacity={0.7}
+                                    style={styles.detailerInfoButton}
+                                  >
+                                    <Ionicons name="information-circle-outline" size={18} color="#C6CFD9" />
+                                  </TouchableOpacity>
+                                </View>
+                                <View style={styles.detailerItemRating}>
+                                  <Ionicons name="star" size={14} color="#6FF0C4" />
+                                  <Text style={styles.detailerItemRatingText}>{detailer.rating}</Text>
+                                  <Text style={styles.detailerItemReviews}>({detailer.review_count} reviews)</Text>
+                                </View>
+                              </View>
+                              {isSelected && (
+                                <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
+          </TouchableOpacity>
+
           {/* Spacer for bottom button */}
           <View style={{ height: 100 }} />
         </ScrollView>
@@ -934,7 +964,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                   (!isReady || isGeocoding) && styles.continueButtonTextDisabled,
                 ]}
               >
-                {isReady ? 'Continue to Review' : `Complete ${3 - stepsCompleted} more step${3 - stepsCompleted !== 1 ? 's' : ''}`}
+                {isReady ? 'Continue to Review' : `Complete ${2 - stepsCompleted} more step${2 - stepsCompleted !== 1 ? 's' : ''}`}
               </Text>
             )}
           </TouchableOpacity>

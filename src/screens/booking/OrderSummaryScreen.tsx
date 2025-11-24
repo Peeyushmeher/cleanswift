@@ -356,7 +356,7 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
           )}
 
           {/* Detailer Card */}
-          {selectedDetailer && (
+          {selectedDetailer ? (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardRow}>
@@ -377,17 +377,20 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                     <Text style={styles.cardSubtitle}>2.1 km away</Text>
                   </View>
                 </View>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => navigation.navigate('ChooseDetailer', {
-                    selectedService: route.params.selectedService,
-                    selectedAddons: route.params.selectedAddons,
-                    date: route.params.date,
-                    time: route.params.time,
-                  })}
-                >
-                  <Text style={styles.changeLink}>Change</Text>
-                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="person-circle" size={40} color="#C6CFD9" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>Detailer Assignment</Text>
+                    <Text style={styles.cardSubtitle}>
+                      A detailer will be assigned after payment
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
           )}

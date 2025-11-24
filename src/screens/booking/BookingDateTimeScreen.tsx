@@ -62,8 +62,8 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
     // Update BookingContext
     setDateTime(bookingDate, selectedTime);
 
-    // Navigate to next screen
-    navigation.navigate('ChooseDetailer', {
+    // Navigate directly to OrderSummary (detailer will be auto-assigned after payment)
+    navigation.navigate('OrderSummary', {
       selectedService: route.params.selectedService,
       selectedAddons: route.params.selectedAddons,
       date: selectedDate.toString(),

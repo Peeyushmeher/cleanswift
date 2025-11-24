@@ -35,7 +35,7 @@ export type BookingStackParamList = {
     selectedAddons: string[];
     date: string;
     time: string;
-    detailerId: string;
+    detailerId?: string; // Optional - only used when detailer is pre-selected (e.g., rebooking)
   };
   PaymentMethod: {
     showPrice?: boolean;
