@@ -1,17 +1,15 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { useMemo } from 'react';
-import type { OrdersStackParamList } from '../../navigation/OrdersStack';
-import type { MainTabsParamList } from '../../navigation/MainTabs';
-import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
+import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
 import { updateBookingStatus } from '../../lib/bookings';
-import { useState } from 'react';
-import { Alert } from 'react-native';
+import type { MainTabsParamList } from '../../navigation/MainTabs';
+import type { OrdersStackParamList } from '../../navigation/OrdersStack';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrderDetails'>;
 type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
@@ -83,18 +81,38 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
 
     Alert.alert(
       'Cancel Booking',
-      'Are you sure you want to cancel this booking?',
+      'Are you sure you want to cancel this booking? This action cannot be undone.',
       [
-        { text: 'No', style: 'cancel' },
         {
-          text: 'Yes, Cancel',
+          text: 'No, Keep Booking',
+          style: 'cancel',
+          onPress: () => {
+            // User chose to keep the booking - do nothing
+          },
+        },
+        {
+          text: 'Yes, Cancel Booking',
           style: 'destructive',
           onPress: async () => {
             try {
               setIsCancelling(true);
               await updateBookingStatus(booking.id, 'cancelled');
               await refetch();
-              Alert.alert('Success', 'Booking cancelled successfully');
+              
+              // Show success message and navigate back
+              Alert.alert(
+                'Booking Cancelled',
+                'Your booking has been successfully cancelled.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      navigation.goBack();
+                    },
+                  },
+                ],
+                { cancelable: false }
+              );
             } catch (err) {
               const errorMessage = err instanceof Error ? err.message : 'Failed to cancel booking';
               Alert.alert('Error', errorMessage);
@@ -103,7 +121,8 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
             }
           },
         },
-      ]
+      ],
+      { cancelable: true }
     );
   };
 

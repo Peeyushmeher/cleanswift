@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
@@ -36,10 +37,28 @@ const formatDateLabel = (date: string, time?: string | null) => {
 export default function OrdersHistoryScreen({ navigation }: Props) {
   const { data: bookings, loading, error, refetch } = useBookings();
 
-  const sortedBookings = useMemo(
-    () => bookings.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [bookings],
+  // Refetch bookings when screen comes into focus (e.g., after payment completes)
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
   );
+
+  const sortedBookings = useMemo(() => {
+    const isCancelled = (status: string) => status === 'cancelled' || status === 'canceled';
+    
+    return bookings.slice().sort((a, b) => {
+      const aCancelled = isCancelled(a.status);
+      const bCancelled = isCancelled(b.status);
+      
+      // If one is cancelled and the other isn't, non-cancelled comes first
+      if (aCancelled && !bCancelled) return 1;
+      if (!aCancelled && bCancelled) return -1;
+      
+      // If both have the same cancellation status, sort by creation date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [bookings]);
 
   const renderStatusDot = (status: string) => {
     const color = STATUS_COLORS[status] || '#C6CFD9';
