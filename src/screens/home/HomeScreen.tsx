@@ -1,10 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { CompositeNavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';
+import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
+import { supabase } from '../../lib/supabase';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
 
@@ -21,8 +25,236 @@ const quickActions = [
   { icon: 'cube' as const, label: 'Luxury Package', color: '#1DA4F3' },
 ];
 
+// Helper function to parse time string (handles "11:00 AM" format)
+const parseTimeString = (timeStr: string): { hours: number; minutes: number } | null => {
+  try {
+    // Handle formats like "11:00 AM" or "1:00 PM"
+    const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (match) {
+      let hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      const period = match[3].toUpperCase();
+      
+      if (period === 'PM' && hours !== 12) {
+        hours += 12;
+      } else if (period === 'AM' && hours === 12) {
+        hours = 0;
+      }
+      
+      return { hours, minutes };
+    }
+    
+    // Try ISO format (HH:mm or HH:mm:ss)
+    const isoMatch = timeStr.match(/(\d+):(\d+)/);
+    if (isoMatch) {
+      return {
+        hours: parseInt(isoMatch[1], 10),
+        minutes: parseInt(isoMatch[2], 10),
+      };
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Helper function to create a Date from date and time strings
+const createBookingDate = (dateStr: string, timeStr: string): Date | null => {
+  try {
+    const timeParts = parseTimeString(timeStr);
+    if (!timeParts) {
+      // Fallback: try direct Date parsing
+      const date = new Date(`${dateStr}T${timeStr}`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    
+    const date = new Date(dateStr);
+    date.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+    return date;
+  } catch {
+    return null;
+  }
+};
+
+// Helper function to format date for upcoming bookings
+const formatUpcomingDate = (booking: BookingHistoryItem): string => {
+  if (!booking.scheduled_date || !booking.scheduled_time_start) {
+    return 'Date TBD';
+  }
+
+  const bookingDate = createBookingDate(booking.scheduled_date, booking.scheduled_time_start);
+  if (!bookingDate) {
+    return booking.scheduled_date;
+  }
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const bookingDay = new Date(
+    bookingDate.getFullYear(),
+    bookingDate.getMonth(),
+    bookingDate.getDate()
+  );
+
+  // Format time
+  const timeText = bookingDate.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  // Check if it's today
+  if (bookingDay.getTime() === today.getTime()) {
+    return `Today, ${timeText}`;
+  }
+
+  // Check if it's tomorrow
+  if (bookingDay.getTime() === tomorrow.getTime()) {
+    return `Tomorrow, ${timeText}`;
+  }
+
+  // Otherwise format as weekday, month day
+  return bookingDate.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
+// Get the next upcoming booking
+const getNextUpcomingBooking = (bookings: BookingHistoryItem[]): BookingHistoryItem | null => {
+  const now = new Date();
+  
+  // Filter for upcoming bookings (status indicates they're scheduled and not completed/cancelled)
+  const upcomingStatuses: Array<BookingHistoryItem['status']> = [
+    'requires_payment',
+    'paid',
+    'offered',
+    'accepted',
+    'in_progress',
+  ];
+
+  const upcomingBookings = bookings
+    .filter((booking) => {
+      // Must have a valid scheduled date/time
+      if (!booking.scheduled_date || !booking.scheduled_time_start) {
+        return false;
+      }
+
+      // Must be in an upcoming status
+      if (!upcomingStatuses.includes(booking.status)) {
+        return false;
+      }
+
+      // Parse the booking date
+      const bookingDate = createBookingDate(booking.scheduled_date, booking.scheduled_time_start);
+      if (!bookingDate) {
+        return false;
+      }
+
+      // For bookings that require payment, show them even if date is in the past
+      // (user still needs to complete payment)
+      if (booking.status === 'requires_payment') {
+        return true;
+      }
+
+      // For other statuses, must be in the future
+      return bookingDate >= now;
+    })
+    .sort((a, b) => {
+      // Sort by scheduled date/time, earliest first
+      const dateA = createBookingDate(a.scheduled_date, a.scheduled_time_start);
+      const dateB = createBookingDate(b.scheduled_date, b.scheduled_time_start);
+      
+      if (!dateA || !dateB) return 0;
+      return dateA.getTime() - dateB.getTime();
+    });
+
+  return upcomingBookings.length > 0 ? upcomingBookings[0] : null;
+};
+
+interface PrimaryCar {
+  id: string;
+  make: string;
+  model: string;
+  year: string;
+  trim?: string | null;
+}
+
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { user } = useAuth();
+  const { data: bookings, loading: bookingsLoading } = useBookings();
+  const [primaryCar, setPrimaryCar] = useState<PrimaryCar | null>(null);
+  const [isLoadingCar, setIsLoadingCar] = useState(true);
+
+  // Function to fetch primary car
+  const fetchPrimaryCar = useCallback(async () => {
+    if (!user) {
+      setIsLoadingCar(false);
+      setPrimaryCar(null);
+      return;
+    }
+
+    try {
+      setIsLoadingCar(true);
+      // First try to get primary car
+      const { data: primaryCar, error: primaryError } = await supabase
+        .from('cars')
+        .select('id, make, model, year, trim')
+        .eq('user_id', user.id)
+        .eq('is_primary', true)
+        .maybeSingle();
+
+      if (primaryError) {
+        console.error('Error fetching primary car:', primaryError);
+      }
+
+      // If we have a primary car, use it; otherwise try to get any car
+      if (primaryCar) {
+        setPrimaryCar(primaryCar);
+      } else {
+        // Try to get any car if no primary is set
+        const { data: anyCar, error: anyCarError } = await supabase
+          .from('cars')
+          .select('id, make, model, year, trim')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (anyCarError) {
+          console.error('Error fetching any car:', anyCarError);
+        }
+        
+        setPrimaryCar(anyCar || null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch primary car:', error);
+      setPrimaryCar(null);
+    } finally {
+      setIsLoadingCar(false);
+    }
+  }, [user]);
+
+  // Fetch primary car on mount and when user changes
+  useEffect(() => {
+    fetchPrimaryCar();
+  }, [fetchPrimaryCar]);
+
+  // Refetch car when screen is focused (e.g., after returning from SelectCar)
+  useFocusEffect(
+    useCallback(() => {
+      fetchPrimaryCar();
+    }, [fetchPrimaryCar])
+  );
+
+  // Get the next upcoming booking
+  const nextBooking = getNextUpcomingBooking(bookings);
 
   const handleBookService = () => {
     // Navigate to the Book tab, which shows the BookingStack (ServiceSelection screen)
@@ -80,8 +312,22 @@ export default function HomeScreen() {
 
               {/* Car Info */}
               <View style={styles.carInfo}>
-                <Text style={styles.carName}>2022 BMW M4</Text>
-                <Text style={styles.carLabel}>Primary Vehicle</Text>
+                {isLoadingCar ? (
+                  <Text style={styles.carName}>Loading...</Text>
+                ) : primaryCar ? (
+                  <>
+                    <Text style={styles.carName}>
+                      {primaryCar.year} {primaryCar.make} {primaryCar.model}
+                      {primaryCar.trim ? ` ${primaryCar.trim}` : ''}
+                    </Text>
+                    <Text style={styles.carLabel}>Primary Vehicle</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.carName}>No Vehicle Added</Text>
+                    <Text style={styles.carLabel}>Add a vehicle to get started</Text>
+                  </>
+                )}
               </View>
 
               {/* CTA Buttons */}
@@ -134,19 +380,50 @@ export default function HomeScreen() {
           {/* Upcoming Bookings */}
           <View style={styles.upcomingContainer}>
             <Text style={styles.sectionTitle}>Upcoming</Text>
-            <TouchableOpacity
-              onPress={handleOrders}
-              activeOpacity={0.8}
-              style={styles.upcomingCard}
-            >
-              <View style={styles.upcomingIconContainer}>
-                <Ionicons name="time" size={24} color="#1DA4F3" />
+            {bookingsLoading ? (
+              <View style={styles.upcomingCard}>
+                <View style={styles.upcomingIconContainer}>
+                  <Ionicons name="time" size={24} color="#1DA4F3" />
+                </View>
+                <View style={styles.upcomingContent}>
+                  <Text style={styles.upcomingTitle}>Loading...</Text>
+                </View>
               </View>
-              <View style={styles.upcomingContent}>
-                <Text style={styles.upcomingTitle}>Full Detail Service</Text>
-                <Text style={styles.upcomingSubtitle}>Tomorrow, 2:00 PM</Text>
-              </View>
-            </TouchableOpacity>
+            ) : nextBooking ? (
+              <TouchableOpacity
+                onPress={handleOrders}
+                activeOpacity={0.8}
+                style={styles.upcomingCard}
+              >
+                <View style={styles.upcomingIconContainer}>
+                  <Ionicons name="time" size={24} color="#1DA4F3" />
+                </View>
+                <View style={styles.upcomingContent}>
+                  <Text style={styles.upcomingTitle}>
+                    {nextBooking.service?.name || 'Service'}
+                  </Text>
+                  <Text style={styles.upcomingSubtitle}>
+                    {formatUpcomingDate(nextBooking)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={handleBookService}
+                activeOpacity={0.8}
+                style={[styles.upcomingCard, styles.upcomingCardEmpty]}
+              >
+                <View style={[styles.upcomingIconContainer, styles.upcomingIconContainerEmpty]}>
+                  <Ionicons name="calendar-outline" size={24} color="#6FF0C4" />
+                </View>
+                <View style={styles.upcomingContent}>
+                  <Text style={styles.upcomingTitle}>No upcoming bookings</Text>
+                  <Text style={styles.upcomingSubtitle}>
+                    Tap to book your next service
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -341,6 +618,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
+  upcomingIconContainerEmpty: {
+    backgroundColor: 'rgba(111, 240, 196, 0.1)',
+  },
   upcomingContent: {
     flex: 1,
   },
@@ -353,5 +633,8 @@ const styles = StyleSheet.create({
   upcomingSubtitle: {
     color: '#C6CFD9',
     fontSize: 14,
+  },
+  upcomingCardEmpty: {
+    borderColor: 'rgba(111, 240, 196, 0.2)',
   },
 });

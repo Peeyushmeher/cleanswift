@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { useAuth } from '../../contexts/AuthContext';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
@@ -38,7 +39,8 @@ const menuSections = [
 ];
 
 export default function ProfileScreen({ navigation }: Props) {
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
+  const { user, signOut } = useAuth();
   const tabsNavigation = useNavigation<TabsNav>();
 
   const handleAction = (action: string) => {
@@ -71,9 +73,28 @@ export default function ProfileScreen({ navigation }: Props) {
     navigation.navigate('Orders');
   };
 
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout');
+  const handleLogout = async () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -89,9 +110,15 @@ export default function ProfileScreen({ navigation }: Props) {
 
             {/* User Info */}
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>Peeyush Yerremsetty</Text>
-              <Text style={styles.userEmail}>meherpeeyush@gmail.com</Text>
-              <Text style={styles.userPhone}>437-989-6480</Text>
+              {profileLoading ? (
+                <ActivityIndicator size="small" color="#6FF0C4" />
+              ) : (
+                <>
+                  <Text style={styles.userName}>{profile?.full_name || 'Not set'}</Text>
+                  <Text style={styles.userEmail}>{profile?.email || user?.email || 'Not set'}</Text>
+                  <Text style={styles.userPhone}>{profile?.phone || 'Not set'}</Text>
+                </>
+              )}
             </View>
 
             {/* Edit Button */}

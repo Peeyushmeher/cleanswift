@@ -1,5 +1,6 @@
 import { createClient } from './supabase/server';
 import { redirect } from 'next/navigation';
+import { getDetailerMode as getMode } from './detailer/mode-detection';
 
 export interface UserProfile {
   id: string;
@@ -76,5 +77,14 @@ export async function requireAdmin() {
     redirect('/auth/login');
   }
   return profile;
+}
+
+/**
+ * Get the detailer mode (solo or organization)
+ * @param profileId - Optional profile ID, defaults to current authenticated user
+ * @returns 'solo' if detailer has no organization, 'organization' if they belong to one
+ */
+export async function getDetailerMode(profileId?: string) {
+  return getMode(profileId);
 }
 

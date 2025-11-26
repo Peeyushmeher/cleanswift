@@ -29,17 +29,22 @@ const BUBBLE_RADIUS = 22;
 
 // Animated bubble component
 function AnimatedBubble({ focused, children }: { focused: boolean; children: React.ReactNode }) {
-  const scale = useSharedValue(0.8);
+  const scale = useSharedValue(focused ? 1 : 0.8);
 
   useEffect(() => {
     if (focused) {
       scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+    } else {
+      scale.value = withSpring(0.8, { damping: 15, stiffness: 150 });
     }
-  }, [focused]);
+  }, [focused, scale]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
 
   return (
     <Animated.View style={[styles.activeBubble, animatedStyle]}>

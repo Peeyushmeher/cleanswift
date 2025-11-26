@@ -52,11 +52,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
-      return { error };
+
+      if (error) {
+        return { error };
+      }
+
+      // Create profile record if user was created
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email || email,
+            full_name: '',
+            phone: '',
+            role: 'user',
+          });
+
+        // Don't fail signup if profile creation fails (it might already exist)
+        if (profileError) {
+          console.warn('Profile creation warning:', profileError);
+        }
+      }
+
+      return { error: null };
     } catch (error) {
       return { error: error as Error };
     }

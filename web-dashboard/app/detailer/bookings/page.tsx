@@ -1,10 +1,14 @@
-import { requireDetailer } from '@/lib/auth';
+import { requireDetailer, getDetailerMode } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
-import Link from 'next/link';
+import { getDetailerOrganization, getOrganizationRole } from '@/lib/detailer/mode-detection';
+import JobsPageClient from './JobsPageClient';
 
 export default async function DetailerBookingsPage() {
   const profile = await requireDetailer();
   const supabase = await createClient();
+  const mode = await getDetailerMode();
+  const organization = mode === 'organization' ? await getDetailerOrganization() : null;
+  const orgRole = organization ? await getOrganizationRole(organization.id) : null;
 
   // Get detailer record
   const { data: detailerData } = await supabase.rpc('get_detailer_by_profile', {
@@ -12,98 +16,113 @@ export default async function DetailerBookingsPage() {
   });
 
   let myBookings: any[] = [];
+  let teams: any[] = [];
+  let orgDetailers: any[] = [];
 
   if (detailerData?.id) {
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select(
+    if (mode === 'organization' && organization && orgRole && ['owner', 'manager', 'dispatcher'].includes(orgRole)) {
+      // Organization mode with permissions: Get all org bookings
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select(
+          `
+          id,
+          receipt_id,
+          status,
+          payment_status,
+          scheduled_date,
+          scheduled_time_start,
+          scheduled_time_end,
+          scheduled_start,
+          scheduled_end,
+          total_amount,
+          service_price,
+          created_at,
+          organization_id,
+          team_id,
+          detailer_id,
+          address_line1,
+          city,
+          province,
+          postal_code,
+          service:service_id (id, name, price),
+          car:car_id (id, make, model, year, license_plate),
+          user:user_id (id, full_name, phone, email),
+          detailer:detailers (id, full_name),
+          team:teams (id, name)
         `
-        id,
-        receipt_id,
-        status,
-        payment_status,
-        scheduled_start,
-        scheduled_end,
-        total_amount,
-        created_at,
-        service:service_id (id, name, price),
-        car:car_id (id, make, model, year, license_plate),
-        user:user_id (id, full_name, phone, email),
-        address:address_id (address_line1, city, province, postal_code)
-      `
-      )
-      .eq('detailer_id', detailerData.id)
-      .order('scheduled_start', { ascending: true });
+        )
+        .eq('organization_id', organization.id)
+        .order('scheduled_date', { ascending: true })
+        .order('scheduled_time_start', { ascending: true });
 
-    myBookings = bookings || [];
+      myBookings = bookings || [];
+
+      // Get teams for filter
+      const { data: teamsData } = await supabase
+        .from('teams')
+        .select('id, name')
+        .eq('organization_id', organization.id)
+        .eq('is_active', true);
+
+      teams = teamsData || [];
+
+      // Get organization detailers for filter
+      const { data: membersData } = await supabase.rpc('get_organization_members', {
+        p_organization_id: organization.id,
+      });
+
+      orgDetailers = (membersData || []).filter((m: any) => m.role === 'detailer');
+    } else {
+      // Solo mode or detailer in org: Get own bookings only
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select(
+          `
+          id,
+          receipt_id,
+          status,
+          payment_status,
+          scheduled_date,
+          scheduled_time_start,
+          scheduled_time_end,
+          scheduled_start,
+          scheduled_end,
+          total_amount,
+          service_price,
+          created_at,
+          address_line1,
+          city,
+          province,
+          postal_code,
+          service:service_id (id, name, price),
+          car:car_id (id, make, model, year, license_plate),
+          user:user_id (id, full_name, phone, email)
+        `
+        )
+        .eq('detailer_id', detailerData.id)
+        .order('scheduled_date', { ascending: true })
+        .order('scheduled_time_start', { ascending: true });
+
+      myBookings = bookings || [];
+    }
   }
 
   return (
     <div className="min-h-screen bg-[#050B12] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">My Bookings</h1>
-          <p className="text-[#C6CFD9]">View and manage your assigned bookings</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Jobs</h1>
+          <p className="text-[#C6CFD9]">View and manage your assigned jobs</p>
         </div>
 
-        {myBookings.length === 0 ? (
-          <div className="bg-[#0A1A2F] border border-white/5 rounded-xl p-8 text-center">
-            <p className="text-[#C6CFD9]">No bookings assigned yet</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {myBookings.map((booking) => (
-              <Link
-                key={booking.id}
-                href={`/detailer/bookings/${booking.id}`}
-                className="block bg-[#0A1A2F] border border-white/5 rounded-xl p-6 hover:border-[#6FF0C4]/20 transition-colors"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold text-white">
-                        {booking.car?.make} {booking.car?.model} {booking.car?.year}
-                      </h3>
-                      <span className="px-2 py-1 text-xs rounded-full bg-[#32CE7A]/20 text-[#32CE7A] capitalize">
-                        {booking.status}
-                      </span>
-                    </div>
-                    <div className="text-[#C6CFD9] space-y-1">
-                      <div>
-                        <strong>Service:</strong> {booking.service?.name}
-                      </div>
-                      <div>
-                        <strong>Customer:</strong> {booking.user?.full_name} ({booking.user?.phone})
-                      </div>
-                      <div>
-                        <strong>Location:</strong>{' '}
-                        {booking.address
-                          ? `${booking.address.address_line1}, ${booking.address.city}, ${booking.address.province}`
-                          : 'N/A'}
-                      </div>
-                      <div>
-                        <strong>Scheduled:</strong>{' '}
-                        {new Date(booking.scheduled_start).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right ml-6">
-                    <div className="text-2xl font-bold text-[#32CE7A]">
-                      ${booking.service?.price || booking.total_amount || 0}
-                    </div>
-                    <div className="text-sm text-[#C6CFD9] mt-2">
-                      {booking.payment_status === 'paid' ? (
-                        <span className="text-[#32CE7A]">Paid</span>
-                      ) : (
-                        <span className="text-yellow-400">Pending</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        <JobsPageClient 
+          initialBookings={myBookings} 
+          mode={mode}
+          teams={teams}
+          detailers={orgDetailers}
+          organizationId={organization?.id}
+        />
       </div>
     </div>
   );
