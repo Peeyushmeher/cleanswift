@@ -13,6 +13,12 @@ const GOOGLE_MAPS_API_KEY = isGoogleMapsConfigured ? normalizedKey : '';
 
 if (!isGoogleMapsConfigured) {
   console.warn('⚠️ Google Maps API key is not configured. Geocoding features are disabled until a valid EXPO_PUBLIC_GOOGLE_MAPS_API_KEY is provided.');
+} else {
+  // Log partial key for debugging (first 10 chars + last 4 chars)
+  const keyPreview = normalizedKey.length > 14 
+    ? `${normalizedKey.substring(0, 10)}...${normalizedKey.substring(normalizedKey.length - 4)}`
+    : '***';
+  console.log('✅ Google Maps API key loaded:', keyPreview);
 }
 
 export interface GeocodeResult {
@@ -74,7 +80,10 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
     }
 
     if (data.status === 'REQUEST_DENIED') {
-      throw new Error('Geocoding request denied. Please check your API key configuration.');
+      const errorMsg = data.error_message || 'No error message provided';
+      console.error('⚠️ Geocoding REQUEST_DENIED:', errorMsg);
+      console.error('Common causes: Geocoding API not enabled, API key restrictions, or billing not enabled');
+      throw new Error(`Geocoding request denied: ${errorMsg}`);
     }
 
     if (data.status !== 'OK' || !data.results || data.results.length === 0) {
@@ -232,7 +241,18 @@ export async function autocompletePlaces(
     const data = await response.json();
 
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.warn('Autocomplete API error:', data.status);
+      const errorMsg = data.error_message || 'No error message provided';
+      console.warn('Autocomplete API error:', data.status, '-', errorMsg);
+      if (data.status === 'REQUEST_DENIED') {
+        console.error('⚠️ REQUEST_DENIED - Common causes:');
+        console.error('  1. Places API not enabled in Google Cloud Console');
+        console.error('  2. Application restrictions blocking requests (use iOS/Android bundle ID, not IP restrictions)');
+        console.error('  3. Billing not enabled (required even for free tier)');
+        console.error('  4. Invalid API key');
+        if (errorMsg.includes('not authorized')) {
+          console.error('  → This error indicates application restrictions need to be configured for mobile apps');
+        }
+      }
       return [];
     }
 

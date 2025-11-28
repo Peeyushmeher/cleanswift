@@ -140,6 +140,12 @@ const getNextUpcomingBooking = (bookings: BookingHistoryItem[]): BookingHistoryI
 
   const upcomingBookings = bookings
     .filter((booking) => {
+      // Explicitly exclude cancelled, completed, and no_show bookings
+      const status = booking.status.toLowerCase();
+      if (status === 'cancelled' || status === 'canceled' || status === 'completed' || status === 'no_show') {
+        return false;
+      }
+
       // Must have a valid scheduled date/time
       if (!booking.scheduled_date || !booking.scheduled_time_start) {
         return false;

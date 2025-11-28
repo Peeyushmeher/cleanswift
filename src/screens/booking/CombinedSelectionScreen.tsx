@@ -8,6 +8,7 @@ import DetailerProfileCard from '../../components/DetailerProfileCard';
 import { useBooking, type BookingLocation, type Detailer } from '../../contexts/BookingContext';
 import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 import { useDetailers } from '../../hooks/useDetailers';
+import { useUserAddresses } from '../../hooks/useUserAddresses';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { geocodeAddress, isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import {
@@ -57,6 +58,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   const parentNavigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { data: detailers, loading: detailersLoading, error: detailersError } = useDetailers();
+  const { addresses, addAddress } = useUserAddresses();
 
   const [selectedDetailerId, setSelectedDetailerId] = useState<string>(selectedDetailer?.id || '');
   const [selectedDateValue, setSelectedDateValue] = useState<Date | null>(
@@ -67,6 +69,10 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   const [timeDropdownOpen, setTimeDropdownOpen] = useState(false);
   const [locationExpanded, setLocationExpanded] = useState(false);
   const [detailerExpanded, setDetailerExpanded] = useState(false);
+  const [showSaveAddressPrompt, setShowSaveAddressPrompt] = useState(false);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [addressNameInput, setAddressNameInput] = useState('');
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
   const today = new Date();
   const initialDate = selectedDate || today;
   const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth());
@@ -175,6 +181,49 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     });
   };
 
+  const handleSelectSavedAddress = (addressId: string) => {
+    const address = addresses.find((a) => a.id === addressId);
+    if (address) {
+      setLocationData({
+        address_line1: address.address_line1,
+        address_line2: address.address_line2 || '',
+        city: address.city,
+        province: address.province,
+        postal_code: address.postal_code,
+        latitude: address.latitude || undefined,
+        longitude: address.longitude || undefined,
+        location_notes: locationData.location_notes || '',
+      });
+      setSelectedSavedAddressId(addressId);
+      setValidationErrors({});
+    }
+  };
+
+  const handleSaveNewAddress = async (name?: string) => {
+    try {
+      const normalizedProvince = normalizeProvince(locationData.province || '');
+      const normalizedPostalCode = normalizePostalCode(locationData.postal_code || '');
+
+      await addAddress(
+        {
+          name: name || `Address ${addresses.length + 1}`,
+          address_line1: locationData.address_line1!,
+          address_line2: locationData.address_line2 || null,
+          city: locationData.city!,
+          province: normalizedProvince,
+          postal_code: normalizedPostalCode,
+          latitude: locationData.latitude || null,
+          longitude: locationData.longitude || null,
+          is_default: false,
+        },
+        !name // Auto-generate name if not provided
+      );
+    } catch (error) {
+      console.error('Failed to save address:', error);
+      // Don't show error to user, just continue
+    }
+  };
+
   const handleContinue = async ({ skipGeocode = false }: { skipGeocode?: boolean } = {}) => {
     // Validate required selections (detailer is optional - will be auto-assigned after payment)
     if (!selectedDateValue || !selectedTime) {
@@ -204,34 +253,90 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     setValidationErrors({});
     setGeocodeError(null);
 
+    // Check if this is a new address (not from saved addresses)
+    const isNewAddress = !selectedSavedAddressId;
+    const addressExists = addresses.some(
+      (a) =>
+        a.address_line1.toLowerCase() === locationData.address_line1?.toLowerCase() &&
+        a.city.toLowerCase() === locationData.city?.toLowerCase() &&
+        a.province === normalizedProvince &&
+        a.postal_code === normalizedPostalCode
+    );
+
     const shouldAttemptGeocode = geocodingEnabled && !skipGeocode;
 
-    if (shouldAttemptGeocode) {
-      setIsGeocoding(true);
-      try {
-        // Build full address string for geocoding
-        const fullAddress = `${locationData.address_line1}, ${locationData.city}, ${normalizedProvince} ${normalizedPostalCode}, Canada`;
+    const proceedWithGeocode = async () => {
+      if (shouldAttemptGeocode) {
+        setIsGeocoding(true);
+        try {
+          // Build full address string for geocoding
+          const fullAddress = `${locationData.address_line1}, ${locationData.city}, ${normalizedProvince} ${normalizedPostalCode}, Canada`;
 
-        // Geocode the address
-        const geocodeResult = await geocodeAddress(fullAddress);
+          // Geocode the address
+          const geocodeResult = await geocodeAddress(fullAddress);
 
+          // Update location data with coordinates
+          setLocationData((prev) => ({
+            ...prev,
+            latitude: geocodeResult.latitude,
+            longitude: geocodeResult.longitude,
+          }));
+
+          finalizeSelection(normalizedProvince, normalizedPostalCode, {
+            latitude: geocodeResult.latitude,
+            longitude: geocodeResult.longitude,
+          });
+          setIsGeocoding(false);
+        } catch (error) {
+          setIsGeocoding(false);
+          const errorMessage = error instanceof Error ? error.message : 'Failed to verify address. Please check and try again.';
+          setGeocodeError(errorMessage);
+          Alert.alert('Address Verification Failed', errorMessage);
+        }
+      } else {
         finalizeSelection(normalizedProvince, normalizedPostalCode, {
-          latitude: geocodeResult.latitude,
-          longitude: geocodeResult.longitude,
+          latitude: null,
+          longitude: null,
         });
-        setIsGeocoding(false);
-      } catch (error) {
-        setIsGeocoding(false);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to verify address. Please check and try again.';
-        setGeocodeError(errorMessage);
-        Alert.alert('Address Verification Failed', errorMessage);
       }
+    };
+
+    // If it's a new address and doesn't exist, prompt to save
+    if (isNewAddress && !addressExists) {
+      Alert.alert(
+        'Save Address?',
+        'Would you like to save this address for future bookings?',
+        [
+          {
+            text: 'Skip',
+            style: 'cancel',
+            onPress: proceedWithGeocode,
+          },
+          {
+            text: 'Save',
+            onPress: () => {
+              setShowNamePrompt(true);
+            },
+          },
+        ]
+      );
     } else {
-      finalizeSelection(normalizedProvince, normalizedPostalCode, {
-        latitude: null,
-        longitude: null,
-      });
+      proceedWithGeocode();
     }
+  };
+
+  // Handle saving address with name
+  const handleSaveAddressWithName = async () => {
+    setShowNamePrompt(false);
+    await handleSaveNewAddress(addressNameInput.trim() || undefined);
+    setAddressNameInput('');
+    // Continue with booking
+    const normalizedProvince = normalizeProvince(locationData.province || '');
+    const normalizedPostalCode = normalizePostalCode(locationData.postal_code || '');
+    finalizeSelection(normalizedProvince, normalizedPostalCode, {
+      latitude: locationData.latitude || null,
+      longitude: locationData.longitude || null,
+    });
   };
 
   const handleBypassVerification = () => {
@@ -607,6 +712,59 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             {locationExpanded && (
               <View style={styles.expandedContent}>
                 <View style={styles.locationCard}>
+                  {/* Saved Addresses Section */}
+                  {addresses.length > 0 && (
+                    <View style={styles.savedAddressesSection}>
+                      <Text style={styles.savedAddressesTitle}>Saved Addresses</Text>
+                      <View style={styles.savedAddressesList}>
+                        {addresses.map((address) => {
+                          const isSelected = selectedSavedAddressId === address.id;
+                          const addressText = `${address.address_line1}, ${address.city}, ${address.province} ${address.postal_code}`;
+                          return (
+                            <TouchableOpacity
+                              key={address.id}
+                              onPress={() => handleSelectSavedAddress(address.id)}
+                              activeOpacity={0.8}
+                              style={[
+                                styles.savedAddressCard,
+                                isSelected && styles.savedAddressCardSelected,
+                              ]}
+                            >
+                              {isSelected && (
+                                <View style={styles.savedAddressCheckmark}>
+                                  <Ionicons name="checkmark" size={14} color="#050B12" />
+                                </View>
+                              )}
+                              <Ionicons
+                                name="location"
+                                size={20}
+                                color={isSelected ? '#6FF0C4' : '#1DA4F3'}
+                                style={styles.savedAddressIcon}
+                              />
+                              <View style={styles.savedAddressInfo}>
+                                <Text style={styles.savedAddressName}>{address.name}</Text>
+                                <Text
+                                  style={[
+                                    styles.savedAddressText,
+                                    isSelected && styles.savedAddressTextSelected,
+                                  ]}
+                                  numberOfLines={2}
+                                >
+                                  {addressText}
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                      <View style={styles.divider}>
+                        <View style={styles.dividerLine} />
+                        <Text style={styles.dividerText}>OR</Text>
+                        <View style={styles.dividerLine} />
+                      </View>
+                    </View>
+                  )}
+
                   {/* Street Address with Autocomplete */}
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>Street Address</Text>
@@ -622,6 +780,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                         value={locationData.address_line1}
                         onChangeText={(text) => {
                           setLocationData({ ...locationData, address_line1: text });
+                          setSelectedSavedAddressId(null); // Clear selection when manually editing
                           if (validationErrors.address_line1) {
                             setValidationErrors({ ...validationErrors, address_line1: undefined });
                           }
@@ -722,6 +881,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                       value={locationData.city}
                       onChangeText={(text) => {
                         setLocationData({ ...locationData, city: text });
+                        setSelectedSavedAddressId(null); // Clear selection when manually editing
                         if (validationErrors.city) {
                           setValidationErrors({ ...validationErrors, city: undefined });
                         }
@@ -749,6 +909,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                         onChangeText={(text) => {
                           const normalized = normalizeProvince(text);
                           setLocationData({ ...locationData, province: normalized });
+                          setSelectedSavedAddressId(null); // Clear selection when manually editing
                           if (validationErrors.province) {
                             setValidationErrors({ ...validationErrors, province: undefined });
                           }
@@ -772,6 +933,7 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                         onChangeText={(text) => {
                           const normalized = normalizePostalCode(text);
                           setLocationData({ ...locationData, postal_code: normalized });
+                          setSelectedSavedAddressId(null); // Clear selection when manually editing
                           if (validationErrors.postal_code) {
                             setValidationErrors({ ...validationErrors, postal_code: undefined });
                           }
@@ -981,6 +1143,50 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             : undefined
         }
       />
+
+      {/* Name Prompt Modal */}
+      {showNamePrompt && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Name Your Address</Text>
+            <Text style={styles.modalSubtitle}>
+              Give this address a name to save it for future bookings (optional)
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="e.g., Home, Work, Office"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              value={addressNameInput}
+              onChangeText={setAddressNameInput}
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowNamePrompt(false);
+                  setAddressNameInput('');
+                  // Continue without saving
+                  const normalizedProvince = normalizeProvince(locationData.province || '');
+                  const normalizedPostalCode = normalizePostalCode(locationData.postal_code || '');
+                  finalizeSelection(normalizedProvince, normalizedPostalCode, {
+                    latitude: locationData.latitude || null,
+                    longitude: locationData.longitude || null,
+                  });
+                }}
+                style={[styles.modalButton, styles.modalButtonCancel]}
+              >
+                <Text style={styles.modalButtonCancelText}>Skip</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveAddressWithName}
+                style={[styles.modalButton, styles.modalButtonSave]}
+              >
+                <Text style={styles.modalButtonSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -1575,6 +1781,152 @@ const styles = StyleSheet.create({
   skipVerificationButtonText: {
     color: '#FFA500',
     fontSize: 13,
+    fontWeight: '600',
+  },
+  savedAddressesSection: {
+    marginBottom: 24,
+  },
+  savedAddressesTitle: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  savedAddressesList: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  savedAddressCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0A1A2F',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    position: 'relative',
+  },
+  savedAddressCardSelected: {
+    borderWidth: 2,
+    borderColor: '#6FF0C4',
+    backgroundColor: 'rgba(111,240,196,0.05)',
+  },
+  savedAddressCheckmark: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#6FF0C4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  savedAddressIcon: {
+    marginRight: 12,
+  },
+  savedAddressInfo: {
+    flex: 1,
+  },
+  savedAddressName: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  savedAddressText: {
+    color: '#C6CFD9',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  savedAddressTextSelected: {
+    color: '#C6CFD9',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  dividerText: {
+    color: '#C6CFD9',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(5, 11, 18, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalContent: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 24,
+    padding: 24,
+    width: '85%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  modalTitle: {
+    color: '#F5F7FA',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  modalInput: {
+    backgroundColor: '#050B12',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: '#F5F7FA',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: '#0A1A2F',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  modalButtonCancelText: {
+    color: '#C6CFD9',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalButtonSave: {
+    backgroundColor: '#1DA4F3',
+  },
+  modalButtonSaveText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

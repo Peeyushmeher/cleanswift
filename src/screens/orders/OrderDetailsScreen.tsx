@@ -74,7 +74,9 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
   const rebookAvailable = booking?.status === 'completed' && Boolean(booking?.detailer);
   
   // Check if booking can be cancelled by user
-  const canCancel = booking && ['pending', 'requires_payment', 'paid'].includes(booking.status) && !booking.detailer;
+  // Users can cancel bookings up to in_progress status
+  // Cannot cancel: completed, cancelled, no_show (final states)
+  const canCancel = booking && ['pending', 'requires_payment', 'paid', 'offered', 'accepted', 'in_progress'].includes(booking.status);
 
   const handleCancel = () => {
     if (!booking) return;
@@ -114,7 +116,29 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
                 { cancelable: false }
               );
             } catch (err) {
-              const errorMessage = err instanceof Error ? err.message : 'Failed to cancel booking';
+              let errorMessage = 'Failed to cancel booking';
+              
+              if (err instanceof Error) {
+                const errorText = err.message.toLowerCase();
+                
+                // Provide more descriptive error messages based on the error
+                if (errorText.includes('not allowed') || errorText.includes('transition')) {
+                  if (booking.status === 'completed') {
+                    errorMessage = 'Cannot cancel: This booking is already completed.';
+                  } else if (booking.status === 'cancelled') {
+                    errorMessage = 'This booking is already cancelled.';
+                  } else if (booking.status === 'no_show') {
+                    errorMessage = 'Cannot cancel: This booking has been marked as no show.';
+                  } else {
+                    errorMessage = `Cannot cancel: ${err.message}`;
+                  }
+                } else if (errorText.includes('not found')) {
+                  errorMessage = 'Booking not found. Please refresh and try again.';
+                } else {
+                  errorMessage = err.message;
+                }
+              }
+              
               Alert.alert('Error', errorMessage);
             } finally {
               setIsCancelling(false);

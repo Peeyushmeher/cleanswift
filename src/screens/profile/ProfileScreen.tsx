@@ -18,6 +18,7 @@ const menuSections = [
     items: [
       { icon: 'person' as const, label: 'Personal Info', action: 'edit-profile' },
       { icon: 'car-sport' as const, label: 'Manage Cars', action: 'manage-cars' },
+      { icon: 'location' as const, label: 'Manage Addresses', action: 'manage-addresses' },
       { icon: 'card' as const, label: 'Payment Methods', action: 'payment' },
     ],
   },
@@ -50,6 +51,9 @@ export default function ProfileScreen({ navigation }: Props) {
         break;
       case 'manage-cars':
         navigation.navigate('SelectCar');
+        break;
+      case 'manage-addresses':
+        navigation.navigate('ManageAddresses');
         break;
       case 'payment':
         // TODO: Navigate to payment methods screen when implemented
