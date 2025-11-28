@@ -16,7 +16,7 @@ interface UseProfileCompletenessReturn {
  * - full_name is not null/empty
  * - phone is not null/empty
  * - At least one car exists
- * - address_line1, city, province, postal_code are all not null/empty
+ * - At least one address exists in user_addresses table
  */
 export function useProfileCompleteness(): UseProfileCompletenessReturn {
   const { user } = useAuth();
@@ -40,7 +40,7 @@ export function useProfileCompleteness(): UseProfileCompletenessReturn {
       // Fetch profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, phone, address_line1, city, province, postal_code')
+        .select('full_name, phone')
         .eq('id', user.id)
         .maybeSingle(); // Use maybeSingle() instead of single() to handle missing profiles
 
@@ -61,19 +61,25 @@ export function useProfileCompleteness(): UseProfileCompletenessReturn {
         throw carsError;
       }
 
+      // Fetch addresses from user_addresses table
+      const { data: addresses, error: addressesError } = await supabase
+        .from('user_addresses')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (addressesError) {
+        throw addressesError;
+      }
+
       // Build missing items array
       const missing: string[] = [];
 
-      // If no profile exists, all fields are missing
+      // If no profile exists, all profile fields are missing
       if (!profile) {
         missing.push('Profile');
         missing.push('Full name');
         missing.push('Phone number');
-        missing.push('At least one vehicle');
-        missing.push('Address');
-        missing.push('City');
-        missing.push('Province');
-        missing.push('Postal code');
       } else {
         if (!profile.full_name || profile.full_name.trim() === '') {
           missing.push('Full name');
@@ -84,26 +90,14 @@ export function useProfileCompleteness(): UseProfileCompletenessReturn {
         }
       }
 
+      // Check for cars (always check, regardless of profile existence)
       if (!cars || cars.length === 0) {
         missing.push('At least one vehicle');
       }
 
-      if (profile) {
-        if (!profile.address_line1 || profile.address_line1.trim() === '') {
-          missing.push('Address');
-        }
-
-        if (!profile.city || profile.city.trim() === '') {
-          missing.push('City');
-        }
-
-        if (!profile.province || profile.province.trim() === '') {
-          missing.push('Province');
-        }
-
-        if (!profile.postal_code || profile.postal_code.trim() === '') {
-          missing.push('Postal code');
-        }
+      // Check for address in user_addresses table (always check, regardless of profile existence)
+      if (!addresses || addresses.length === 0) {
+        missing.push('Address');
       }
 
       setMissingItems(missing);
@@ -114,6 +108,7 @@ export function useProfileCompleteness(): UseProfileCompletenessReturn {
         missingItems: missing,
         hasProfile: !!profile,
         hasCars: !!(cars && cars.length > 0),
+        hasAddress: !!(addresses && addresses.length > 0),
       });
     } catch (error) {
       console.error('Error checking profile completeness:', error);

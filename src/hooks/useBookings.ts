@@ -192,6 +192,18 @@ export function useBookings(): UseBookingsReturn {
         .order('created_at', { ascending: false });
 
       if (fetchError) {
+        // Check if it's an authentication error (invalid refresh token, etc.)
+        if (fetchError.message?.includes('Refresh Token') || 
+            fetchError.message?.includes('refresh_token') ||
+            fetchError.message?.includes('Invalid Refresh Token') ||
+            fetchError.code === 'PGRST301' || // PostgREST unauthorized
+            fetchError.status === 401) {
+          console.warn('Authentication error in useBookings:', fetchError.message);
+          // The AuthContext will handle clearing the session via onAuthStateChange
+          // Just clear the data and set a user-friendly error
+          setData([]);
+          throw new Error('Your session has expired. Please sign in again.');
+        }
         throw new Error(fetchError.message);
       }
 

@@ -14,6 +14,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useProfileCompleteness } from '../../hooks/useProfileCompleteness';
+import { useUserAddresses } from '../../hooks/useUserAddresses';
+import { normalizePostalCode, normalizeProvince } from '../../utils/addressValidation';
+import { geocodeAddress, isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import { supabase } from '../../lib/supabase';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -33,6 +36,7 @@ export default function OnboardingWizard() {
   const { user } = useAuth();
   const { profile, refetch: refetchProfile } = useUserProfile();
   const { isComplete, refetch: refetchCompleteness } = useProfileCompleteness();
+  const { addAddress } = useUserAddresses();
 
   // Navigate to Main when profile becomes complete
   useFocusEffect(
@@ -113,23 +117,86 @@ export default function OnboardingWizard() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: fullName.trim(),
-          email: email.trim() || user.email,
-          phone: phone.trim(),
-          updated_at: new Date().toISOString(),
-        });
+      // Verify the user exists in auth.users by getting fresh user data
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authUser) {
+        console.error('Auth user verification failed:', authError);
+        Alert.alert('Authentication Error', 'Your session is invalid. Please sign in again.');
+        // Sign out to clear invalid session
+        await supabase.auth.signOut();
+        return;
+      }
 
-      if (error) throw error;
+      // Always use the auth user's email to avoid unique constraint violations
+      const userEmail = authUser.email || email.trim();
+      const userId = authUser.id;
+      
+      console.log('Attempting to save profile:', {
+        id: userId,
+        full_name: fullName.trim(),
+        email: userEmail,
+        phone: phone.trim(),
+      });
+
+      // Check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      let result;
+      if (existingProfile) {
+        // Profile exists, use UPDATE
+        result = await supabase
+          .from('profiles')
+          .update({
+            full_name: fullName.trim(),
+            email: userEmail, // Always use auth user's email
+            phone: phone.trim(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId)
+          .select();
+      } else {
+        // Profile doesn't exist, use INSERT
+        result = await supabase
+          .from('profiles')
+          .insert({
+            id: userId, // Use verified auth user ID
+            full_name: fullName.trim(),
+            email: userEmail, // Always use auth user's email
+            phone: phone.trim(),
+            role: 'user', // Set default role
+            updated_at: new Date().toISOString(),
+          })
+          .select();
+      }
+
+      if (result.error) {
+        console.error('Supabase error saving profile:', {
+          code: result.error.code,
+          message: result.error.message,
+          details: result.error.details,
+          hint: result.error.hint,
+        });
+        throw result.error;
+      }
+
+      console.log('Profile saved successfully:', result.data);
 
       // Refetch profile so completeness check updates
       await refetchProfile();
       setCurrentStep(1);
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to save profile');
+      console.error('Error in handleStep1Continue:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (typeof error === 'object' && error !== null && 'message' in error)
+          ? String(error.message)
+          : 'Failed to save profile';
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -184,24 +251,44 @@ export default function OnboardingWizard() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
+      // Normalize address fields
+      const normalizedProvince = normalizeProvince(province.trim());
+      const normalizedPostalCode = normalizePostalCode(postalCode.trim());
+
+      // Attempt to geocode the address if Google Maps is configured
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+
+      if (isGoogleMapsConfigured) {
+        try {
+          const fullAddress = `${addressLine1.trim()}, ${city.trim()}, ${normalizedProvince} ${normalizedPostalCode}, Canada`;
+          const geocodeResult = await geocodeAddress(fullAddress);
+          latitude = geocodeResult.latitude;
+          longitude = geocodeResult.longitude;
+          console.log('Address geocoded successfully:', { latitude, longitude });
+        } catch (geocodeError) {
+          // If geocoding fails, continue without coordinates (not critical)
+          console.warn('Geocoding failed during onboarding, continuing without coordinates:', geocodeError);
+        }
+      }
+
+      // Save address to user_addresses table as "Home" with is_default=true
+      await addAddress(
+        {
+          name: 'Home',
           address_line1: addressLine1.trim(),
           address_line2: addressLine2.trim() || null,
           city: city.trim(),
-          province: province.trim(),
-          postal_code: postalCode.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+          province: normalizedProvince,
+          postal_code: normalizedPostalCode,
+          latitude,
+          longitude,
+          is_default: true,
+        },
+        false // Don't auto-generate name, we're using "Home"
+      );
 
-      if (error) {
-        console.error('Error saving address:', error);
-        throw error;
-      }
-
-      console.log('Address saved successfully');
+      console.log('Address saved successfully to user_addresses as "Home"');
 
       // Refetch profile first to ensure it's updated
       await refetchProfile();

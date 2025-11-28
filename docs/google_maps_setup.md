@@ -21,7 +21,7 @@ This guide will help you set up the Google Maps API key needed for address verif
 4. **Create API Key**
    - Go to "APIs & Services" > "Credentials"
    - Click "Create Credentials" > "API Key"
-   - Copy the API key (it will look like: `AIzaSy...`)
+   - Copy the API key it will look like: AIzaSyATSfaGFpLgtSFQpZt2-xexbmuznKWe2qY
 
 5. **Restrict the API Key (Recommended for Production)**
    - Click on the newly created API key
@@ -29,9 +29,12 @@ This guide will help you set up the Google Maps API key needed for address verif
    - Choose only:
      - Geocoding API
      - Places API
-   - Under "Application restrictions", you can restrict by:
-     - iOS bundle ID: `com.cleanswift.app`
-     - Android package name (if you have one)
+   - Under "Application restrictions":
+     - **For Development/Testing**: Select "None" (no restrictions) to test quickly
+     - **For Production**: Select "iOS apps" or "Android apps" (NOT "IP addresses")
+       - iOS bundle ID: `com.cleanswift.app`
+       - Android package name: (if you have one)
+     - ⚠️ **Important**: Do NOT use "IP addresses" restriction for mobile apps - it will cause REQUEST_DENIED errors
    - Click "Save"
 
 ## Step 2: Add API Key to Your Project
@@ -42,12 +45,12 @@ This guide will help you set up the Google Maps API key needed for address verif
 
 2. **Add your API key:**
    ```bash
-   EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+   EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyATSfaGFpLgtSFQpZt2-xexbmuznKWe2qY
    ```
 
    Example:
    ```bash
-   EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyAbCdEfGhIjKlMnOpQrStUvWxYz1234567890
+   EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSyATSfaGFpLgtSFQpZt2-xexbmuznKWe2qY
    ```
 
 3. **Make sure `.env` is in `.gitignore`** (it should be already)
@@ -98,7 +101,13 @@ expo start
 ### Error: "REQUEST_DENIED" or "API key not valid"
 - ✅ Make sure you enabled both Geocoding API and Places API
 - ✅ Check that your API key restrictions allow these APIs
+- ✅ **Most Common Issue**: If you see "This IP, site or mobile application is not authorized":
+  - Go to your API key settings in Google Cloud Console
+  - Under "Application restrictions", change from "IP addresses" to "None" (for testing) or "iOS apps"/"Android apps" (for production)
+  - For iOS apps, add bundle ID: `com.cleanswift.app`
+  - ⚠️ Mobile apps cannot use IP address restrictions - use bundle ID/package name instead
 - ✅ Verify the API key is correct (no extra spaces or quotes)
+- ✅ Make sure billing is enabled (required even for free tier)
 
 ### Autocomplete not showing suggestions
 - ✅ Make sure Places API is enabled
