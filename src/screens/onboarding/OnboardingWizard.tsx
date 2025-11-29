@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,13 +15,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useProfileCompleteness } from '../../hooks/useProfileCompleteness';
 import { useUserAddresses } from '../../hooks/useUserAddresses';
+import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 import { normalizePostalCode, normalizeProvince } from '../../utils/addressValidation';
-import { geocodeAddress, isGoogleMapsConfigured } from '../../services/googleGeocoding';
+import { isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import { supabase } from '../../lib/supabase';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
-import { useCallback } from 'react';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 
@@ -83,6 +83,22 @@ export default function OnboardingWizard() {
   const [city, setCity] = useState('');
   const [province, setProvince] = useState('');
   const [postalCode, setPostalCode] = useState('');
+  
+  // Address autocomplete
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const addressInputRef = useRef<TextInput>(null);
+  const geocodingEnabled = isGoogleMapsConfigured;
+  const {
+    suggestions,
+    isLoading: isAutocompleteLoading,
+    searchAddress,
+    selectPlace,
+    clearSuggestions,
+  } = useAddressAutocomplete({
+    debounceMs: 300,
+    minInputLength: 3,
+    enabled: geocodingEnabled,
+  });
 
   // Pre-fill data from existing profile (only once on mount)
   // This prevents the form from being reset when profile refetches after saving
@@ -215,6 +231,47 @@ export default function OnboardingWizard() {
 
     setLoading(true);
     try {
+      // Find all primary cars with no bookings (from incomplete onboarding attempts)
+      const { data: primaryCars, error: fetchError } = await supabase
+        .from('cars')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_primary', true);
+
+      if (fetchError) {
+        console.error('Error fetching primary cars:', fetchError);
+        // Continue anyway - don't block onboarding
+      } else if (primaryCars && primaryCars.length > 0) {
+        // Check which cars have no bookings
+        const carIds = primaryCars.map((c) => c.id);
+        const { data: bookings } = await supabase
+          .from('bookings')
+          .select('car_id')
+          .eq('user_id', user.id)
+          .in('car_id', carIds);
+
+        const carsWithBookings = new Set((bookings || []).map((b) => b.car_id));
+        const carsToDelete = primaryCars
+          .filter((c) => !carsWithBookings.has(c.id))
+          .map((c) => c.id);
+
+        // Delete primary cars with no bookings
+        if (carsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('cars')
+            .delete()
+            .in('id', carsToDelete);
+
+          if (deleteError) {
+            console.error('Error deleting incomplete onboarding cars:', deleteError);
+            // Continue anyway - don't block onboarding
+          } else {
+            console.log(`Deleted ${carsToDelete.length} incomplete onboarding car(s)`);
+          }
+        }
+      }
+
+      // Now insert the new car
       const { error } = await supabase.from('cars').insert({
         user_id: user.id,
         make: make.trim(),
@@ -238,6 +295,10 @@ export default function OnboardingWizard() {
     }
   };
 
+  // Track lat/lng from autocomplete selection
+  const [selectedLatitude, setSelectedLatitude] = useState<number | null>(null);
+  const [selectedLongitude, setSelectedLongitude] = useState<number | null>(null);
+
   const handleStep3Continue = async () => {
     if (!addressLine1.trim() || !city.trim() || !province.trim() || !postalCode.trim()) {
       Alert.alert('Required Fields', 'Please fill in all address fields');
@@ -255,21 +316,12 @@ export default function OnboardingWizard() {
       const normalizedProvince = normalizeProvince(province.trim());
       const normalizedPostalCode = normalizePostalCode(postalCode.trim());
 
-      // Attempt to geocode the address if Google Maps is configured
-      let latitude: number | null = null;
-      let longitude: number | null = null;
+      // Use coordinates from autocomplete if available, no need for additional geocoding
+      const latitude = selectedLatitude;
+      const longitude = selectedLongitude;
 
-      if (isGoogleMapsConfigured) {
-        try {
-          const fullAddress = `${addressLine1.trim()}, ${city.trim()}, ${normalizedProvince} ${normalizedPostalCode}, Canada`;
-          const geocodeResult = await geocodeAddress(fullAddress);
-          latitude = geocodeResult.latitude;
-          longitude = geocodeResult.longitude;
-          console.log('Address geocoded successfully:', { latitude, longitude });
-        } catch (geocodeError) {
-          // If geocoding fails, continue without coordinates (not critical)
-          console.warn('Geocoding failed during onboarding, continuing without coordinates:', geocodeError);
-        }
+      if (latitude && longitude) {
+        console.log('Using coordinates from autocomplete:', { latitude, longitude });
       }
 
       // Save address to user_addresses table as "Home" with is_default=true
@@ -456,20 +508,90 @@ export default function OnboardingWizard() {
   );
 
   const renderStep3 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <Text style={styles.stepTitle}>Add your service address</Text>
       <Text style={styles.stepSubtitle}>Where should we provide the service?</Text>
 
       <View style={styles.form}>
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Address Line 1 *</Text>
-          <TextInput
-            value={addressLine1}
-            onChangeText={setAddressLine1}
-            placeholder="Street address"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
+          <View style={styles.inputWrapper}>
+            <TextInput
+              ref={addressInputRef}
+              value={addressLine1}
+              onChangeText={(value) => {
+                setAddressLine1(value);
+                // Clear stored coordinates when user types manually
+                setSelectedLatitude(null);
+                setSelectedLongitude(null);
+                if (geocodingEnabled && value.length >= 3) {
+                  setShowAutocomplete(true);
+                  searchAddress(value);
+                } else {
+                  setShowAutocomplete(false);
+                  clearSuggestions();
+                }
+              }}
+              onFocus={() => {
+                if (geocodingEnabled && addressLine1.length >= 3) {
+                  setShowAutocomplete(true);
+                  searchAddress(addressLine1);
+                }
+              }}
+              onBlur={() => {
+                // Delay hiding autocomplete to allow selection
+                setTimeout(() => setShowAutocomplete(false), 200);
+              }}
+              placeholder="Start typing to search..."
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+            {isAutocompleteLoading && (
+              <View style={styles.autocompleteLoader}>
+                <ActivityIndicator size="small" color="#1DA4F3" />
+              </View>
+            )}
+          </View>
+          
+          {/* Autocomplete Suggestions Dropdown */}
+          {geocodingEnabled && showAutocomplete && suggestions.length > 0 && (
+            <View style={styles.autocompleteDropdown}>
+              {suggestions.map((suggestion) => (
+                <TouchableOpacity
+                  key={suggestion.placeId}
+                  style={styles.autocompleteItem}
+                  onPress={async () => {
+                    const placeDetails = await selectPlace(suggestion.placeId);
+                    if (placeDetails) {
+                      // Auto-fill form fields from place details
+                      const streetNumber = placeDetails.addressComponents.streetNumber || '';
+                      const streetName = placeDetails.addressComponents.streetName || '';
+                      const newAddressLine1 = streetNumber && streetName
+                        ? `${streetNumber} ${streetName}`
+                        : placeDetails.formattedAddress.split(',')[0];
+
+                      setAddressLine1(newAddressLine1);
+                      setCity(placeDetails.addressComponents.city || city);
+                      setProvince(placeDetails.addressComponents.province || province);
+                      setPostalCode(placeDetails.addressComponents.postalCode || postalCode);
+                      
+                      // Store coordinates from autocomplete
+                      setSelectedLatitude(placeDetails.latitude);
+                      setSelectedLongitude(placeDetails.longitude);
+                      
+                      setShowAutocomplete(false);
+                    }
+                  }}
+                >
+                  <Ionicons name="location" size={18} color="#1DA4F3" style={styles.autocompleteIcon} />
+                  <View style={styles.autocompleteTextContainer}>
+                    <Text style={styles.autocompleteMainText}>{suggestion.mainText}</Text>
+                    <Text style={styles.autocompleteSecondaryText}>{suggestion.secondaryText}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.fieldContainer}>
@@ -682,6 +804,53 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     color: '#F5F7FA',
     fontSize: 16,
+  },
+  inputWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  autocompleteLoader: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+  },
+  autocompleteDropdown: {
+    marginTop: 8,
+    backgroundColor: '#0A1A2F',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    maxHeight: 200,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  autocompleteItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  autocompleteIcon: {
+    marginRight: 12,
+  },
+  autocompleteTextContainer: {
+    flex: 1,
+  },
+  autocompleteMainText: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  autocompleteSecondaryText: {
+    color: '#C6CFD9',
+    fontSize: 13,
   },
   buttonContainer: {
     flexDirection: 'row',

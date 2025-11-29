@@ -42,6 +42,13 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  // Use getUser() instead of getSession() for more reliable authentication
+  // getSession() reads from cookies which may not be immediately updated after login
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  
+  // Get session separately for role checks
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -50,55 +57,59 @@ export async function proxy(request: NextRequest) {
 
   // Protect detailer routes
   if (pathname.startsWith('/detailer')) {
-    if (!session) {
+    if (!user || !session) {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
 
     // Check user role
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
-    if (!profile || (profile.role !== 'detailer' && profile.role !== 'admin')) {
+    if (profileError || !profile || (profile.role !== 'detailer' && profile.role !== 'admin')) {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
   }
 
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
-    if (!session) {
+    if (!user || !session) {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
 
     // Check user role
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'admin') {
+    if (profileError || !profile || profile.role !== 'admin') {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
   }
 
   // Redirect authenticated users away from login page
-  if (pathname.startsWith('/auth/login') && session) {
-    const { data: profile } = await supabase
+  if (pathname.startsWith('/auth/login') && user && session) {
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
-    if (profile) {
+    // Only redirect if we successfully got the profile
+    // If there's an error, let the login page handle it (might be RLS issue)
+    if (profile && !profileError) {
       if (profile.role === 'admin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       } else if (profile.role === 'detailer') {
         return NextResponse.redirect(new URL('/detailer/dashboard', request.url));
       }
     }
+    // If profile query failed, don't redirect - let user stay on login page
+    // This prevents redirect loops when RLS blocks the query
   }
 
   return supabaseResponse;

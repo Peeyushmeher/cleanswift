@@ -39,7 +39,13 @@ export async function getUserProfile(): Promise<UserProfile | null> {
     .eq('id', session.user.id)
     .single();
 
-  if (error || !data) {
+  if (error) {
+    console.error('Profile query error in getUserProfile:', error.message, error.code, error.details);
+    return null;
+  }
+  
+  if (!data) {
+    console.error('No profile found for user:', session.user.id);
     return null;
   }
 

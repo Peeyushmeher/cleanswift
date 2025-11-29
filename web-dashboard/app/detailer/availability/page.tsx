@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -12,33 +12,132 @@ interface AvailabilitySlot {
   is_active: boolean;
 }
 
+interface UserProfile {
+  id: string;
+  role: 'user' | 'detailer' | 'admin';
+}
+
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+// Permission-related error messages from the RPC function
+const PERMISSION_ERRORS = [
+  'Only detailers and admins can view availability',
+  'Only detailers can set availability',
+  'Not authenticated',
+  'User profile not found',
+  'Detailer profile not found',
+];
 
 export default function AvailabilityPage() {
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [hasDetailerRecord, setHasDetailerRecord] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchAvailability();
-  }, []);
+  // Check if error is permission-related
+  const isPermissionError = (errorMessage: string): boolean => {
+    return PERMISSION_ERRORS.some(permError => 
+      errorMessage.toLowerCase().includes(permError.toLowerCase())
+    );
+  };
 
-  const fetchAvailability = async () => {
+  // Verify user authentication and role
+  const verifyUser = useCallback(async (): Promise<UserProfile | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      router.push('/auth/login');
+      return null;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!profile) {
+      router.push('/auth/login');
+      return null;
+    }
+
+    // Check if user has permission to access this page
+    if (profile.role !== 'detailer' && profile.role !== 'admin') {
+      router.push('/auth/login');
+      return null;
+    }
+
+    setIsAdmin(profile.role === 'admin');
+    return profile as UserProfile;
+  }, [supabase, router]);
+
+  // Check if detailer record exists for this user
+  const checkDetailerRecord = useCallback(async (profileId: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from('detailers')
+      .select('id')
+      .eq('profile_id', profileId)
+      .single();
+
+    return !!data;
+  }, [supabase]);
+
+  const fetchAvailability = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
+
+      // First verify the user
+      const profile = await verifyUser();
+      if (!profile) return;
+
+      // Check if detailer record exists
+      const hasRecord = await checkDetailerRecord(profile.id);
+      setHasDetailerRecord(hasRecord);
+
+      // If admin without detailer record, show empty state (not an error)
+      if (profile.role === 'admin' && !hasRecord) {
+        setAvailability([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch availability
       const { data, error: fetchError } = await supabase.rpc('get_detailer_availability');
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        // Handle permission errors by redirecting
+        if (isPermissionError(fetchError.message)) {
+          router.push('/auth/login');
+          return;
+        }
+        throw fetchError;
+      }
+      
       setAvailability(data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load availability');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load availability';
+      
+      // Check for permission errors and redirect
+      if (isPermissionError(errorMessage)) {
+        router.push('/auth/login');
+        return;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, router, verifyUser, checkDetailerRecord]);
+
+  // Load availability on mount
+  useEffect(() => {
+    fetchAvailability();
+  }, [fetchAvailability]);
 
   const handleToggleDay = async (dayOfWeek: number) => {
     try {
@@ -56,7 +155,13 @@ export default function AvailabilityPage() {
           p_is_active: !existingSlot.is_active,
         });
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          if (isPermissionError(updateError.message)) {
+            router.push('/auth/login');
+            return;
+          }
+          throw updateError;
+        }
       } else {
         // Create new slot with default hours (9 AM - 5 PM)
         const { error: createError } = await supabase.rpc('set_detailer_availability', {
@@ -66,12 +171,23 @@ export default function AvailabilityPage() {
           p_is_active: true,
         });
 
-        if (createError) throw createError;
+        if (createError) {
+          if (isPermissionError(createError.message)) {
+            router.push('/auth/login');
+            return;
+          }
+          throw createError;
+        }
       }
 
       await fetchAvailability();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update availability');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update availability';
+      if (isPermissionError(errorMessage)) {
+        router.push('/auth/login');
+        return;
+      }
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -92,10 +208,21 @@ export default function AvailabilityPage() {
         p_is_active: existingSlot?.is_active ?? true,
       });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        if (isPermissionError(updateError.message)) {
+          router.push('/auth/login');
+          return;
+        }
+        throw updateError;
+      }
       await fetchAvailability();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update time');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update time';
+      if (isPermissionError(errorMessage)) {
+        router.push('/auth/login');
+        return;
+      }
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -113,6 +240,35 @@ export default function AvailabilityPage() {
     return (
       <div className="min-h-screen bg-[#050B12] text-white flex items-center justify-center">
         <div className="text-[#C6CFD9]">Loading availability...</div>
+      </div>
+    );
+  }
+
+  // Admin without detailer record - show informative message
+  if (isAdmin && !hasDetailerRecord) {
+    return (
+      <div className="min-h-screen bg-[#050B12] text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Availability Management</h1>
+            <p className="text-[#C6CFD9]">Set your weekly availability schedule</p>
+          </div>
+
+          <div className="bg-[#0A1A2F] border border-white/5 rounded-xl p-6">
+            <div className="text-center py-8">
+              <div className="text-[#C6CFD9] mb-4">
+                <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">Admin Account</h3>
+              <p className="text-[#C6CFD9] text-sm max-w-md mx-auto">
+                As an admin, you don&apos;t have personal availability to manage. 
+                To manage a detailer&apos;s availability, please access their profile directly.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
