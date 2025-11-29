@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
@@ -9,11 +8,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     setLoading(true);
     setError(null);
 
@@ -24,36 +23,24 @@ export default function LoginPage() {
       });
 
       if (signInError) {
-        setError(signInError.message);
+        console.error('Login error:', signInError);
+        setError(signInError.message || 'Failed to sign in. Please check your credentials.');
         setLoading(false);
         return;
       }
 
-      if (data.user) {
-        // Get user profile to determine role
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profile) {
-          if (profile.role === 'admin') {
-            router.push('/admin/dashboard');
-          } else if (profile.role === 'detailer') {
-            router.push('/detailer/dashboard');
-          } else {
-            setError('Access denied. This dashboard is for detailers and admins only.');
-            await supabase.auth.signOut();
-          }
-        } else {
-          setError('User profile not found.');
-          await supabase.auth.signOut();
-        }
+      if (!data.user) {
+        setError('Login failed: No user data returned');
+        setLoading(false);
+        return;
       }
+
+      // Login successful - do a full page navigation to ensure middleware sees new cookies
+      // Keep showing "Signing in..." while redirecting
+      window.location.href = '/detailer/dashboard';
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
+      console.error('Unexpected login error:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       setLoading(false);
     }
   };

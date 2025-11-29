@@ -2,6 +2,19 @@
 
 ## Quick Setup: Test Detailer Login
 
+### Pre-Seeded QA Detailer (Already Created)
+
+For convenience, a throwaway QA detailer account has already been created in Supabase. Use this when you just need to log in quickly without running any SQL:
+
+- **Email:** `test-detailer@cleanswift.dev`
+- **Password:** `TestDetailer123!`
+- **Role:** `detailer`
+- **Detailer ID:** Stored automatically (solo / no organization)
+
+> This account is meant for local/demo testing only. You can always reset the password by running the SQL snippet in this file (Step 2) or via Supabase Auth → Users.
+
+If you prefer to create your own detailer user, follow the steps below.
+
 ### Option 1: Create New Test Detailer Account (Recommended)
 
 **Step 1: Create Auth User via Supabase Dashboard**

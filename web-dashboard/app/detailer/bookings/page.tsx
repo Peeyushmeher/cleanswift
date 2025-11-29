@@ -22,6 +22,7 @@ export default async function DetailerBookingsPage() {
   if (detailerData?.id) {
     if (mode === 'organization' && organization && orgRole && ['owner', 'manager', 'dispatcher'].includes(orgRole)) {
       // Organization mode with permissions: Get all org bookings
+      // Include 'paid' status (unassigned) for dispatchers to assign
       const { data: bookings } = await supabase
         .from('bookings')
         .select(
@@ -53,6 +54,7 @@ export default async function DetailerBookingsPage() {
         `
         )
         .eq('organization_id', organization.id)
+        .in('status', ['paid', 'offered', 'accepted', 'in_progress', 'completed', 'cancelled'])
         .order('scheduled_date', { ascending: true })
         .order('scheduled_time_start', { ascending: true });
 

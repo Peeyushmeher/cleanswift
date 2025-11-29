@@ -8,7 +8,18 @@ Since you're logged in as admin, you can directly access the detailer dashboard:
 
 The middleware allows admins to access detailer routes, so this should work immediately.
 
-## Option 2: Create a Test Detailer Account
+## Option 2: Create or Use a Test Detailer Account
+
+### Pre-Seeded QA Detailer
+
+Already set up for local testing:
+
+- **Email:** `test-detailer@cleanswift.dev`
+- **Password:** `TestDetailer123!`
+
+Use this account whenever you just need a throwaway detailer user. You can reset the password in Supabase Auth if needed.
+
+### Create Your Own Detailer
 
 If you want to test with a detailer account:
 

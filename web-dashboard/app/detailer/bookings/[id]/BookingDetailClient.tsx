@@ -113,13 +113,13 @@ export default function BookingDetailClient({
             <h2 className="text-lg font-semibold text-white mb-4">Customer Information</h2>
             <div className="space-y-2 text-[#C6CFD9]">
               <div>
-                <strong>Name:</strong> {booking.user?.full_name}
+                <strong>Name:</strong> {booking.user?.full_name || booking.user_id || 'N/A'}
               </div>
               <div>
-                <strong>Phone:</strong> {booking.user?.phone}
+                <strong>Phone:</strong> {booking.user?.phone || 'N/A'}
               </div>
               <div>
-                <strong>Email:</strong> {booking.user?.email}
+                <strong>Email:</strong> {booking.user?.email || 'N/A'}
               </div>
             </div>
           </div>
@@ -128,13 +128,15 @@ export default function BookingDetailClient({
             <h2 className="text-lg font-semibold text-white mb-4">Vehicle Information</h2>
             <div className="space-y-2 text-[#C6CFD9]">
               <div>
-                <strong>Make/Model:</strong> {booking.car?.make} {booking.car?.model}
+                <strong>Make/Model:</strong> {booking.car?.make && booking.car?.model 
+                  ? `${booking.car.make} ${booking.car.model}` 
+                  : 'N/A'}
               </div>
               <div>
-                <strong>Year:</strong> {booking.car?.year}
+                <strong>Year:</strong> {booking.car?.year || 'N/A'}
               </div>
               <div>
-                <strong>License Plate:</strong> {booking.car?.license_plate}
+                <strong>License Plate:</strong> {booking.car?.license_plate || 'N/A'}
               </div>
             </div>
           </div>
@@ -185,6 +187,73 @@ export default function BookingDetailClient({
           <h2 className="text-lg font-semibold text-white mb-4">Contact Customer</h2>
           <ContactCustomer phone={booking.user?.phone} />
         </div>
+
+        {/* Accept Offer Button */}
+        {booking.status === 'offered' && (
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <h2 className="text-lg font-semibold text-white mb-4">Accept Offer</h2>
+            <p className="text-[#C6CFD9] mb-4">
+              This job has been offered to you. Accept it to add it to your schedule.
+            </p>
+            <button
+              onClick={async () => {
+                try {
+                  // For "offered" bookings that are already assigned, we need to use accept_booking
+                  // But accept_booking requires detailer_id to be NULL, so we need a different approach
+                  // Let's use a direct update that bypasses the RPC check for this specific case
+                  
+                  // First, get the current user's detailer record ID
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) {
+                    alert('Not authenticated');
+                    return;
+                  }
+
+                  const { data: detailerRecord } = await supabase
+                    .from('detailers')
+                    .select('id')
+                    .eq('profile_id', user.id)
+                    .single();
+
+                  if (!detailerRecord) {
+                    alert('Detailer record not found');
+                    return;
+                  }
+
+                  // Check if booking is assigned to this detailer
+                  if (booking.detailer_id !== detailerRecord.id) {
+                    alert('This booking is not assigned to you');
+                    return;
+                  }
+
+                  // Update status directly (since we've verified access)
+                  const { error } = await supabase
+                    .from('bookings')
+                    .update({ 
+                      status: 'accepted',
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', booking.id)
+                    .eq('detailer_id', detailerRecord.id);
+
+                  if (error) {
+                    console.error('Error accepting booking:', error);
+                    alert(`Failed to accept booking: ${error.message}`);
+                  } else {
+                    alert('Booking accepted! It will now appear in your schedule.');
+                    router.refresh();
+                  }
+                } catch (err) {
+                  console.error('Error accepting booking:', err);
+                  alert('Failed to accept booking. Please try again.');
+                }
+              }}
+              className="bg-[#32CE7A] hover:bg-[#2AB869] text-white font-semibold py-3 px-8 rounded-lg transition-colors text-lg"
+            >
+              Accept Offer
+            </button>
+          </div>
+        )}
 
         {canUpdateStatus && (
           <div className="mt-6 pt-6 border-t border-white/10">

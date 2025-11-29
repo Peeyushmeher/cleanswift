@@ -40,6 +40,8 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
   const showPriceSummary = route.params?.showPrice ?? true;
+  const testPaymentSecret = process.env.EXPO_PUBLIC_TEST_PAYMENT_SECRET;
+  const isTestPaymentEnabled = __DEV__ && !!testPaymentSecret;
 
   // Check if Apple Pay is available on the device
   useEffect(() => {
@@ -235,67 +237,92 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     }
   };
 
+  const markBookingAsPaidForTest = async (bookingId: string) => {
+    if (!testPaymentSecret) {
+      throw new Error('Test payment secret not configured');
+    }
+
+    const { error } = await supabase.functions.invoke('mark-test-payment', {
+      body: {
+        booking_id: bookingId,
+        test_token: testPaymentSecret,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to mark booking as paid.');
+    }
+  };
+
   const handleTestSkipPayment = async () => {
     if (isProcessing) return;
+    if (!isTestPaymentEnabled) {
+      Alert.alert('Test Payment Disabled', 'Enable dev mode and EXPO_PUBLIC_TEST_PAYMENT_SECRET to use this flow.');
+      return;
+    }
 
     try {
       setIsProcessing(true);
 
-      // Validate required booking data
-      if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
-        Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
-        return;
-      }
+      let bookingId: string;
+      let createdBookingInFlow = false;
 
-      // Format scheduled date and time
-      const scheduledDate = selectedDate.toISOString().split('T')[0];
-      const scheduledTime = selectedTimeSlot;
-
-      // Determine car_id: use selectedCar OR fetch user's primary car
-      let finalCarId = selectedCar?.id || null;
-
-      if (!finalCarId) {
-        const { data: primaryCar } = await supabase
-          .from('cars')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_primary', true)
-          .maybeSingle();
-
-        if (primaryCar) {
-          finalCarId = primaryCar.id;
+      if (route.params?.bookingId) {
+        bookingId = route.params.bookingId;
+      } else {
+        // Validate required booking data
+        if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
+          Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
+          return;
         }
+
+        const scheduledDate = selectedDate.toISOString().split('T')[0];
+        const scheduledTime = selectedTimeSlot;
+
+        let finalCarId = selectedCar?.id || null;
+
+        if (!finalCarId) {
+          const { data: primaryCar } = await supabase
+            .from('cars')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('is_primary', true)
+            .maybeSingle();
+
+          if (primaryCar) {
+            finalCarId = primaryCar.id;
+          }
+        }
+
+        if (!finalCarId) {
+          Alert.alert('Vehicle Required', 'Please add a vehicle to your profile before booking a service.');
+          return;
+        }
+
+        bookingId = await createBooking({
+          user_id: user.id,
+          service_id: selectedService.id,
+          car_id: finalCarId,
+          detailer_id: selectedDetailer?.id || null,
+          scheduled_date: scheduledDate,
+          scheduled_time_start: scheduledTime,
+          total_amount: priceBreakdown.totalAmount,
+          service_price: priceBreakdown.servicePrice,
+          addons_total: priceBreakdown.addonsTotal,
+          tax_amount: priceBreakdown.taxAmount,
+          address_line1: selectedLocation.address_line1,
+          address_line2: selectedLocation.address_line2 || null,
+          city: selectedLocation.city,
+          province: selectedLocation.province,
+          postal_code: selectedLocation.postal_code,
+          latitude: selectedLocation.latitude || null,
+          longitude: selectedLocation.longitude || null,
+          location_notes: selectedLocation.location_notes || null,
+        });
+        createdBookingInFlow = true;
       }
 
-      if (!finalCarId) {
-        Alert.alert('Vehicle Required', 'Please add a vehicle to your profile before booking a service.');
-        return;
-      }
-
-      // Create booking record (skip payment)
-      const bookingId = await createBooking({
-        user_id: user.id,
-        service_id: selectedService.id,
-        car_id: finalCarId,
-        detailer_id: selectedDetailer?.id || null,
-        scheduled_date: scheduledDate,
-        scheduled_time_start: scheduledTime,
-        total_amount: priceBreakdown.totalAmount,
-        service_price: priceBreakdown.servicePrice,
-        addons_total: priceBreakdown.addonsTotal,
-        tax_amount: priceBreakdown.taxAmount,
-        address_line1: selectedLocation.address_line1,
-        address_line2: selectedLocation.address_line2 || null,
-        city: selectedLocation.city,
-        province: selectedLocation.province,
-        postal_code: selectedLocation.postal_code,
-        latitude: selectedLocation.latitude || null,
-        longitude: selectedLocation.longitude || null,
-        location_notes: selectedLocation.location_notes || null,
-      });
-
-      // Create booking addons if any
-      if (selectedAddons.length > 0) {
+      if (selectedAddons.length > 0 && createdBookingInFlow) {
         const addonData = selectedAddons.map((addon) => ({
           id: addon.id,
           price: addon.price,
@@ -303,8 +330,8 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         await createBookingAddons(bookingId, addonData);
       }
 
-      // Skip payment and navigate directly to success screen
-      console.log('🧪 TEST: Skipping payment flow');
+      await markBookingAsPaidForTest(bookingId);
+      console.log('🧪 TEST: booking marked as paid via Edge Function');
       navigation.navigate('ServiceProgress');
     } catch (error) {
       console.error('Test skip payment error:', error);
@@ -484,11 +511,18 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           <TouchableOpacity
             onPress={handleTestSkipPayment}
             activeOpacity={0.8}
-            disabled={isProcessing}
-            style={[styles.testSkipButton, isProcessing && styles.testSkipButtonDisabled]}
+            disabled={isProcessing || !isTestPaymentEnabled}
+            style={[
+              styles.testSkipButton,
+              (isProcessing || !isTestPaymentEnabled) && styles.testSkipButtonDisabled,
+            ]}
           >
             <Text style={styles.testSkipButtonText}>
-              {isProcessing ? 'Processing...' : 'Test Skip Payment'}
+              {isProcessing
+                ? 'Processing...'
+                : isTestPaymentEnabled
+                ? 'Test: Mark Paid'
+                : 'Test Payment Disabled'}
             </Text>
           </TouchableOpacity>
           

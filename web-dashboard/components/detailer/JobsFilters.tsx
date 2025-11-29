@@ -28,6 +28,17 @@ const statusOptions = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
+// Organization mode includes additional statuses for dispatchers
+const orgStatusOptions = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'unassigned', label: '🔴 Unassigned (Needs Assignment)' },
+  { value: 'offered', label: '🟡 Offered (Awaiting Accept)' },
+  { value: 'accepted', label: '🟢 Accepted' },
+  { value: 'in_progress', label: '🔵 In Progress' },
+  { value: 'completed', label: '✅ Completed' },
+  { value: 'cancelled', label: '⚫ Cancelled' },
+];
+
 const sortOptions = [
   { value: 'time', label: 'Start Time' },
   { value: 'price', label: 'Price' },
@@ -95,12 +106,21 @@ export default function JobsFilters({
 
     // Status filter
     if (status !== 'all') {
-      filtered = filtered.filter(b => b.status === status);
+      if (status === 'unassigned') {
+        // Unassigned = paid status with no detailer assigned
+        filtered = filtered.filter(b => b.status === 'paid' && !b.detailer_id);
+      } else {
+        filtered = filtered.filter(b => b.status === status);
+      }
     }
 
     // Detailer filter (org mode only)
     if (mode === 'organization' && selectedDetailer !== 'all') {
-      filtered = filtered.filter(b => b.detailer_id === selectedDetailer);
+      if (selectedDetailer === 'unassigned') {
+        filtered = filtered.filter(b => !b.detailer_id);
+      } else {
+        filtered = filtered.filter(b => b.detailer_id === selectedDetailer);
+      }
     }
 
     // Team filter (org mode only)
@@ -127,6 +147,7 @@ export default function JobsFilters({
 
   const detailerOptions = [
     { value: 'all', label: 'All Detailers' },
+    { value: 'unassigned', label: '🔴 Unassigned' },
     ...detailers.map(d => ({ value: d.profile_id, label: d.full_name })),
   ];
 
@@ -161,7 +182,7 @@ export default function JobsFilters({
         {/* Status Filter */}
         <FilterDropdown
           label="Status"
-          options={statusOptions}
+          options={mode === 'organization' ? orgStatusOptions : statusOptions}
           value={status}
           onChange={(value) => setStatus(value)}
         />
