@@ -1,4 +1,4 @@
 {
-  "/detailer/bookings/page": "app/detailer/bookings/page.js",
-  "/detailer/dashboard/page": "app/detailer/dashboard/page.js"
+  "/detailer/bookings/[id]/page": "app/detailer/bookings/[id]/page.js",
+  "/detailer/bookings/page": "app/detailer/bookings/page.js"
 }
