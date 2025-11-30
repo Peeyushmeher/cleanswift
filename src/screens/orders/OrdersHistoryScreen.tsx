@@ -162,7 +162,7 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: '#030B18',
   },
   safeArea: {
     flex: 1,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   orderContent: {
     flexDirection: 'row',

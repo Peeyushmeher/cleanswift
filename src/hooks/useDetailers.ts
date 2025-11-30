@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Detailer } from '../contexts/BookingContext';
+import type { Detailer } from '../types/domain';
 
 interface UseDetailersReturn {
   data: Detailer[];

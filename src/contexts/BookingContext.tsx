@@ -1,65 +1,13 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-
-// Types matching our database schema
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  duration_minutes: number;
-  is_active: boolean;
-  display_order: number;
-}
-
-interface ServiceAddon {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  is_active: boolean;
-  display_order: number;
-}
-
-interface Car {
-  id: string;
-  user_id: string;
-  make: string;
-  model: string;
-  year: string;
-  trim: string | null;
-  license_plate: string;
-  color: string | null;
-  photo_url: string | null;
-  is_primary: boolean;
-}
-
-interface Detailer {
-  id: string;
-  full_name: string;
-  avatar_url: string | null;
-  rating: number;
-  review_count: number;
-  years_experience: number;
-  is_active: boolean;
-}
-
-interface PriceBreakdown {
-  servicePrice: number;
-  addonsTotal: number;
-  taxAmount: number;
-  totalAmount: number;
-}
-
-interface BookingLocation {
-  address_line1: string;
-  address_line2?: string | null;
-  city: string;
-  province: string;
-  postal_code: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  location_notes?: string | null;
-}
+import type {
+  Service,
+  ServiceAddon,
+  Car,
+  Detailer,
+  BookingLocation,
+  PaymentMethod,
+  PriceBreakdown,
+} from '../types/domain';
 
 interface BookingContextType {
   // State
@@ -77,6 +25,8 @@ interface BookingContextType {
   setAddons: (addons: ServiceAddon[]) => void;
   setCar: (car: Car | null) => void;
   setDateTime: (date: Date, timeSlot: string) => void;
+  setDate: (date: Date | null) => void;
+  setTime: (timeSlot: string | null) => void;
   setDetailer: (detailer: Detailer | null) => void;
   setLocation: (location: BookingLocation | null) => void;
   calculateTotals: () => void;
@@ -134,6 +84,14 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setSelectedTimeSlot(timeSlot);
   }, []);
 
+  const setDate = useCallback((date: Date | null) => {
+    setSelectedDate(date);
+  }, []);
+
+  const setTime = useCallback((timeSlot: string | null) => {
+    setSelectedTimeSlot(timeSlot);
+  }, []);
+
   const setDetailer = useCallback((detailer: Detailer | null) => {
     setSelectedDetailer(detailer);
   }, []);
@@ -176,6 +134,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setAddons,
     setCar,
     setDateTime,
+    setDate,
+    setTime,
     setDetailer,
     setLocation,
     calculateTotals,

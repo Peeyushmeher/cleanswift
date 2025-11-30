@@ -209,7 +209,7 @@ export default function HomeScreen() {
     try {
       setIsLoadingCar(true);
       // First try to get primary car
-      const { data: primaryCar, error: primaryError } = await supabase
+      const { data: primaryCarData, error: primaryError } = await supabase
         .from('cars')
         .select('id, make, model, year, trim')
         .eq('user_id', user.id)
@@ -221,8 +221,8 @@ export default function HomeScreen() {
       }
 
       // If we have a primary car, use it; otherwise try to get any car
-      if (primaryCar) {
-        setPrimaryCar(primaryCar);
+      if (primaryCarData) {
+        setPrimaryCar(primaryCarData);
       } else {
         // Try to get any car if no primary is set
         const { data: anyCar, error: anyCarError } = await supabase
@@ -440,7 +440,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: '#030B18',
   },
   safeArea: {
     flex: 1,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: 'rgba(111, 240, 196, 0.4)',
+    borderColor: 'rgba(111, 240, 196, 0.3)',
     backgroundColor: 'rgba(111, 240, 196, 0.05)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -493,8 +493,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    shadowColor: '#000',
+    borderColor: 'rgba(255,255,255,0.06)',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 20 },
     shadowOpacity: 0.4,
     shadowRadius: 40,
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     backgroundColor: '#0A1A2F',
     borderWidth: 1,
-    borderColor: 'rgba(198, 207, 217, 0.2)',
+    borderColor: 'rgba(255,255,255,0.12)',
     paddingVertical: 16,
     borderRadius: 24,
     justifyContent: 'center',
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     marginRight: 12,
   },
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(29, 164, 243, 0.2)',
+    borderColor: 'rgba(29, 164, 243, 0.3)',
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#1DA4F3',

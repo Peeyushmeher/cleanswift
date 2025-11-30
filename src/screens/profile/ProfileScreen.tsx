@@ -210,7 +210,7 @@ export default function ProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: '#030B18',
   },
   safeArea: {
     flex: 1,
@@ -229,11 +229,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: 'rgba(29, 164, 243, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(111,240,196,0.4)',
+    borderColor: 'rgba(111, 240, 196, 0.3)',
   },
   userInfo: {
     flex: 1,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A1A2F',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 24,
     paddingVertical: 20,
     gap: 16,
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(29,164,243,0.1)',
+    backgroundColor: 'rgba(29, 164, 243, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A1A2F',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
   menuItem: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   },
   menuItemWithBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(198,207,217,0.1)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   menuItemLabel: {
     flex: 1,
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A1A2F',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 24,
     paddingVertical: 16,
     minHeight: 56,
