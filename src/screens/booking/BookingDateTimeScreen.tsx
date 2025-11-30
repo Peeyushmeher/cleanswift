@@ -62,8 +62,8 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
     // Update BookingContext
     setDateTime(bookingDate, selectedTime);
 
-    // Navigate to next screen
-    navigation.navigate('ChooseDetailer', {
+    // Navigate directly to OrderSummary (detailer will be auto-assigned after payment)
+    navigation.navigate('OrderSummary', {
       selectedService: route.params.selectedService,
       selectedAddons: route.params.selectedAddons,
       date: selectedDate.toString(),
@@ -174,7 +174,7 @@ export default function BookingDateTimeScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}

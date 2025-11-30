@@ -68,8 +68,9 @@ export interface BookingLocation {
   city: string;
   province: string;
   postal_code: string;
-  lat?: number;
-  lng?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_notes?: string | null;
 }
 
 /**

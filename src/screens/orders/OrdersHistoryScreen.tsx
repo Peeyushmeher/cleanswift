@@ -1,177 +1,159 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { OrdersStackParamList } from '../../navigation/OrdersStack';
-import { COLORS } from '../../theme/colors';
+import { useCallback, useMemo } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
+import type { OrdersStackParamList } from '../../navigation/OrdersStack';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrdersHistory'>;
 
-const orders = [
-  {
-    id: '1',
-    service: 'Full Exterior Detail',
-    car: '2022 BMW M4',
-    license: 'ABC-123',
-    date: 'Nov 16, 2:42 PM',
-    price: '$213.57',
-    status: 'completed',
-  },
-  {
-    id: '2',
-    service: 'Quick Wash',
-    car: '2022 BMW M4',
-    license: 'ABC-123',
-    date: 'Nov 10, 11:30 AM',
-    price: '$45.00',
-    status: 'completed',
-  },
-  {
-    id: '3',
-    service: 'Interior Detail',
-    car: '2021 Tesla Model 3',
-    license: 'XYZ-789',
-    date: 'Nov 3, 4:15 PM',
-    price: '$120.00',
-    status: 'completed',
-  },
-  {
-    id: '4',
-    service: 'Full Detail',
-    car: '2023 Porsche 911',
-    license: 'POR-911',
-    date: 'Oct 28, 1:00 PM',
-    price: '$285.00',
-    status: 'completed',
-  },
-  {
-    id: '5',
-    service: 'Exterior Wash',
-    car: '2022 BMW M4',
-    license: 'ABC-123',
-    date: 'Oct 15, 9:45 AM',
-    price: '$65.00',
-    status: 'canceled',
-  },
-];
+const STATUS_COLORS: Record<string, string> = {
+  pending: '#FFA500',
+  requires_payment: '#FFA500',
+  paid: '#1DA4F3',
+  offered: '#1DA4F3',
+  accepted: '#1DA4F3',
+  in_progress: '#1DA4F3',
+  completed: '#6FF0C4',
+  cancelled: '#C6CFD9',
+  canceled: '#C6CFD9', // Legacy support
+  no_show: '#C6CFD9',
+};
+
+const formatDateLabel = (date: string, time?: string | null) => {
+  if (!date) return 'Date TBD';
+  const dateObj = new Date(`${date}T${time || '00:00:00'}`);
+  if (Number.isNaN(dateObj.getTime())) return date;
+  return dateObj.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
 
 export default function OrdersHistoryScreen({ navigation }: Props) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return COLORS.accent.mint;
-      case 'scheduled':
-        return COLORS.accent.blue;
-      case 'in-progress':
-        return COLORS.accent.mint;
-      case 'canceled':
-        return COLORS.text.secondary;
-      default:
-        return COLORS.text.secondary;
-    }
+  const { data: bookings, loading, error, refetch } = useBookings();
+
+  // Refetch bookings when screen comes into focus (e.g., after payment completes)
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
+  const sortedBookings = useMemo(() => {
+    const isCancelled = (status: string) => status === 'cancelled' || status === 'canceled';
+    
+    return bookings.slice().sort((a, b) => {
+      const aCancelled = isCancelled(a.status);
+      const bCancelled = isCancelled(b.status);
+      
+      // If one is cancelled and the other isn't, non-cancelled comes first
+      if (aCancelled && !bCancelled) return 1;
+      if (!aCancelled && bCancelled) return -1;
+      
+      // If both have the same cancellation status, sort by creation date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [bookings]);
+
+  const renderStatusDot = (status: string) => {
+    const color = STATUS_COLORS[status] || '#C6CFD9';
+    return (
+      <View style={styles.statusContainer}>
+        <View style={[styles.statusDot, { backgroundColor: color }]} />
+        <Text style={[styles.statusText, { color }]}>{status.replace('_', ' ')}</Text>
+      </View>
+    );
   };
 
-  const getStatusBgColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return COLORS.accent.mint;
-      case 'scheduled':
-        return COLORS.accent.blue;
-      case 'in-progress':
-        return COLORS.accent.mint;
-      case 'canceled':
-        return COLORS.text.secondary;
-      default:
-        return COLORS.text.secondary;
+  const handleOpenDetails = (booking: BookingHistoryItem) => {
+    navigation.navigate('OrderDetails', { orderId: booking.id, booking });
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.centerState}>
+          <ActivityIndicator size='large' color='#6FF0C4' />
+          <Text style={styles.loadingText}>Loading your bookings...</Text>
+        </View>
+      );
     }
+
+    if (error) {
+      return (
+        <View style={[styles.centerState, styles.errorState]}>
+          <Ionicons name='alert-circle' size={48} color='#FF6B6B' />
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorMessage}>{error.message}</Text>
+          <TouchableOpacity onPress={refetch} activeOpacity={0.85} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (sortedBookings.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Ionicons name='car-sport' size={64} color='#C6CFD9' style={styles.emptyIcon} />
+          <Text style={styles.emptyTitle}>No Bookings Yet</Text>
+          <Text style={styles.emptySubtitle}>Your past detailing sessions will appear here.</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.ordersContainer}>
+        {sortedBookings.map((booking) => (
+          <TouchableOpacity
+            key={booking.id}
+            onPress={() => handleOpenDetails(booking)}
+            activeOpacity={0.85}
+            style={styles.orderCard}
+          >
+            <View style={styles.orderContent}>
+              <View style={styles.carIconContainer}>
+                <Ionicons name='car-sport' size={24} color='#1DA4F3' />
+              </View>
+
+              <View style={styles.orderInfo}>
+                <View style={styles.orderHeader}>
+                  <Text style={styles.serviceName} numberOfLines={1} ellipsizeMode="tail">
+                    {booking.service?.name || 'Detailing Service'}
+                  </Text>
+                  <Text style={styles.price}>${booking.total_amount.toFixed(2)}</Text>
+                </View>
+
+                <Text style={styles.date}>{formatDateLabel(booking.scheduled_date, booking.scheduled_time_start)}</Text>
+                {renderStatusDot(booking.status)}
+              </View>
+
+              <Ionicons name='chevron-forward' size={20} color='#C6CFD9' style={styles.chevron} />
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
   };
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
+          <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7} style={styles.backButton}>
+            <Ionicons name='chevron-back' size={24} color='#C6CFD9' />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Your Bookings</Text>
         </View>
 
-        {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-        {orders.length > 0 ? (
-          <View style={styles.ordersContainer}>
-            {orders.map((order) => (
-              <TouchableOpacity
-                key={order.id}
-                onPress={() => navigation.navigate('OrderDetails', { orderId: order.id })}
-                activeOpacity={0.8}
-                style={styles.orderCard}
-              >
-                <View style={styles.orderContent}>
-                  {/* Car Icon */}
-                  <View style={styles.carIconContainer}>
-                    <Ionicons name="car-sport" size={24} color={COLORS.accent.blue} />
-                  </View>
-
-                  {/* Order Info */}
-                  <View style={styles.orderInfo}>
-                    <View style={styles.orderHeader}>
-                      <Text style={styles.serviceName}>{order.service}</Text>
-                      <Text style={styles.price}>{order.price}</Text>
-                    </View>
-
-                    <Text style={styles.carDetails}>
-                      {order.car} • {order.license}
-                    </Text>
-
-                    <View style={styles.orderFooter}>
-                      <Text style={styles.date}>{order.date}</Text>
-
-                      <View style={styles.statusContainer}>
-                        <View
-                          style={[
-                            styles.statusDot,
-                            { backgroundColor: getStatusBgColor(order.status) },
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.statusText,
-                            { color: getStatusColor(order.status) },
-                          ]}
-                        >
-                          {order.status}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Chevron */}
-                  <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} style={styles.chevron} />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          /* Empty State */
-          <View style={styles.emptyState}>
-            <Ionicons name="car-sport" size={64} color={COLORS.text.secondary} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>No Bookings Yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Your past detailing sessions will appear here.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {renderContent()}
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -180,7 +162,7 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#030B18',
   },
   safeArea: {
     flex: 1,
@@ -197,7 +179,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
   },
@@ -212,77 +194,105 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   orderCard: {
-    backgroundColor: COLORS.bg.surface,
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: '#0A1A2F',
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   orderContent: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 16,
   },
   carIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.accentBg.blue10,
+    backgroundColor: 'rgba(29,164,243,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   orderInfo: {
     flex: 1,
+    minWidth: 0,
+    gap: 6,
   },
   orderHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    gap: 12,
   },
   serviceName: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 17,
     fontWeight: '600',
     flex: 1,
+    flexShrink: 1,
   },
   price: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
-  },
-  carDetails: {
-    color: COLORS.text.secondary,
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  orderFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   date: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+    marginTop: 2,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
     textTransform: 'capitalize',
   },
   chevron: {
-    marginTop: 4,
+    marginLeft: 8,
+  },
+  centerState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+    gap: 12,
+  },
+  loadingText: {
+    color: '#C6CFD9',
+    fontSize: 15,
+  },
+  errorState: {
+    paddingHorizontal: 16,
+  },
+  errorTitle: {
+    color: '#F5F7FA',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  errorMessage: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#1DA4F3',
+  },
+  retryButtonText: {
+    color: '#1DA4F3',
+    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
@@ -293,14 +303,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 20,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 8,
   },
   emptySubtitle: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 15,
     textAlign: 'center',
   },

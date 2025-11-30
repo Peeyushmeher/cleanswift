@@ -1,19 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useStripe } from '@stripe/stripe-react-native';
-import { useLayoutEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../contexts/AuthContext';
-import { useBooking } from '../../contexts/BookingContext';
-import { supabase } from '../../lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useStripe, isPlatformPaySupported } from '@stripe/stripe-react-native';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useBooking } from '../../contexts/BookingContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import {
-  createBooking,
-  createBookingAddons,
   createPaymentIntent,
   updateBookingPaymentStatus,
+  createBooking,
+  createBookingAddons,
 } from '../../services/paymentService';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PaymentMethod'>;
@@ -24,8 +23,6 @@ const savedCards = [
 ];
 
 export default function PaymentMethodScreen({ navigation, route }: Props) {
-  const parentNavigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const {
     priceBreakdown,
     selectedService,
@@ -34,26 +31,37 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     selectedDate,
     selectedTimeSlot,
     selectedDetailer,
+    selectedLocation,
   } = useBooking();
-
-  useLayoutEffect(() => {
-    const parent = parentNavigation.getParent();
-    if (parent) {
-      parent.setOptions({
-        tabBarStyle: {
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-      });
-    }
-  }, [parentNavigation]);
   const { user } = useAuth();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const insets = useSafeAreaInsets();
   const [selectedCard, setSelectedCard] = useState<string>('apple-pay');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
   const showPriceSummary = route.params?.showPrice ?? true;
+  const testPaymentSecret = process.env.EXPO_PUBLIC_TEST_PAYMENT_SECRET;
+  const isTestPaymentEnabled = __DEV__ && !!testPaymentSecret;
+
+  // Check if Apple Pay is available on the device
+  useEffect(() => {
+    const checkApplePayAvailability = async () => {
+      if (Platform.OS === 'ios') {
+        try {
+          const supported = await isPlatformPaySupported();
+          setIsApplePayAvailable(supported);
+          console.log('🍎 Apple Pay available:', supported);
+        } catch (error) {
+          console.error('Error checking Apple Pay availability:', error);
+          setIsApplePayAvailable(false);
+        }
+      } else {
+        setIsApplePayAvailable(false);
+      }
+    };
+
+    checkApplePayAvailability();
+  }, []);
 
   const handleCompletePayment = async () => {
     if (isProcessing) return;
@@ -61,86 +69,95 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     try {
       setIsProcessing(true);
 
-      // Validate required booking data
-      if (!user || !selectedService || !selectedDate || !selectedTimeSlot) {
-        Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
-        return;
-      }
+      // Check if booking was already created (from OrderSummaryScreen via RPC)
+      let bookingId: string;
 
-      // Format scheduled date and time
-      const scheduledDate = selectedDate.toISOString().split('T')[0];
-      const scheduledTime = selectedTimeSlot;
-
-      // Determine car_id: use selectedCar OR fetch user's primary car
-      let finalCarId = selectedCar?.id || null;
-
-      if (!finalCarId) {
-        console.log('No car selected, fetching user primary car...');
-        const { data: primaryCar, error: carError } = await supabase
-          .from('cars')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_primary', true)
-          .maybeSingle(); // Use maybeSingle() to handle 0 or 1 results
-
-        if (carError) {
-          console.error('Error fetching primary car:', carError);
-        }
-
-        if (primaryCar) {
-          finalCarId = primaryCar.id;
-          console.log('Using primary car for booking:', finalCarId);
-        }
+      if (route.params?.bookingId) {
+        // Booking already created via RPC, use the provided ID
+        bookingId = route.params.bookingId;
+        console.log('Using existing booking ID from RPC:', bookingId);
       } else {
-        console.log('Using selected car for booking:', finalCarId);
-      }
+        // Fallback: Create booking using old method (for backward compatibility)
+        // This should not happen in normal flow, but kept for safety
+        console.warn('No booking ID in route params, falling back to old createBooking method');
 
-      // If still no car, show error and don't proceed
-      if (!finalCarId) {
-        Alert.alert(
-          'Vehicle Required',
-          'Please add a vehicle to your profile before booking a service.',
-          [
-            {
-              text: 'Add Vehicle',
-              onPress: () => {
-                // Navigate to Profile tab where user can add cars
-                // Assuming MainTabs has a Profile tab
-                navigation.getParent()?.navigate('Profile');
+        // Validate required booking data
+        if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
+          Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
+          return;
+        }
+
+        // Format scheduled date and time
+        const scheduledDate = selectedDate.toISOString().split('T')[0];
+        const scheduledTime = selectedTimeSlot;
+
+        // Determine car_id: use selectedCar OR fetch user's primary car
+        let finalCarId = selectedCar?.id || null;
+
+        if (!finalCarId) {
+          console.log('No car selected, fetching user primary car...');
+          const { data: primaryCar, error: carError } = await supabase
+            .from('cars')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('is_primary', true)
+            .maybeSingle();
+
+          if (carError) {
+            console.error('Error fetching primary car:', carError);
+          }
+
+          if (primaryCar) {
+            finalCarId = primaryCar.id;
+            console.log('Using primary car for booking:', finalCarId);
+          }
+        } else {
+          console.log('Using selected car for booking:', finalCarId);
+        }
+
+        // If still no car, show error and don't proceed
+        if (!finalCarId) {
+          Alert.alert(
+            'Vehicle Required',
+            'Please add a vehicle to your profile before booking a service.',
+            [
+              {
+                text: 'Add Vehicle',
+                onPress: () => {
+                  navigation.getParent()?.navigate('Profile');
+                },
               },
-            },
-            { text: 'Cancel', style: 'cancel' },
-          ]
-        );
-        return;
+              { text: 'Cancel', style: 'cancel' },
+            ]
+          );
+          return;
+        }
+
+        // Step 1: Create booking record in Supabase (old method)
+        bookingId = await createBooking({
+          user_id: user.id,
+          service_id: selectedService.id,
+          car_id: finalCarId,
+          detailer_id: selectedDetailer?.id || null,
+          scheduled_date: scheduledDate,
+          scheduled_time_start: scheduledTime,
+          total_amount: priceBreakdown.totalAmount,
+          service_price: priceBreakdown.servicePrice,
+          addons_total: priceBreakdown.addonsTotal,
+          tax_amount: priceBreakdown.taxAmount,
+          address_line1: selectedLocation.address_line1,
+          address_line2: selectedLocation.address_line2 || null,
+          city: selectedLocation.city,
+          province: selectedLocation.province,
+          postal_code: selectedLocation.postal_code,
+          latitude: selectedLocation.latitude || null,
+          longitude: selectedLocation.longitude || null,
+          location_notes: selectedLocation.location_notes || null,
+        });
       }
 
-      // Step 1: Create booking record in Supabase
-      const bookingId = await createBooking({
-        user_id: user.id,
-        service_id: selectedService.id,
-        car_id: finalCarId, // Now guaranteed to be a valid UUID
-        detailer_id: selectedDetailer?.id || null,
-        scheduled_date: scheduledDate,
-        scheduled_time_start: scheduledTime, // Fixed: was 'scheduled_time'
-        total_amount: priceBreakdown.totalAmount,
-        service_price: priceBreakdown.servicePrice,
-        addons_total: priceBreakdown.addonsTotal,
-        tax_amount: priceBreakdown.taxAmount,
-        // TODO: Wire address from user profile or location selection flow
-        address_line1: 'Customer address TBD', // TODO: get from user profile
-        address_line2: null,
-        city: 'Toronto', // TODO: get from user profile
-        province: 'ON', // TODO: get from user profile
-        postal_code: 'M1M 1M1', // TODO: get from user profile
-        latitude: null,
-        longitude: null,
-        location_notes: null,
-      });
-
-      // Step 2: Create booking addons if any
+      // Step 2: Create booking addons if any (still needed even if booking created via RPC)
       if (selectedAddons.length > 0) {
-        // Map to { id, price } format expected by createBookingAddons
         const addonData = selectedAddons.map((addon) => ({
           id: addon.id,
           price: addon.price,
@@ -149,20 +166,29 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       }
 
       // Step 3: Create PaymentIntent via Edge Function
-      const { client_secret, payment_intent_id } = await createPaymentIntent(
-        bookingId,
-        priceBreakdown.totalAmount
-      );
+      // Amount is computed server-side from booking's total_amount for security
+      console.log('📞 Calling createPaymentIntent with bookingId:', bookingId);
+      const paymentIntentResponse = await createPaymentIntent(bookingId);
 
       // Step 4: Initialize PaymentSheet
-      const { error: initError } = await initPaymentSheet({
+      const paymentSheetConfig: any = {
         merchantDisplayName: 'CleanSwift',
-        paymentIntentClientSecret: client_secret,
+        paymentIntentClientSecret: paymentIntentResponse.paymentIntentClientSecret,
         defaultBillingDetails: {
           email: user.email,
         },
         returnURL: 'cleanswift://payment-complete',
-      });
+      };
+
+      // Enable Apple Pay if available and selected
+      if (Platform.OS === 'ios' && isApplePayAvailable && selectedCard === 'apple-pay') {
+        paymentSheetConfig.applePay = {
+          merchantCountryCode: 'US',
+        };
+        console.log('🍎 Apple Pay enabled in PaymentSheet');
+      }
+
+      const { error: initError } = await initPaymentSheet(paymentSheetConfig);
 
       if (initError) {
         console.error('PaymentSheet init error:', initError);
@@ -182,9 +208,9 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           Alert.alert('Payment Failed', presentError.message || 'Payment could not be processed.');
 
           // Update booking status to failed
+          // Note: The Edge Function already stores stripe_payment_intent_id in the booking
           await updateBookingPaymentStatus({
             booking_id: bookingId,
-            payment_intent_id: payment_intent_id,
             payment_status: 'failed',
           });
         }
@@ -192,9 +218,9 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       }
 
       // Step 6: Payment successful - update booking status
+      // Note: The Edge Function already stores stripe_payment_intent_id in the booking
       await updateBookingPaymentStatus({
         booking_id: bookingId,
-        payment_intent_id: payment_intent_id,
         payment_status: 'paid',
       });
 
@@ -211,13 +237,115 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     }
   };
 
-  const handleAddCard = () => {
-    navigation.navigate('AddPaymentCard');
+  const markBookingAsPaidForTest = async (bookingId: string) => {
+    if (!testPaymentSecret) {
+      throw new Error('Test payment secret not configured');
+    }
+
+    const { error } = await supabase.functions.invoke('mark-test-payment', {
+      body: {
+        booking_id: bookingId,
+        test_token: testPaymentSecret,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to mark booking as paid.');
+    }
   };
 
-  const handleSkipPayment = () => {
-    // Skip payment for testing purposes
-    navigation.navigate('ServiceProgress');
+  const handleTestSkipPayment = async () => {
+    if (isProcessing) return;
+    if (!isTestPaymentEnabled) {
+      Alert.alert('Test Payment Disabled', 'Enable dev mode and EXPO_PUBLIC_TEST_PAYMENT_SECRET to use this flow.');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+
+      let bookingId: string;
+      let createdBookingInFlow = false;
+
+      if (route.params?.bookingId) {
+        bookingId = route.params.bookingId;
+      } else {
+        // Validate required booking data
+        if (!user || !selectedService || !selectedDate || !selectedTimeSlot || !selectedLocation) {
+          Alert.alert('Error', 'Missing required booking information. Please go back and complete all fields.');
+          return;
+        }
+
+        const scheduledDate = selectedDate.toISOString().split('T')[0];
+        const scheduledTime = selectedTimeSlot;
+
+        let finalCarId = selectedCar?.id || null;
+
+        if (!finalCarId) {
+          const { data: primaryCar } = await supabase
+            .from('cars')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('is_primary', true)
+            .maybeSingle();
+
+          if (primaryCar) {
+            finalCarId = primaryCar.id;
+          }
+        }
+
+        if (!finalCarId) {
+          Alert.alert('Vehicle Required', 'Please add a vehicle to your profile before booking a service.');
+          return;
+        }
+
+        bookingId = await createBooking({
+          user_id: user.id,
+          service_id: selectedService.id,
+          car_id: finalCarId,
+          detailer_id: selectedDetailer?.id || null,
+          scheduled_date: scheduledDate,
+          scheduled_time_start: scheduledTime,
+          total_amount: priceBreakdown.totalAmount,
+          service_price: priceBreakdown.servicePrice,
+          addons_total: priceBreakdown.addonsTotal,
+          tax_amount: priceBreakdown.taxAmount,
+          address_line1: selectedLocation.address_line1,
+          address_line2: selectedLocation.address_line2 || null,
+          city: selectedLocation.city,
+          province: selectedLocation.province,
+          postal_code: selectedLocation.postal_code,
+          latitude: selectedLocation.latitude || null,
+          longitude: selectedLocation.longitude || null,
+          location_notes: selectedLocation.location_notes || null,
+        });
+        createdBookingInFlow = true;
+      }
+
+      if (selectedAddons.length > 0 && createdBookingInFlow) {
+        const addonData = selectedAddons.map((addon) => ({
+          id: addon.id,
+          price: addon.price,
+        }));
+        await createBookingAddons(bookingId, addonData);
+      }
+
+      await markBookingAsPaidForTest(bookingId);
+      console.log('🧪 TEST: booking marked as paid via Edge Function');
+      navigation.navigate('ServiceProgress');
+    } catch (error) {
+      console.error('Test skip payment error:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAddCard = () => {
+    navigation.navigate('AddPaymentCard');
   };
 
   const formatCurrency = (amount: number) => {
@@ -251,17 +379,37 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           </Text>
 
           {/* Apple Pay */}
-          <TouchableOpacity
-            onPress={() => setSelectedCard('apple-pay')}
-            activeOpacity={0.8}
-            style={[
-              styles.applePayButton,
-              selectedCard === 'apple-pay' && styles.applePayButtonSelected,
-            ]}
-          >
-            <Ionicons name="logo-apple" size={24} color="white" />
-            <Text style={styles.applePayText}>Apple Pay</Text>
-          </TouchableOpacity>
+          {Platform.OS === 'ios' && isApplePayAvailable && (
+            <TouchableOpacity
+              onPress={async () => {
+                setSelectedCard('apple-pay');
+                console.log('🍎 Apple Pay selected - triggering payment flow');
+                // Directly trigger payment when Apple Pay button is tapped
+                await handleCompletePayment();
+              }}
+              activeOpacity={0.8}
+              disabled={isProcessing}
+              style={[
+                styles.applePayButton,
+                selectedCard === 'apple-pay' && styles.applePayButtonSelected,
+                isProcessing && styles.applePayButtonDisabled,
+              ]}
+            >
+              <Ionicons name="logo-apple" size={24} color="white" />
+              <Text style={styles.applePayText}>
+                {isProcessing ? 'Processing...' : 'Pay with Apple Pay'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          
+          {/* Show message if Apple Pay not available */}
+          {Platform.OS === 'ios' && !isApplePayAvailable && (
+            <View style={styles.applePayUnavailableContainer}>
+              <Text style={styles.applePayUnavailableText}>
+                Apple Pay is not available on this device
+              </Text>
+            </View>
+          )}
 
           {/* Divider */}
           <View style={styles.dividerContainer}>
@@ -358,8 +506,27 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
-          <View style={styles.buttonSafeArea}>
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
+          {/* Test Skip Payment Button */}
+          <TouchableOpacity
+            onPress={handleTestSkipPayment}
+            activeOpacity={0.8}
+            disabled={isProcessing || !isTestPaymentEnabled}
+            style={[
+              styles.testSkipButton,
+              (isProcessing || !isTestPaymentEnabled) && styles.testSkipButtonDisabled,
+            ]}
+          >
+            <Text style={styles.testSkipButtonText}>
+              {isProcessing
+                ? 'Processing...'
+                : isTestPaymentEnabled
+                ? 'Test: Mark Paid'
+                : 'Test Payment Disabled'}
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Complete Payment Button */}
           <TouchableOpacity
             onPress={handleCompletePayment}
             activeOpacity={0.8}
@@ -374,16 +541,6 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 : 'Save'}
             </Text>
           </TouchableOpacity>
-
-          {/* Skip Payment for Testing */}
-          <TouchableOpacity
-            onPress={handleSkipPayment}
-            activeOpacity={0.8}
-            style={styles.skipButton}
-          >
-            <Text style={styles.skipButtonText}>Skip Payment (Testing)</Text>
-          </TouchableOpacity>
-          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -429,7 +586,7 @@ const styles = StyleSheet.create({
   },
   applePayButton: {
     width: '100%',
-    height: 48,
+    height: 56,
     backgroundColor: '#000000',
     borderRadius: 24,
     borderWidth: 1,
@@ -448,11 +605,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  applePayButtonDisabled: {
+    opacity: 0.6,
+  },
   applePayText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 12,
+  },
+  applePayUnavailableContainer: {
+    width: '100%',
+    padding: 16,
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 24,
+  },
+  applePayUnavailableText: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    textAlign: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -596,6 +770,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 16,
     backgroundColor: 'transparent',
     elevation: 0,
     shadowColor: 'transparent',
@@ -606,12 +782,28 @@ const styles = StyleSheet.create({
     borderTopColor: 'transparent',
     borderWidth: 0,
     borderColor: 'transparent',
+    gap: 12,
   },
-  buttonSafeArea: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: 'transparent',
+  testSkipButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 48,
+    backgroundColor: '#6FF0C4',
+    borderWidth: 1,
+    borderColor: '#6FF0C4',
+  },
+  testSkipButtonDisabled: {
+    backgroundColor: '#0A1A2F',
+    opacity: 0.6,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  testSkipButtonText: {
+    color: '#050B12',
+    fontSize: 15,
+    fontWeight: '600',
   },
   completeButton: {
     width: '100%',
@@ -635,22 +827,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
-  },
-  skipButton: {
-    width: '100%',
-    paddingVertical: 12,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 48,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.3)',
-    marginTop: 12,
-  },
-  skipButtonText: {
-    color: '#C6CFD9',
-    fontSize: 15,
-    fontWeight: '500',
   },
 });

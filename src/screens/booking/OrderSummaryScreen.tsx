@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useLayoutEffect } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useLayoutEffect, useState, useEffect } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';
 import { useBooking } from '../../contexts/BookingContext';
+import { createBooking } from '../../lib/bookings';
+import { supabase } from '../../lib/supabase';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'OrderSummary'>;
@@ -12,6 +15,7 @@ type Props = NativeStackScreenProps<BookingStackParamList, 'OrderSummary'>;
 export default function OrderSummaryScreen({ navigation, route }: Props) {
   const parentNavigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const {
     selectedService,
     selectedAddons,
@@ -19,8 +23,56 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
     selectedDetailer,
     selectedDate,
     selectedTimeSlot,
+    selectedLocation,
     priceBreakdown,
+    setCar,
   } = useBooking();
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
+  const [isLoadingCar, setIsLoadingCar] = useState(false);
+
+  // Auto-fetch primary car if no car is selected
+  useEffect(() => {
+    const fetchPrimaryCar = async () => {
+      if (selectedCar || !user) return;
+
+      try {
+        setIsLoadingCar(true);
+        const { data: primaryCar, error } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_primary', true)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching primary car:', error);
+          return;
+        }
+
+        if (primaryCar) {
+          // Map Supabase car to BookingContext Car type
+          setCar({
+            id: primaryCar.id,
+            user_id: primaryCar.user_id,
+            make: primaryCar.make,
+            model: primaryCar.model,
+            year: primaryCar.year,
+            trim: primaryCar.trim || null,
+            license_plate: primaryCar.license_plate,
+            color: primaryCar.color || null,
+            photo_url: primaryCar.photo_url || null,
+            is_primary: primaryCar.is_primary,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch primary car:', error);
+      } finally {
+        setIsLoadingCar(false);
+      }
+    };
+
+    fetchPrimaryCar();
+  }, [user, selectedCar, setCar]);
 
   useLayoutEffect(() => {
     const parent = parentNavigation.getParent();
@@ -36,8 +88,130 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
     }
   }, [parentNavigation]);
 
-  const handleContinue = () => {
-    navigation.navigate('PaymentMethod', { showPrice: true });
+  const handleContinue = async () => {
+    // Validate required data
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to create a booking');
+      return;
+    }
+
+    // If still no car after auto-fetch, try one more time or show error
+    let finalCar = selectedCar;
+    if (!finalCar) {
+      // Try fetching primary car one more time
+      const { data: primaryCar, error } = await supabase
+        .from('cars')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_primary', true)
+        .maybeSingle();
+
+      if (error || !primaryCar) {
+        Alert.alert(
+          'Vehicle Required',
+          'Please add a vehicle to your profile before booking a service.',
+          [
+            {
+              text: 'Add Vehicle',
+              onPress: () => {
+                const parent = parentNavigation.getParent();
+                if (parent) {
+                  (parent as any).navigate('Profile', { screen: 'SelectCar' });
+                }
+              },
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+
+      // Set the car in context for next time
+      finalCar = {
+        id: primaryCar.id,
+        user_id: primaryCar.user_id,
+        make: primaryCar.make,
+        model: primaryCar.model,
+        year: primaryCar.year,
+        trim: primaryCar.trim || null,
+        license_plate: primaryCar.license_plate,
+        color: primaryCar.color || null,
+        photo_url: primaryCar.photo_url || null,
+        is_primary: primaryCar.is_primary,
+      };
+      setCar(finalCar);
+    }
+
+    if (!selectedService) {
+      Alert.alert('Error', 'Please select a service');
+      return;
+    }
+
+    if (!selectedDate || !selectedTimeSlot) {
+      Alert.alert('Error', 'Please select a date and time');
+      return;
+    }
+
+    if (!selectedLocation) {
+      Alert.alert('Error', 'Please provide a service location');
+      return;
+    }
+
+    // Parse time slot (format: "8:00 AM" or "1:00 PM")
+    const [timeStr, period] = selectedTimeSlot.split(' ');
+    const [hours, minutes] = timeStr.split(':');
+    let hour = parseInt(hours, 10);
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+
+    // Create scheduled_start timestamp
+    const scheduledDate = new Date(selectedDate);
+    scheduledDate.setHours(hour, parseInt(minutes, 10), 0, 0);
+    const scheduledStart = scheduledDate.toISOString();
+
+    // Build location address string
+    const locationAddress = [
+      selectedLocation.address_line1,
+      selectedLocation.address_line2,
+      selectedLocation.city,
+      selectedLocation.province,
+      selectedLocation.postal_code,
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    try {
+      setIsCreatingBooking(true);
+
+      // Call create_booking RPC
+      const result = await createBooking({
+        carId: finalCar.id,
+        scheduledStart,
+        locationAddress,
+        city: selectedLocation.city,
+        province: selectedLocation.province,
+        postalCode: selectedLocation.postal_code,
+        locationLat: selectedLocation.latitude,
+        locationLng: selectedLocation.longitude,
+        serviceIds: [selectedService.id], // Currently single service, but RPC supports multiple
+        locationNotes: selectedLocation.location_notes,
+      });
+
+      // Navigate to payment with booking ID and total price
+      navigation.navigate('PaymentMethod', {
+        showPrice: true,
+        bookingId: result.booking.id,
+        totalPriceCents: result.total_price_cents,
+      });
+    } catch (error) {
+      console.error('Failed to create booking:', error);
+      Alert.alert(
+        'Booking Failed',
+        error instanceof Error ? error.message : 'Failed to create booking. Please try again.'
+      );
+    } finally {
+      setIsCreatingBooking(false);
+    }
   };
 
   const formatDate = (date: Date | null) => {
@@ -115,7 +289,19 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
           </View>
 
           {/* Car Card */}
-          {selectedCar && (
+          {isLoadingCar ? (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="car-sport" size={40} color="#6FF0C4" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>Loading vehicle...</Text>
+                  </View>
+                </View>
+                <ActivityIndicator size="small" color="#6FF0C4" />
+              </View>
+            </View>
+          ) : selectedCar ? (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardRow}>
@@ -142,10 +328,35 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                 </TouchableOpacity>
               </View>
             </View>
+          ) : (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="car-sport" size={40} color="#C6CFD9" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>No vehicle selected</Text>
+                    <Text style={styles.cardSubtitle}>
+                      Please add a vehicle to continue
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    const parent = parentNavigation.getParent();
+                    if (parent) {
+                      (parent as any).navigate('Profile', { screen: 'SelectCar' });
+                    }
+                  }}
+                >
+                  <Text style={styles.changeLink}>Add Vehicle</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
 
           {/* Detailer Card */}
-          {selectedDetailer && (
+          {selectedDetailer ? (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardRow}>
@@ -166,17 +377,20 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                     <Text style={styles.cardSubtitle}>2.1 km away</Text>
                   </View>
                 </View>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => navigation.navigate('ChooseDetailer', {
-                    selectedService: route.params.selectedService,
-                    selectedAddons: route.params.selectedAddons,
-                    date: route.params.date,
-                    time: route.params.time,
-                  })}
-                >
-                  <Text style={styles.changeLink}>Change</Text>
-                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="person-circle" size={40} color="#C6CFD9" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>Detailer Assignment</Text>
+                    <Text style={styles.cardSubtitle}>
+                      A detailer will be assigned after payment
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
           )}
@@ -194,7 +408,36 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
                 </View>
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate('BookingDateTime', {
+                  onPress={() => navigation.navigate('CombinedSelection', {
+                    selectedService: route.params.selectedService,
+                    selectedAddons: route.params.selectedAddons,
+                  })}
+                >
+                  <Text style={styles.changeLink}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Location Card */}
+          {selectedLocation && (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardRow}>
+                  <Ionicons name="location" size={40} color="#6FF0C4" />
+                  <View style={styles.cardContent}>
+                    <Text style={styles.cardTitle}>{selectedLocation.address_line1}</Text>
+                    <Text style={styles.cardSubtitle}>
+                      {selectedLocation.city}, {selectedLocation.province} {selectedLocation.postal_code}
+                    </Text>
+                    {selectedLocation.location_notes && (
+                      <Text style={styles.cardSubtitle}>Notes: {selectedLocation.location_notes}</Text>
+                    )}
+                  </View>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('CombinedSelection', {
                     selectedService: route.params.selectedService,
                     selectedAddons: route.params.selectedAddons,
                   })}
@@ -248,14 +491,22 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}
+            disabled={isCreatingBooking}
             activeOpacity={0.8}
-            style={styles.continueButton}
+            style={[styles.continueButton, isCreatingBooking && styles.continueButtonDisabled]}
           >
-            <Text style={styles.continueButtonText}>Continue to Payment</Text>
+            {isCreatingBooking ? (
+              <View style={styles.buttonLoadingContainer}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.continueButtonText}>Creating Booking...</Text>
+              </View>
+            ) : (
+              <Text style={styles.continueButtonText}>Continue to Payment</Text>
+            )}
           </TouchableOpacity>
           </View>
         </View>
@@ -452,5 +703,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
+  },
+  continueButtonDisabled: {
+    opacity: 0.7,
+  },
+  buttonLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
 });

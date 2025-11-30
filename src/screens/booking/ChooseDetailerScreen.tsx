@@ -4,18 +4,21 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useLayoutEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBooking } from '../../contexts/BookingContext';
+import { useBooking, type Detailer } from '../../contexts/BookingContext';
 import { useDetailers } from '../../hooks/useDetailers';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import DetailerProfileCard from '../../components/DetailerProfileCard';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ChooseDetailer'>;
 
 export default function ChooseDetailerScreen({ navigation, route }: Props) {
-  const { setDetailer } = useBooking();
+  const { setDetailer, selectedService } = useBooking();
   const parentNavigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { data: detailers, loading, error } = useDetailers();
   const [selectedDetailerId, setSelectedDetailerId] = useState<string>('');
+  const [profileDetailer, setProfileDetailer] = useState<Detailer | null>(null);
+  const [profileVisible, setProfileVisible] = useState(false);
 
   useLayoutEffect(() => {
     const parent = parentNavigation.getParent();
@@ -30,6 +33,18 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
       });
     }
   }, [parentNavigation]);
+
+  const handleShowProfile = (detailer: Detailer) => {
+    setProfileDetailer(detailer);
+    setProfileVisible(true);
+  };
+
+  const handleSelectFromProfile = (detailer: Detailer) => {
+    setSelectedDetailerId(detailer.id);
+    setProfileVisible(false);
+  };
+
+  const closeProfile = () => setProfileVisible(false);
 
   const handleContinue = () => {
     if (!selectedDetailerId) return;
@@ -127,8 +142,16 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
 
                     {/* Details */}
                     <View style={styles.detailerDetails}>
-                      {/* Name */}
-                      <Text style={styles.detailerName}>{detailer.full_name}</Text>
+                      <View style={styles.detailerNameRow}>
+                        <Text style={styles.detailerName}>{detailer.full_name}</Text>
+                        <TouchableOpacity
+                          onPress={() => handleShowProfile(detailer)}
+                          activeOpacity={0.7}
+                          style={styles.infoButton}
+                        >
+                          <Ionicons name="information-circle-outline" size={20} color="#C6CFD9" />
+                        </TouchableOpacity>
+                      </View>
 
                       {/* Rating */}
                       <View style={styles.ratingRow}>
@@ -166,7 +189,7 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleContinue}
@@ -189,6 +212,17 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
         </>
         )}
       </SafeAreaView>
+      <DetailerProfileCard
+        detailer={profileDetailer}
+        visible={profileVisible}
+        onClose={closeProfile}
+        onSelectDetailer={handleSelectFromProfile}
+        serviceSummary={
+          selectedService
+            ? { name: selectedService.name, price: selectedService.price }
+            : undefined
+        }
+      />
     </View>
   );
 }
@@ -308,11 +342,20 @@ const styles = StyleSheet.create({
   detailerDetails: {
     flex: 1,
   },
+  detailerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   detailerName: {
     color: '#F5F7FA',
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 8,
+  },
+  infoButton: {
+    padding: 4,
   },
   ratingRow: {
     flexDirection: 'row',
