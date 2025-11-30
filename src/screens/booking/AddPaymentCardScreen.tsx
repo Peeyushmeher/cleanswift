@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'AddPaymentCard'>;
 
@@ -69,7 +70,7 @@ export default function AddPaymentCardScreen({ navigation }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add Card</Text>
         </View>
@@ -88,7 +89,7 @@ export default function AddPaymentCardScreen({ navigation }: Props) {
           {/* Minimal Card Visual */}
           <View style={styles.cardPreview}>
             <View style={styles.cardHeader}>
-              <Ionicons name="card" size={32} color="#C6CFD9" />
+              <Ionicons name="card" size={32} color={COLORS.text.secondary} />
               <View style={styles.chipPlaceholder} />
             </View>
             <View style={styles.cardDivider} />
@@ -108,7 +109,7 @@ export default function AddPaymentCardScreen({ navigation }: Props) {
                 onChangeText={handleCardNumberChange}
                 maxLength={19}
                 keyboardType="numeric"
-                placeholderTextColor="rgba(198,207,217,0.5)"
+                placeholderTextColor={COLORS.text.disabled}
                 style={styles.inputCardNumber}
               />
             </View>
@@ -123,7 +124,7 @@ export default function AddPaymentCardScreen({ navigation }: Props) {
                   onChangeText={handleExpiryChange}
                   maxLength={7}
                   keyboardType="numeric"
-                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  placeholderTextColor={COLORS.text.disabled}
                   style={styles.input}
                 />
               </View>
@@ -136,7 +137,7 @@ export default function AddPaymentCardScreen({ navigation }: Props) {
                   onChangeText={(value) => setCvc(value.replace(/[^0-9]/g, '').slice(0, 4))}
                   maxLength={4}
                   keyboardType="numeric"
-                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  placeholderTextColor={COLORS.text.disabled}
                   style={styles.input}
                 />
               </View>
@@ -150,7 +151,7 @@ export default function AddPaymentCardScreen({ navigation }: Props) {
                 value={name}
                 onChangeText={(value) => setName(value.toUpperCase())}
                 autoCapitalize="characters"
-                placeholderTextColor="rgba(198,207,217,0.5)"
+                placeholderTextColor={COLORS.text.disabled}
                 style={styles.input}
               />
             </View>
@@ -204,7 +205,7 @@ export default function AddPaymentCardScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -221,7 +222,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -233,18 +234,18 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   securityText: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 32,
   },
   cardPreview: {
     marginBottom: 32,
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: COLORS.border.emphasis,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -255,16 +256,16 @@ const styles = StyleSheet.create({
   chipPlaceholder: {
     width: 40,
     height: 24,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: COLORS.border.emphasis,
     borderRadius: 4,
   },
   cardDivider: {
     height: 1,
-    backgroundColor: 'rgba(198,207,217,0.1)',
+    backgroundColor: COLORS.border.default,
     marginBottom: 16,
   },
   cardNumber: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 18,
     fontWeight: '500',
     letterSpacing: 2,
@@ -276,31 +277,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
     fontWeight: '500',
     paddingHorizontal: 4,
   },
   input: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: COLORS.border.emphasis,
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
   },
   inputCardNumber: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: COLORS.border.emphasis,
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     letterSpacing: 2,
   },
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   toggleLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -327,11 +328,11 @@ const styles = StyleSheet.create({
     width: 48,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(198,207,217,0.3)',
+    backgroundColor: COLORS.border.strong,
     justifyContent: 'center',
   },
   toggleTrackActive: {
-    backgroundColor: '#6FF0C4',
+    backgroundColor: COLORS.accent.mint,
   },
   toggleThumb: {
     width: 20,
@@ -346,8 +347,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
+    backgroundColor: COLORS.accent.blue,
+    shadowColor: COLORS.shadow.blue,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -355,16 +356,16 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   saveButtonDisabled: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     shadowOpacity: 0,
     elevation: 0,
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: COLORS.text.inverse,
     fontSize: 17,
     fontWeight: '600',
   },
   saveButtonTextDisabled: {
-    color: 'rgba(198,207,217,0.5)',
+    color: COLORS.text.disabled,
   },
 });

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'HelpSupport'>;
 
@@ -61,7 +62,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Support</Text>
         </View>
@@ -82,7 +83,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
                   style={styles.quickActionCard}
                 >
                   <View style={styles.quickActionIconContainer}>
-                    <Ionicons name={action.icon} size={24} color="#1DA4F3" />
+                    <Ionicons name={action.icon} size={24} color={COLORS.accent.blue} />
                   </View>
                   <View style={styles.quickActionContent}>
                     <Text style={styles.quickActionTitle}>{action.title}</Text>
@@ -111,7 +112,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
                       <Ionicons
                         name="chevron-forward"
                         size={20}
-                        color="#C6CFD9"
+                        color={COLORS.text.secondary}
                         style={{
                           transform: [{ rotate: isExpanded ? '90deg' : '0deg' }],
                         }}
@@ -141,12 +142,12 @@ export default function HelpSupportScreen({ navigation }: Props) {
                       !isLast && styles.contactOptionWithBorder,
                     ]}
                   >
-                    <Ionicons name={option.icon} size={20} color="#C6CFD9" />
+                    <Ionicons name={option.icon} size={20} color={COLORS.text.secondary} />
                     <View style={styles.contactOptionContent}>
                       <Text style={styles.contactOptionLabel}>{option.label}</Text>
                       <Text style={styles.contactOptionSubtitle}>{option.subtitle}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+                    <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} />
                   </TouchableOpacity>
                 );
               })}
@@ -169,7 +170,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
                     ]}
                   >
                     <Text style={styles.policyLabel}>{policy.label}</Text>
-                    <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+                    <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} />
                   </TouchableOpacity>
                 );
               })}
@@ -184,7 +185,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -220,11 +221,11 @@ const styles = StyleSheet.create({
   },
   quickActionCard: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 16,
@@ -233,7 +234,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(29,164,243,0.1)',
+    backgroundColor: COLORS.accentBg.blue10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -241,20 +242,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   quickActionTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
   },
   quickActionSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   faqSection: {
     marginBottom: 32,
   },
   sectionTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
@@ -264,11 +265,11 @@ const styles = StyleSheet.create({
   },
   faqCard: {
     width: '100%',
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -277,13 +278,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   faqQuestion: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
     flex: 1,
   },
   faqAnswer: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 15,
     marginTop: 12,
   },
@@ -291,10 +292,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   contactCard: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     overflow: 'hidden',
   },
   contactOption: {
@@ -307,29 +308,29 @@ const styles = StyleSheet.create({
   },
   contactOptionWithBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(198,207,217,0.1)',
+    borderBottomColor: COLORS.border.default,
   },
   contactOptionContent: {
     flex: 1,
   },
   contactOptionLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 2,
   },
   contactOptionSubtitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
   },
   policiesSection: {
     marginBottom: 32,
   },
   policiesCard: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     overflow: 'hidden',
   },
   policyOption: {
@@ -342,10 +343,10 @@ const styles = StyleSheet.create({
   },
   policyOptionWithBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(198,207,217,0.1)',
+    borderBottomColor: COLORS.border.default,
   },
   policyLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
   },

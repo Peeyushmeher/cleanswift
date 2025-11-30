@@ -10,6 +10,14 @@ type Props = NativeStackScreenProps<BookingStackParamList, 'ReceiptRating'>;
 
 const tipAmounts = ['$5', '$10', '$20', 'Custom'];
 
+const receiptData = {
+  serviceName: 'Full Exterior Detail',
+  completedAt: '2:42 PM',
+  price: '$213.57',
+  carModel: '2022 BMW M4',
+  licensePlate: 'ABC-123',
+};
+
 export default function ReceiptRatingScreen({ navigation }: Props) {
   const { clearBooking } = useBooking();
   const insets = useSafeAreaInsets();
@@ -65,18 +73,18 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
             {/* Service Info */}
             <View style={styles.serviceRow}>
               <View>
-                <Text style={styles.serviceTitle}>Full Exterior Detail</Text>
-                <Text style={styles.serviceTime}>Completed at 2:42 PM</Text>
+                <Text style={styles.serviceTitle}>{receiptData.serviceName}</Text>
+                <Text style={styles.serviceTime}>Completed at {receiptData.completedAt}</Text>
               </View>
-              <Text style={styles.servicePrice}>$149.00</Text>
+              <Text style={styles.servicePrice}>{receiptData.price}</Text>
             </View>
 
             {/* Car Info */}
             <View style={styles.infoRow}>
               <Ionicons name="car-sport" size={20} color="#C6CFD9" />
               <View>
-                <Text style={styles.infoTitle}>2021 BMW M4</Text>
-                <Text style={styles.infoSubtitle}>License: ABC-123</Text>
+                <Text style={styles.infoTitle}>{receiptData.carModel}</Text>
+                <Text style={styles.infoSubtitle}>License: {receiptData.licensePlate}</Text>
               </View>
             </View>
 
@@ -135,7 +143,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
                   <Ionicons
                     name={star <= rating ? 'star' : 'star-outline'}
                     size={40}
-                    color={star <= rating ? '#6FF0C4' : 'rgba(198,207,217,0.3)'}
+                    color={star <= rating ? '#6FF0C4' : 'rgba(255,255,255,0.15)'}
                   />
                 </TouchableOpacity>
               ))}
@@ -176,7 +184,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
               value={review}
               onChangeText={setReview}
               placeholder="Tell us how Marcus did..."
-              placeholderTextColor="rgba(198,207,217,0.5)"
+              placeholderTextColor="#666666"
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -217,7 +225,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: '#030B18',
   },
   safeArea: {
     flex: 1,
@@ -234,7 +242,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(111,240,196,0.1)',
+    backgroundColor: 'rgba(111, 240, 196, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -263,7 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.06)',
     marginBottom: 24,
   },
   serviceRow: {
@@ -292,7 +300,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(198,207,217,0.1)',
+    borderTopColor: 'rgba(255,255,255,0.08)',
     gap: 12,
   },
   infoTitle: {
@@ -308,7 +316,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(29,164,243,0.15)',
+    backgroundColor: 'rgba(29, 164, 243, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -338,7 +346,7 @@ const styles = StyleSheet.create({
   breakdownSection: {
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(198,207,217,0.1)',
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   breakdownRows: {
     gap: 8,
@@ -358,7 +366,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(198,207,217,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     marginBottom: 12,
   },
   totalRow: {
@@ -412,7 +420,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: 'rgba(255,255,255,0.12)',
     backgroundColor: '#0A1A2F',
     marginBottom: 12,
   },
@@ -435,7 +443,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#0A1A2F',
     borderWidth: 1,
-    borderColor: 'rgba(198,207,217,0.2)',
+    borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -486,6 +494,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   submitButtonTextDisabled: {
-    color: 'rgba(198,207,217,0.5)',
+    color: '#666666',
   },
 });

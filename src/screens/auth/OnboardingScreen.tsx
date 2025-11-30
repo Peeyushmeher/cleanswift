@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/AuthStack';
+import { COLORS } from '../../theme/colors';
 
 type OnboardingScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Onboarding'>;
 
@@ -40,62 +41,90 @@ export default function OnboardingScreen() {
   const screen = screens[currentScreen];
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#050B12' }} className="flex flex-col">
+    <View style={{ flex: 1, backgroundColor: COLORS.bg.primary, flexDirection: 'column' }}>
       {/* Main Content */}
-      <View className="flex-1 flex flex-col items-center justify-center px-8 pb-32">
+      <View style={{ flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 128 }}>
         {/* Icon */}
-        <View className="mb-12 relative animate-fade-in-up">
+        <View style={{ marginBottom: 48, position: 'relative' }}>
           <Ionicons
             name={screen.icon}
             size={96}
-            color="#6FF0C4"
+            color={COLORS.accent.mint}
           />
-          <View className="absolute inset-0 blur-2xl opacity-20 bg-[#6FF0C4]" />
         </View>
 
         {/* Title */}
         <Text
-          className="text-[#F5F7FA] text-center mb-5 px-4 animate-fade-in-up max-w-md tracking-wide"
-          style={{ fontSize: 28, fontWeight: '600', animationDelay: '100ms', opacity: 0 }}
+          style={{
+            color: COLORS.text.primary,
+            textAlign: 'center',
+            marginBottom: 20,
+            paddingHorizontal: 16,
+            maxWidth: 448,
+            fontSize: 28,
+            fontWeight: '600',
+            opacity: 0
+          }}
         >
           {screen.title}
         </Text>
 
         {/* Subtitle */}
         <Text
-          className="text-[#C6CFD9] text-center max-w-sm animate-fade-in-up"
-          style={{ fontSize: 16, animationDelay: '200ms', opacity: 0 }}
+          style={{
+            color: COLORS.text.secondary,
+            textAlign: 'center',
+            maxWidth: 384,
+            fontSize: 16,
+            opacity: 0
+          }}
         >
           {screen.subtitle}
         </Text>
       </View>
 
       {/* Progress Dots */}
-      <View className="flex justify-center gap-2.5 mb-10" style={{ flexDirection: 'row' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 40 }}>
         {screens.map((_, index) => (
           <View
             key={index}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              index === currentScreen
-                ? 'w-8 bg-[#6FF0C4]'
-                : 'w-2 bg-[#C6CFD9] opacity-30'
-            }`}
+            style={{
+              height: 8,
+              borderRadius: 9999,
+              width: index === currentScreen ? 32 : 8,
+              backgroundColor: index === currentScreen ? COLORS.accent.mint : COLORS.text.secondary,
+              opacity: index === currentScreen ? 1 : 0.3,
+            }}
           />
         ))}
       </View>
 
       {/* CTA Button */}
-      <View className="px-6 pb-12">
+      <View style={{ paddingHorizontal: 24, paddingBottom: 48 }}>
         <TouchableOpacity
           onPress={handleNext}
           activeOpacity={0.8}
-          className="w-full bg-[#1DA4F3] text-white py-4 rounded-full transition-all duration-200 active:scale-[0.98] shadow-lg shadow-[#1DA4F3]/20 flex items-center justify-center gap-2"
-          style={{ minHeight: 56, flexDirection: 'row' }}
+          style={{
+            width: '100%',
+            backgroundColor: COLORS.accent.blue,
+            paddingVertical: 16,
+            borderRadius: 9999,
+            shadowColor: COLORS.shadow.blue,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 4,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            minHeight: 56
+          }}
         >
-          <Text className="text-white" style={{ fontSize: 17, fontWeight: '600' }}>
+          <Text style={{ color: COLORS.text.inverse, fontSize: 17, fontWeight: '600' }}>
             {currentScreen < screens.length - 1 ? 'Next' : 'Get Started'}
           </Text>
-          <Ionicons name="chevron-forward" size={20} color="white" />
+          <Ionicons name="chevron-forward" size={20} color={COLORS.text.inverse} />
         </TouchableOpacity>
       </View>
     </View>

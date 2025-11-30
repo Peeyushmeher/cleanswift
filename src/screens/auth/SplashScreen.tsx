@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../../navigation/AuthStack';
+import { COLORS } from '../../theme/colors';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
@@ -18,32 +19,28 @@ export default function SplashScreen() {
   }, [navigation]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#050B12', alignItems: 'center', justifyContent: 'center' }}>
-      <View className="flex flex-col items-center gap-6 animate-fade-in">
+    <View style={{ flex: 1, backgroundColor: COLORS.bg.primary, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'column', alignItems: 'center', gap: 24 }}>
         {/* Icon */}
-        <View className="relative">
+        <View style={{ position: 'relative' }}>
           <Ionicons
             name="water"
             size={64}
-            color="#1DA4F3"
-            className="animate-fade-in-up"
+            color={COLORS.accent.blue}
           />
-          <View className="absolute inset-0 blur-xl opacity-20 bg-[#1DA4F3] rounded-full" />
         </View>
 
         {/* Brand Name */}
         <View
-          className="flex flex-col items-center gap-3 animate-fade-in-up"
-          style={{ animationDelay: '200ms', opacity: 0 }}
+          style={{ flexDirection: 'column', alignItems: 'center', gap: 12, opacity: 0 }}
         >
-          <Text className="text-[#F5F7FA] tracking-wider" style={{ fontWeight: '600', fontSize: 32 }}>
+          <Text style={{ color: COLORS.text.primary, fontWeight: '600', fontSize: 32, letterSpacing: 1.5 }}>
             CleanSwift
           </Text>
 
           {/* Tagline */}
           <Text
-            className="text-[#C6CFD9] tracking-wide"
-            style={{ fontSize: 14, animationDelay: '400ms', opacity: 0 }}
+            style={{ color: COLORS.text.secondary, fontSize: 14, letterSpacing: 0.5, opacity: 0 }}
           >
             Premium Mobile Detailing
           </Text>

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
+import { COLORS } from '../../theme/colors';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Notifications'>;
 
@@ -22,7 +23,7 @@ const ToggleSwitch = ({ enabled, locked, onPress }: { enabled: boolean; locked?:
     activeOpacity={locked ? 1 : 0.8}
     style={[
       styles.toggleSwitch,
-      { backgroundColor: enabled ? '#6FF0C4' : 'rgba(198,207,217,0.3)' },
+      { backgroundColor: enabled ? COLORS.accent.mint : COLORS.border.emphasis },
       locked && styles.toggleSwitchLocked,
     ]}
   >
@@ -118,7 +119,7 @@ export default function NotificationsScreen({ navigation }: Props) {
             activeOpacity={0.7}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="#C6CFD9" />
+            <Ionicons name="chevron-back" size={24} color={COLORS.text.secondary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
         </View>
@@ -167,7 +168,7 @@ export default function NotificationsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#050B12',
+    backgroundColor: COLORS.bg.primary,
   },
   safeArea: {
     flex: 1,
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 28,
     fontWeight: '600',
   },
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.8,
@@ -211,11 +212,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   settingItem: {
-    backgroundColor: '#0A1A2F',
+    backgroundColor: COLORS.bg.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: COLORS.border.subtle,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 16,
@@ -224,13 +225,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingLabel: {
-    color: '#F5F7FA',
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
   },
   settingDescription: {
-    color: '#C6CFD9',
+    color: COLORS.text.secondary,
     fontSize: 14,
   },
   toggleSwitch: {
