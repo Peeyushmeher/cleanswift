@@ -1,24 +1,72 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const [name, setName] = useState('Peeyush Yerremsetty');
-  const [email, setEmail] = useState('meherpeeyush@gmail.com');
-  const [phone, setPhone] = useState('437-989-6480');
+  const { profile } = useUserProfile();
+  const { user } = useAuth();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setName(profile.full_name || '');
+      setEmail(profile.email || user?.email || '');
+      setPhone(profile.phone || '');
+    }
+  }, [profile, user]);
 
   const isFormValid = name.length > 0 && email.length > 0 && phone.length > 0;
 
-  const handleSave = () => {
-    // TODO: Implement save logic
-    console.log('Save profile changes');
-    navigation.goBack();
+  const handleSave = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to update your profile');
+      return;
+    }
+
+    if (!isFormValid) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: name,
+          email: email,
+          phone: phone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      Alert.alert('Success', 'Profile updated successfully', [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -112,21 +160,25 @@ export default function EditProfileScreen({ navigation }: Props) {
           <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleSave}
-            disabled={!isFormValid}
-            activeOpacity={isFormValid ? 0.8 : 1}
+            disabled={!isFormValid || loading}
+            activeOpacity={isFormValid && !loading ? 0.8 : 1}
             style={[
               styles.saveButton,
-              !isFormValid && styles.saveButtonDisabled,
+              (!isFormValid || loading) && styles.saveButtonDisabled,
             ]}
           >
-            <Text
-              style={[
-                styles.saveButtonText,
-                !isFormValid && styles.saveButtonTextDisabled,
-              ]}
-            >
-              Save Changes
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  !isFormValid && styles.saveButtonTextDisabled,
+                ]}
+              >
+                Save Changes
+              </Text>
+            )}
           </TouchableOpacity>
           </View>
         </View>

@@ -1,39 +1,140 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EditCarCard, type Car } from '../../components/EditCarCard';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'SelectCar'>;
 
-const savedCars = [
-  {
-    id: '1',
-    model: '2022 BMW M4',
-    details: 'Competition Package',
-    license: 'ABC-123',
-    color: 'Black Sapphire Metallic',
-  },
-  {
-    id: '2',
-    model: '2021 Tesla Model 3',
-    details: 'Performance',
-    license: 'XYZ-789',
-    color: 'Pearl White Multi-Coat',
-  },
-  {
-    id: '3',
-    model: '2023 Porsche 911',
-    details: 'Carrera S',
-    license: 'POR-911',
-    color: 'GT Silver Metallic',
-  },
-];
-
 export default function SelectCarScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const [selectedCar, setSelectedCar] = useState<string>('1');
+  const { user } = useAuth();
+  const [savedCars, setSavedCars] = useState<Car[]>([]);
+  const [selectedCar, setSelectedCar] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
+  // Fetch cars from database
+  useEffect(() => {
+    const fetchCars = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const { data: cars, error } = await supabase
+          .from('cars')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_primary', { ascending: false })
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching cars:', error);
+          Alert.alert('Error', 'Failed to load cars');
+          return;
+        }
+
+        const mappedCars: Car[] = (cars || []).map(car => ({
+          id: car.id,
+          make: car.make,
+          model: car.model,
+          year: car.year,
+          trim: car.trim || undefined,
+          license_plate: car.license_plate,
+          color: car.color || undefined,
+        }));
+
+        setSavedCars(mappedCars);
+        if (mappedCars.length > 0 && !selectedCar) {
+          setSelectedCar(mappedCars[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch cars:', error);
+        Alert.alert('Error', 'Failed to load cars');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCars();
+  }, [user]);
+
+  const handleEditCar = (carId: string) => {
+    const car = savedCars.find(c => c.id === carId);
+    if (car) {
+      setEditingCar(car);
+      setIsEditModalVisible(true);
+    }
+  };
+
+  const handleSaveCar = async (updatedCar: Car) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('cars')
+        .update({
+          make: updatedCar.make,
+          model: updatedCar.model,
+          year: updatedCar.year,
+          trim: updatedCar.trim || null,
+          license_plate: updatedCar.license_plate,
+          color: updatedCar.color || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', updatedCar.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      setSavedCars(prev => prev.map(c => c.id === updatedCar.id ? updatedCar : c));
+      Alert.alert('Success', 'Car updated successfully');
+    } catch (error) {
+      console.error('Error updating car:', error);
+      Alert.alert('Error', 'Failed to update car');
+    }
+  };
+
+  const handleDeleteCar = async (carId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('cars')
+        .delete()
+        .eq('id', carId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      setSavedCars(prev => {
+        const updated = prev.filter(c => c.id !== carId);
+        // Update selected car if the deleted one was selected
+        if (selectedCar === carId) {
+          setSelectedCar(updated.length > 0 ? updated[0].id : null);
+        }
+        return updated;
+      });
+      Alert.alert('Success', 'Car deleted successfully');
+    } catch (error) {
+      console.error('Error deleting car:', error);
+      Alert.alert('Error', 'Failed to delete car');
+    }
+  };
 
   const handleContinue = () => {
     // TODO: Pass selected car to next screen
@@ -64,47 +165,70 @@ export default function SelectCarScreen({ navigation }: Props) {
         >
           {/* Vehicle Cards */}
           <View style={styles.cardsContainer}>
-            {savedCars.map((car) => {
-              const isSelected = selectedCar === car.id;
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading cars...</Text>
+              </View>
+            ) : savedCars.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No cars added yet</Text>
+              </View>
+            ) : (
+              savedCars.map((car) => {
+                const isSelected = selectedCar === car.id;
+                const carDisplayName = `${car.year} ${car.make} ${car.model}`;
 
-              return (
-                <TouchableOpacity
-                  key={car.id}
-                  onPress={() => setSelectedCar(car.id)}
-                  activeOpacity={isSelected ? 1 : 0.8}
-                  style={[
-                    styles.carCard,
-                    isSelected && styles.carCardSelected,
-                  ]}
-                >
-                  {/* Selection Checkmark */}
-                  {isSelected && (
-                    <View style={styles.checkmarkContainer}>
-                      <Ionicons name="checkmark" size={16} color="#050B12" />
+                return (
+                  <TouchableOpacity
+                    key={car.id}
+                    onPress={() => setSelectedCar(car.id)}
+                    activeOpacity={isSelected ? 1 : 0.8}
+                    style={[
+                      styles.carCard,
+                      isSelected && styles.carCardSelected,
+                    ]}
+                  >
+                    {/* Selection Checkmark */}
+                    {isSelected && (
+                      <View style={styles.checkmarkContainer}>
+                        <Ionicons name="checkmark" size={16} color="#050B12" />
+                      </View>
+                    )}
+
+                    {/* Edit Button */}
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleEditCar(car.id);
+                      }}
+                      activeOpacity={0.7}
+                      style={styles.cardEditButton}
+                    >
+                      <Ionicons name="create-outline" size={20} color="#6FF0C4" />
+                    </TouchableOpacity>
+
+                    {/* Car Icon */}
+                    <View style={styles.carIconContainer}>
+                      <Ionicons
+                        name="car-sport"
+                        size={56}
+                        color={isSelected ? '#6FF0C4' : '#1DA4F3'}
+                      />
                     </View>
-                  )}
 
-                  {/* Car Icon */}
-                  <View style={styles.carIconContainer}>
-                    <Ionicons
-                      name="car-sport"
-                      size={56}
-                      color={isSelected ? '#6FF0C4' : '#1DA4F3'}
-                    />
-                  </View>
-
-                  {/* Car Info */}
-                  <View>
-                    <Text style={styles.carModel}>{car.model}</Text>
-                    <View style={styles.carDetailsContainer}>
-                      <Text style={styles.carDetail}>{car.details}</Text>
-                      <Text style={styles.carDetail}>License: {car.license}</Text>
-                      <Text style={styles.carDetail}>{car.color}</Text>
+                    {/* Car Info */}
+                    <View>
+                      <Text style={styles.carModel}>{carDisplayName}</Text>
+                      <View style={styles.carDetailsContainer}>
+                        {car.trim && <Text style={styles.carDetail}>{car.trim}</Text>}
+                        <Text style={styles.carDetail}>License: {car.license_plate}</Text>
+                        {car.color && <Text style={styles.carDetail}>{car.color}</Text>}
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </View>
 
           {/* Add Car Card */}
@@ -125,15 +249,27 @@ export default function SelectCarScreen({ navigation }: Props) {
         {/* Bottom CTA */}
         <View style={[styles.bottomCTA, { bottom: Math.max(insets.bottom, 8) + 68 }]}>
           <View style={styles.buttonSafeArea}>
-          <TouchableOpacity
-            onPress={handleContinue}
-            activeOpacity={0.8}
-            style={styles.continueButton}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleContinue}
+              activeOpacity={0.8}
+              style={styles.continueButton}
+            >
+              <Text style={styles.continueButtonText}>Continue</Text>
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* Edit Car Modal */}
+        <EditCarCard
+          car={editingCar}
+          visible={isEditModalVisible}
+          onClose={() => {
+            setIsEditModalVisible(false);
+            setEditingCar(null);
+          }}
+          onSave={handleSaveCar}
+          onDelete={handleDeleteCar}
+        />
       </SafeAreaView>
     </View>
   );
@@ -159,9 +295,26 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
+    flex: 1,
     color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#C6CFD9',
+    fontSize: 16,
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#C6CFD9',
+    fontSize: 16,
   },
   scrollView: {
     flex: 1,
@@ -195,13 +348,25 @@ const styles = StyleSheet.create({
   checkmarkContainer: {
     position: 'absolute',
     top: 24,
-    right: 24,
+    left: 24,
     width: 24,
     height: 24,
     borderRadius: 12,
     backgroundColor: '#6FF0C4',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  cardEditButton: {
+    position: 'absolute',
+    top: 24,
+    right: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(111,240,196,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
   },
   carIconContainer: {
     marginBottom: 24,

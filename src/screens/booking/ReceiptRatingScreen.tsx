@@ -1,17 +1,26 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { BookingStackParamList } from '../../navigation/BookingStack';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking } from '../../contexts/BookingContext';
-import { DEMO_TIP_AMOUNTS, DEMO_RECEIPT_DATA } from '../../config/demoData';
-import { COLORS } from '../../theme/colors';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ReceiptRating'>;
 
+const tipAmounts = ['$5', '$10', '$20', 'Custom'];
+
+const receiptData = {
+  serviceName: 'Full Exterior Detail',
+  completedAt: '2:42 PM',
+  price: '$213.57',
+  carModel: '2022 BMW M4',
+  licensePlate: 'ABC-123',
+};
+
 export default function ReceiptRatingScreen({ navigation }: Props) {
   const { clearBooking } = useBooking();
+  const insets = useSafeAreaInsets();
   const [rating, setRating] = useState(0);
   const [selectedTip, setSelectedTip] = useState('');
   const [review, setReview] = useState('');
@@ -42,7 +51,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.successIcon}>
-              <Ionicons name="checkmark" size={40} color={COLORS.accent.mint} />
+              <Ionicons name="checkmark" size={40} color="#6FF0C4" />
             </View>
             <Text style={styles.headerTitle}>
               Your Detail Is Complete
@@ -64,18 +73,18 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
             {/* Service Info */}
             <View style={styles.serviceRow}>
               <View>
-                <Text style={styles.serviceTitle}>{DEMO_RECEIPT_DATA.serviceName}</Text>
-                <Text style={styles.serviceTime}>Completed at {DEMO_RECEIPT_DATA.completedAt}</Text>
+                <Text style={styles.serviceTitle}>{receiptData.serviceName}</Text>
+                <Text style={styles.serviceTime}>Completed at {receiptData.completedAt}</Text>
               </View>
-              <Text style={styles.servicePrice}>{DEMO_RECEIPT_DATA.price}</Text>
+              <Text style={styles.servicePrice}>{receiptData.price}</Text>
             </View>
 
             {/* Car Info */}
             <View style={styles.infoRow}>
-              <Ionicons name="car-sport" size={20} color={COLORS.text.secondary} />
+              <Ionicons name="car-sport" size={20} color="#C6CFD9" />
               <View>
-                <Text style={styles.infoTitle}>{DEMO_RECEIPT_DATA.carModel}</Text>
-                <Text style={styles.infoSubtitle}>License: {DEMO_RECEIPT_DATA.licensePlate}</Text>
+                <Text style={styles.infoTitle}>{receiptData.carModel}</Text>
+                <Text style={styles.infoSubtitle}>License: {receiptData.licensePlate}</Text>
               </View>
             </View>
 
@@ -87,7 +96,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
               <View style={styles.detailerInfo}>
                 <Text style={styles.detailerName}>Marcus Thompson</Text>
                 <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={12} color={COLORS.accent.mint} />
+                  <Ionicons name="star" size={12} color="#6FF0C4" />
                   <Text style={styles.ratingText}>4.9</Text>
                 </View>
               </View>
@@ -134,7 +143,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
                   <Ionicons
                     name={star <= rating ? 'star' : 'star-outline'}
                     size={40}
-                    color={star <= rating ? COLORS.accent.mint : COLORS.border.strong}
+                    color={star <= rating ? '#6FF0C4' : 'rgba(255,255,255,0.15)'}
                   />
                 </TouchableOpacity>
               ))}
@@ -145,7 +154,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
           <View style={styles.tipSection}>
             <Text style={styles.sectionTitleLeft}>Add a Tip?</Text>
             <View style={styles.tipGrid}>
-              {DEMO_TIP_AMOUNTS.map((amount) => (
+              {tipAmounts.map((amount) => (
                 <TouchableOpacity
                   key={amount}
                   onPress={() => setSelectedTip(amount)}
@@ -175,7 +184,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
               value={review}
               onChangeText={setReview}
               placeholder="Tell us how Marcus did..."
-              placeholderTextColor={COLORS.text.disabled}
+              placeholderTextColor="#666666"
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -183,7 +192,12 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
             />
           </View>
 
-          {/* Bottom CTA */}
+          {/* Spacer for bottom button */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+
+        {/* Bottom CTA */}
+        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <TouchableOpacity
             onPress={handleSubmitRating}
             disabled={rating === 0}
@@ -202,7 +216,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
               Submit Rating
             </Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -211,7 +225,7 @@ export default function ReceiptRatingScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#030B18',
   },
   safeArea: {
     flex: 1,
@@ -228,20 +242,20 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.accentBg.mint10,
+    backgroundColor: 'rgba(111, 240, 196, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
   headerTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 8,
   },
   headerSubtitle: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 15,
     textAlign: 'center',
   },
@@ -253,11 +267,11 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   receiptCard: {
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.06)',
     marginBottom: 24,
   },
   serviceRow: {
@@ -267,17 +281,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   serviceTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 4,
   },
   serviceTime: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
   },
   servicePrice: {
-    color: COLORS.accent.blue,
+    color: '#1DA4F3',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -286,28 +300,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border.default,
+    borderTopColor: 'rgba(255,255,255,0.08)',
     gap: 12,
   },
   infoTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 15,
     fontWeight: '500',
   },
   infoSubtitle: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 13,
   },
   avatarContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.accentBg.blue15,
+    backgroundColor: 'rgba(29, 164, 243, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -315,7 +329,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailerName: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 15,
     fontWeight: '500',
     marginBottom: 2,
@@ -326,13 +340,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 12,
   },
   breakdownSection: {
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border.default,
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   breakdownRows: {
     gap: 8,
@@ -343,16 +357,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   priceLabel: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
   },
   priceValue: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 14,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border.emphasis,
+    backgroundColor: 'rgba(255,255,255,0.12)',
     marginBottom: 12,
   },
   totalRow: {
@@ -361,12 +375,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 17,
     fontWeight: '600',
   },
   totalValue: {
-    color: COLORS.accent.mint,
+    color: '#6FF0C4',
     fontSize: 24,
     fontWeight: '700',
   },
@@ -374,14 +388,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 16,
   },
   sectionTitleLeft: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
@@ -406,36 +420,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border.emphasis,
-    backgroundColor: COLORS.bg.surface,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#0A1A2F',
     marginBottom: 12,
   },
   tipButtonSelected: {
     borderWidth: 2,
-    borderColor: COLORS.accent.mint,
+    borderColor: '#6FF0C4',
   },
   tipButtonText: {
     fontSize: 15,
     fontWeight: '500',
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
   },
   tipButtonTextSelected: {
-    color: COLORS.accent.mint,
+    color: '#6FF0C4',
   },
   reviewSection: {
     marginBottom: 24,
   },
   reviewInput: {
     width: '100%',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderWidth: 1,
-    borderColor: COLORS.border.emphasis,
+    borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 16,
     minHeight: 100,
+  },
+  bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    backgroundColor: 'transparent',
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   submitButton: {
     width: '100%',
@@ -444,24 +476,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 56,
-    backgroundColor: COLORS.accent.blue,
-    shadowColor: COLORS.shadow.blue,
+    backgroundColor: '#1DA4F3',
+    shadowColor: '#1DA4F3',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   submitButtonDisabled: {
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     shadowOpacity: 0,
     elevation: 0,
   },
   submitButtonText: {
-    color: COLORS.text.inverse,
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
   },
   submitButtonTextDisabled: {
-    color: COLORS.text.disabled,
+    color: '#666666',
   },
 });

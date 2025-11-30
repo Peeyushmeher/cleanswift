@@ -1,11 +1,13 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import OrdersHistoryScreen from '../screens/orders/OrdersHistoryScreen';
 import OrderDetailsScreen from '../screens/orders/OrderDetailsScreen';
+import type { BookingHistoryItem } from '../hooks/useBookings';
 
 export type OrdersStackParamList = {
   OrdersHistory: undefined;
   OrderDetails: {
     orderId: string;
+    booking?: BookingHistoryItem;
   };
 };
 

@@ -19,17 +19,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Get initial session with error handling for refresh token errors
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        // Check if it's a refresh token error
+        if (error.message?.includes('Refresh Token') || error.message?.includes('refresh_token')) {
+          console.warn('Invalid refresh token detected, clearing session:', error.message);
+          // Clear the invalid session
+          supabase.auth.signOut().catch(console.error);
+          setSession(null);
+          setUser(null);
+        } else {
+          console.error('Session error:', error);
+          setSession(null);
+          setUser(null);
+        }
+      } else {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+      setLoading(false);
+    }).catch((error) => {
+      // Handle any unexpected errors
+      console.error('Unexpected error getting session:', error);
+      if (error.message?.includes('Refresh Token') || error.message?.includes('refresh_token')) {
+        console.warn('Invalid refresh token detected, clearing session');
+        supabase.auth.signOut().catch(console.error);
+      }
+      setSession(null);
+      setUser(null);
       setLoading(false);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Handle token refresh errors
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.warn('Token refresh failed, signing out');
+        supabase.auth.signOut().catch(console.error);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -52,11 +82,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
-      return { error };
+
+      if (error) {
+        return { error };
+      }
+
+      // Create profile record if user was created
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email || email,
+            full_name: '',
+            phone: '',
+            role: 'user',
+          });
+
+        // Don't fail signup if profile creation fails (it might already exist)
+        if (profileError) {
+          console.warn('Profile creation warning:', profileError);
+        }
+      }
+
+      return { error: null };
     } catch (error) {
       return { error: error as Error };
     }

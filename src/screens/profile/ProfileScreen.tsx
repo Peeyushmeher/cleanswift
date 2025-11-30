@@ -1,11 +1,16 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
-import { COLORS } from '../../theme/colors';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { useAuth } from '../../contexts/AuthContext';
+import type { MainTabsParamList } from '../../navigation/MainTabs';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
+type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
 
 const menuSections = [
   {
@@ -13,6 +18,7 @@ const menuSections = [
     items: [
       { icon: 'person' as const, label: 'Personal Info', action: 'edit-profile' },
       { icon: 'car-sport' as const, label: 'Manage Cars', action: 'manage-cars' },
+      { icon: 'location' as const, label: 'Manage Addresses', action: 'manage-addresses' },
       { icon: 'card' as const, label: 'Payment Methods', action: 'payment' },
     ],
   },
@@ -34,6 +40,10 @@ const menuSections = [
 ];
 
 export default function ProfileScreen({ navigation }: Props) {
+  const { profile, loading: profileLoading } = useUserProfile();
+  const { user, signOut } = useAuth();
+  const tabsNavigation = useNavigation<TabsNav>();
+
   const handleAction = (action: string) => {
     switch (action) {
       case 'edit-profile':
@@ -41,6 +51,9 @@ export default function ProfileScreen({ navigation }: Props) {
         break;
       case 'manage-cars':
         navigation.navigate('SelectCar');
+        break;
+      case 'manage-addresses':
+        navigation.navigate('ManageAddresses');
         break;
       case 'payment':
         // TODO: Navigate to payment methods screen when implemented
@@ -64,9 +77,28 @@ export default function ProfileScreen({ navigation }: Props) {
     navigation.navigate('Orders');
   };
 
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout');
+  const handleLogout = async () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -77,14 +109,20 @@ export default function ProfileScreen({ navigation }: Props) {
           <View style={styles.profileRow}>
             {/* Profile Photo */}
             <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={40} color={COLORS.accent.mint} />
+              <Ionicons name="person" size={40} color="#6FF0C4" />
             </View>
 
             {/* User Info */}
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>Peeyush Yerremsetty</Text>
-              <Text style={styles.userEmail}>meherpeeyush@gmail.com</Text>
-              <Text style={styles.userPhone}>437-989-6480</Text>
+              {profileLoading ? (
+                <ActivityIndicator size="small" color="#6FF0C4" />
+              ) : (
+                <>
+                  <Text style={styles.userName}>{profile?.full_name || 'Not set'}</Text>
+                  <Text style={styles.userEmail}>{profile?.email || user?.email || 'Not set'}</Text>
+                  <Text style={styles.userPhone}>{profile?.phone || 'Not set'}</Text>
+                </>
+              )}
             </View>
 
             {/* Edit Button */}
@@ -93,7 +131,7 @@ export default function ProfileScreen({ navigation }: Props) {
               activeOpacity={0.7}
               style={styles.editButton}
             >
-              <Ionicons name="settings" size={20} color={COLORS.accent.mint} />
+              <Ionicons name="settings" size={20} color="#6FF0C4" />
             </TouchableOpacity>
           </View>
         </View>
@@ -112,13 +150,13 @@ export default function ProfileScreen({ navigation }: Props) {
               style={styles.ordersCard}
             >
               <View style={styles.ordersIconContainer}>
-                <Ionicons name="cube" size={24} color={COLORS.accent.blue} />
+                <Ionicons name="cube" size={24} color="#1DA4F3" />
               </View>
               <View style={styles.ordersContent}>
                 <Text style={styles.ordersTitle}>Your Orders</Text>
                 <Text style={styles.ordersSubtitle}>View booking history & receipts</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} />
+              <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
             </TouchableOpacity>
           </View>
 
@@ -144,9 +182,9 @@ export default function ProfileScreen({ navigation }: Props) {
                         !isLast && styles.menuItemWithBorder,
                       ]}
                     >
-                      <Ionicons name={item.icon} size={20} color={COLORS.text.secondary} />
+                      <Ionicons name={item.icon} size={20} color="#C6CFD9" />
                       <Text style={styles.menuItemLabel}>{item.label}</Text>
-                      <Ionicons name="chevron-forward" size={20} color={COLORS.text.secondary} />
+                      <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
                     </TouchableOpacity>
                   );
                 })}
@@ -160,7 +198,7 @@ export default function ProfileScreen({ navigation }: Props) {
             activeOpacity={0.8}
             style={styles.logoutButton}
           >
-            <Ionicons name="log-out" size={20} color={COLORS.text.secondary} />
+            <Ionicons name="log-out" size={20} color="#C6CFD9" />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -172,7 +210,7 @@ export default function ProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: '#030B18',
   },
   safeArea: {
     flex: 1,
@@ -191,28 +229,28 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.accentBg.blue15,
+    backgroundColor: 'rgba(29, 164, 243, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: COLORS.border.accentMint,
+    borderColor: 'rgba(111, 240, 196, 0.3)',
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 6,
   },
   userEmail: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 15,
     marginBottom: 4,
   },
   userPhone: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 15,
   },
   editButton: {
@@ -231,10 +269,10 @@ const styles = StyleSheet.create({
   ordersCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 24,
     paddingVertical: 20,
     gap: 16,
@@ -243,7 +281,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.accentBg.blue10,
+    backgroundColor: 'rgba(29, 164, 243, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -251,20 +289,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ordersTitle: {
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   ordersSubtitle: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 14,
   },
   menuSection: {
     marginBottom: 32,
   },
   sectionTitle: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 13,
     fontWeight: '600',
     letterSpacing: 0.8,
@@ -273,10 +311,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   menuCard: {
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
   menuItem: {
@@ -289,11 +327,11 @@ const styles = StyleSheet.create({
   },
   menuItemWithBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.default,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   menuItemLabel: {
     flex: 1,
-    color: COLORS.text.primary,
+    color: '#F5F7FA',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -301,17 +339,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.bg.surface,
+    backgroundColor: '#0A1A2F',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 24,
     paddingVertical: 16,
     minHeight: 56,
     gap: 12,
   },
   logoutText: {
-    color: COLORS.text.secondary,
+    color: '#C6CFD9',
     fontSize: 16,
     fontWeight: '500',
   },

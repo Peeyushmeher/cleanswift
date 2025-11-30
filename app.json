@@ -9,7 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cleanswift.app",
+      "entitlements": {
+        "com.apple.developer.in-app-payments": [
+          "merchant.com.cleanswift"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +42,13 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.cleanswift",
+          "enableGooglePay": false
         }
       ]
     ],
