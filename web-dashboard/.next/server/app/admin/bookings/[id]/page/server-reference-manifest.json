@@ -1,0 +1,35 @@
+{
+  "node": {
+    "609d7ed7b04468e7cac3fe24f78283934b7d517f65": {
+      "workers": {
+        "app/admin/bookings/[id]/page": {
+          "moduleId": 39985,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/bookings/[id]/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_ACTION_0",
+      "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+    },
+    "60a56094e761419d3eee1e66fffad7f8200d716553": {
+      "workers": {
+        "app/admin/bookings/[id]/page": {
+          "moduleId": 39985,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_1",
+          "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/bookings/[id]/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_ACTION_1",
+      "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+    }
+  },
+  "edge": {}
+}

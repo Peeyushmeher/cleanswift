@@ -1,0 +1,23 @@
+{
+  "devFiles": [],
+  "ampDevFiles": [],
+  "polyfillFiles": [],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [],
+  "pages": {
+    "/_app": [
+      "static/chunks/0c9b8_next_dist_compiled_0b2e2435._.js",
+      "static/chunks/0c9b8_next_dist_shared_lib_c163b05c._.js",
+      "static/chunks/0c9b8_next_dist_client_ec8ea6fe._.js",
+      "static/chunks/0c9b8_next_dist_4e44069d._.js",
+      "static/chunks/0c9b8_next_app_0e5cab9f.js",
+      "static/chunks/[next]_entry_page-loader_ts_97e11c56._.js",
+      "static/chunks/0c9b8_react-dom_522b9771._.js",
+      "static/chunks/0c9b8_c5fcdc1e._.js",
+      "static/chunks/[root-of-the-server]__860c157a._.js",
+      "static/chunks/cleanswift_web-dashboard_pages__app_2da965e7._.js",
+      "static/chunks/turbopack-cleanswift_web-dashboard_pages__app_92c87cb1._.js"
+    ]
+  },
+  "ampFirstPages": []
+}

@@ -1,0 +1,4 @@
+{
+  "/detailer/bookings/page": "app/detailer/bookings/page.js",
+  "/detailer/dashboard/page": "app/detailer/dashboard/page.js"
+}

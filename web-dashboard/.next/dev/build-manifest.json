@@ -1,0 +1,25 @@
+{
+  "pages": {
+    "/_app": []
+  },
+  "devFiles": [],
+  "polyfillFiles": [
+    "static/chunks/0c9b8_next_dist_build_polyfills_polyfill-nomodule.js"
+  ],
+  "lowPriorityFiles": [
+    "static/development/_ssgManifest.js",
+    "static/development/_buildManifest.js"
+  ],
+  "rootMainFiles": [
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_4b9fce53._.js",
+    "static/chunks/0c9b8_next_dist_compiled_react-dom_bb7d88c1._.js",
+    "static/chunks/0c9b8_next_dist_compiled_react-server-dom-turbopack_b778373a._.js",
+    "static/chunks/0c9b8_next_dist_compiled_next-devtools_index_efb23552.js",
+    "static/chunks/0c9b8_next_dist_compiled_860aae21._.js",
+    "static/chunks/0c9b8_next_dist_client_2f17227b._.js",
+    "static/chunks/0c9b8_next_dist_37263d21._.js",
+    "static/chunks/0c9b8_@swc_helpers_cjs_15d14841._.js",
+    "static/chunks/cleanswift_web-dashboard_a0ff3932._.js",
+    "static/chunks/turbopack-cleanswift_web-dashboard_c384f669._.js"
+  ]
+}

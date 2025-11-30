@@ -1,0 +1,20 @@
+{
+  "node": {
+    "60d858c2f9116937f1ff29a4433a628e709b07024a": {
+      "workers": {
+        "app/detailer/bookings/page": {
+          "moduleId": 56946,
+          "async": false,
+          "exportedName": "assignJobToDetailer",
+          "filename": "cleanswift/web-dashboard/app/detailer/bookings/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/bookings/page": "action-browser"
+      },
+      "exportedName": "assignJobToDetailer",
+      "filename": "cleanswift/web-dashboard/app/detailer/bookings/actions.ts"
+    }
+  },
+  "edge": {}
+}

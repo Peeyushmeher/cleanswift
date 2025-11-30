@@ -1,0 +1,50 @@
+{
+  "node": {
+    "40818020bd46baf457f11ead61a43c0a5eb6a72a6c": {
+      "workers": {
+        "app/detailer/teams/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/teams/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/teams/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteTeam",
+          "filename": "cleanswift/web-dashboard/app/detailer/teams/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/teams/page": "action-browser"
+      },
+      "exportedName": "deleteTeam",
+      "filename": "cleanswift/web-dashboard/app/detailer/teams/actions.ts"
+    },
+    "7c3b50b01530e1c9b0fbe935d1c44fa0b6c274044b": {
+      "workers": {
+        "app/detailer/teams/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/teams/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/teams/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createTeam",
+          "filename": "cleanswift/web-dashboard/app/detailer/teams/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/teams/page": "action-browser"
+      },
+      "exportedName": "createTeam",
+      "filename": "cleanswift/web-dashboard/app/detailer/teams/actions.ts"
+    },
+    "7ca37a6007a6dbc124d74e0760defede774851b4c7": {
+      "workers": {
+        "app/detailer/teams/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/teams/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/teams/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateTeam",
+          "filename": "cleanswift/web-dashboard/app/detailer/teams/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/teams/page": "action-browser"
+      },
+      "exportedName": "updateTeam",
+      "filename": "cleanswift/web-dashboard/app/detailer/teams/actions.ts"
+    }
+  },
+  "edge": {}
+}

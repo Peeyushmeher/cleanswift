@@ -1,0 +1,80 @@
+{
+  "node": {
+    "703797e60fbb016fcd7e046529634bfa1142bd67fc": {
+      "workers": {
+        "app/detailer/members/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/members/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/members/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateMemberRole",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/page": "action-browser"
+      },
+      "exportedName": "updateMemberRole",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    },
+    "60a446d426f2f65cea46c4dbb7faf5d0e0fb8e9767": {
+      "workers": {
+        "app/detailer/members/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/members/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/members/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "suspendMember",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/page": "action-browser"
+      },
+      "exportedName": "suspendMember",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    },
+    "60ac567f52cdf60cae3ffb68e1cc50e927cf81aab6": {
+      "workers": {
+        "app/detailer/members/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/members/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/members/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "activateMember",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/page": "action-browser"
+      },
+      "exportedName": "activateMember",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    },
+    "6028be15458b9994fe185ed90031cf0d041b61eb22": {
+      "workers": {
+        "app/detailer/members/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/members/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/members/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "removeMember",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/page": "action-browser"
+      },
+      "exportedName": "removeMember",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    },
+    "70cf6a3cfbe6ca7139d4ac7a295622ae64a88301d6": {
+      "workers": {
+        "app/detailer/members/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/members/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/members/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "inviteMember",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/page": "action-browser"
+      },
+      "exportedName": "inviteMember",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    }
+  },
+  "edge": {}
+}

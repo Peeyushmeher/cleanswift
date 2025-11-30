@@ -1,0 +1,191 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/admin/bookings/[id]",
+      "regex": "^/admin/bookings/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/bookings/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/detailer/bookings/[id]",
+      "regex": "^/detailer/bookings/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/detailer/bookings/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/detailer/members/[id]",
+      "regex": "^/detailer/members/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/detailer/members/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/detailer/teams/[id]",
+      "regex": "^/detailer/teams/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/detailer/teams/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin/bookings",
+      "regex": "^/admin/bookings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/bookings(?:/)?$"
+    },
+    {
+      "page": "/admin/dashboard",
+      "regex": "^/admin/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dashboard(?:/)?$"
+    },
+    {
+      "page": "/admin/detailers",
+      "regex": "^/admin/detailers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/detailers(?:/)?$"
+    },
+    {
+      "page": "/admin/users",
+      "regex": "^/admin/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/auth/login",
+      "regex": "^/auth/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/login(?:/)?$"
+    },
+    {
+      "page": "/detailer/availability",
+      "regex": "^/detailer/availability(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/availability(?:/)?$"
+    },
+    {
+      "page": "/detailer/bookings",
+      "regex": "^/detailer/bookings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/bookings(?:/)?$"
+    },
+    {
+      "page": "/detailer/dashboard",
+      "regex": "^/detailer/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/dashboard(?:/)?$"
+    },
+    {
+      "page": "/detailer/earnings",
+      "regex": "^/detailer/earnings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/earnings(?:/)?$"
+    },
+    {
+      "page": "/detailer/members",
+      "regex": "^/detailer/members(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/members(?:/)?$"
+    },
+    {
+      "page": "/detailer/reviews",
+      "regex": "^/detailer/reviews(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/reviews(?:/)?$"
+    },
+    {
+      "page": "/detailer/schedule",
+      "regex": "^/detailer/schedule(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/schedule(?:/)?$"
+    },
+    {
+      "page": "/detailer/settings",
+      "regex": "^/detailer/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/settings(?:/)?$"
+    },
+    {
+      "page": "/detailer/settings/organization",
+      "regex": "^/detailer/settings/organization(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/settings/organization(?:/)?$"
+    },
+    {
+      "page": "/detailer/teams",
+      "regex": "^/detailer/teams(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/detailer/teams(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

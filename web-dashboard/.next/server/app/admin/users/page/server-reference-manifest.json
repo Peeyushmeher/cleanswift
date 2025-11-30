@@ -1,0 +1,20 @@
+{
+  "node": {
+    "40f7840d6b2af554d4d8d5f57a66b605f21e8eb023": {
+      "workers": {
+        "app/admin/users/page": {
+          "moduleId": 59262,
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "cleanswift/web-dashboard/app/admin/users/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/users/page": "rsc"
+      },
+      "exportedName": "$$RSC_SERVER_ACTION_0",
+      "filename": "cleanswift/web-dashboard/app/admin/users/page.tsx"
+    }
+  },
+  "edge": {}
+}

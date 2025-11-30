@@ -1,0 +1,15 @@
+module.exports=[93695,(a,b,c)=>{b.exports=a.x("next/dist/shared/lib/no-fallback-error.external.js",()=>require("next/dist/shared/lib/no-fallback-error.external.js"))},6032,a=>{a.n(a.i(77318))},79104,a=>{a.n(a.i(30730))},30188,a=>{a.n(a.i(7581))},42540,a=>{a.n(a.i(99116))},29789,a=>{a.n(a.i(16755))},5531,a=>{a.n(a.i(2287))},92088,a=>{"use strict";let b=(0,a.i(44322).registerClientReference)(function(){throw Error("Attempted to call the default export of [project]/cleanswift/web-dashboard/app/detailer/teams/[id]/TeamDetailClient.tsx <module evaluation> from the server, but it's on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.")},"[project]/cleanswift/web-dashboard/app/detailer/teams/[id]/TeamDetailClient.tsx <module evaluation>","default");a.s(["default",0,b])},2134,a=>{"use strict";let b=(0,a.i(44322).registerClientReference)(function(){throw Error("Attempted to call the default export of [project]/cleanswift/web-dashboard/app/detailer/teams/[id]/TeamDetailClient.tsx from the server, but it's on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.")},"[project]/cleanswift/web-dashboard/app/detailer/teams/[id]/TeamDetailClient.tsx","default");a.s(["default",0,b])},18580,a=>{"use strict";a.i(92088);var b=a.i(2134);a.n(b)},57443,a=>{"use strict";var b=a.i(2813),c=a.i(54380),d=a.i(75557),e=a.i(14650);a.i(37104);var f=a.i(22971),g=a.i(18580);async function h({params:a}){await (0,c.requireDetailer)(),"solo"===await (0,c.getDetailerMode)()&&(0,f.redirect)("/detailer/dashboard");let h=await (0,d.createClient)(),i=await (0,e.getDetailerOrganization)(),j=i?await (0,e.getOrganizationRole)(i.id):null;i||(0,f.redirect)("/detailer/dashboard");let{data:k}=await h.from("teams").select(`
+      *,
+      team_members (
+        id,
+        detailer:detailers (
+          id,
+          full_name,
+          rating,
+          review_count,
+          profile:profiles (email)
+        )
+      )
+    `).eq("id",a.id).eq("organization_id",i.id).single();k||(0,f.redirect)("/detailer/teams");let{data:l}=await h.from("bookings").select("id, receipt_id, status, total_amount, scheduled_date, service:service_id (name)").eq("team_id",a.id).order("scheduled_date",{ascending:!1}).limit(20),m=l?.filter(a=>"completed"===a.status)||[],n=m.reduce((a,b)=>a+(b.total_amount||0),0),o=k.team_members?.reduce((a,b)=>a+(b.detailer?.rating||0),0)/(k.team_members?.length||1)||0;return(0,b.jsx)("div",{className:"min-h-screen bg-[#050B12] text-white",children:(0,b.jsx)("div",{className:"max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8",children:(0,b.jsx)(g.default,{team:k,bookings:l||[],metrics:{totalRevenue:n,completedJobs:m.length,averageRating:o,totalMembers:k.team_members?.length||0},organizationId:i.id,canManageTeams:"owner"===j||"manager"===j})})})}a.s(["default",()=>h])}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__cbd6a02f._.js.map

@@ -1,0 +1,65 @@
+{
+  "node": {
+    "70441f92eace9f5c95172795179a39e8de3e56cc9c": {
+      "workers": {
+        "app/detailer/members/[id]/page": {
+          "moduleId": 49832,
+          "async": false,
+          "exportedName": "updateMemberRole",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/[id]/page": "action-browser"
+      },
+      "exportedName": "updateMemberRole",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    },
+    "60cbe5e04c6b41e452e03d4194f480e00fc61fb53d": {
+      "workers": {
+        "app/detailer/members/[id]/page": {
+          "moduleId": 49832,
+          "async": false,
+          "exportedName": "suspendMember",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/[id]/page": "action-browser"
+      },
+      "exportedName": "suspendMember",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    },
+    "60130a1205b9140401be37ca750477dc5af6567516": {
+      "workers": {
+        "app/detailer/members/[id]/page": {
+          "moduleId": 49832,
+          "async": false,
+          "exportedName": "activateMember",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/[id]/page": "action-browser"
+      },
+      "exportedName": "activateMember",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    },
+    "60aa0c9c4e959f5cdd05e33b980a52df99e7636d8e": {
+      "workers": {
+        "app/detailer/members/[id]/page": {
+          "moduleId": 49832,
+          "async": false,
+          "exportedName": "removeMember",
+          "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/members/[id]/page": "action-browser"
+      },
+      "exportedName": "removeMember",
+      "filename": "cleanswift/web-dashboard/app/detailer/members/actions.ts"
+    }
+  },
+  "edge": {}
+}

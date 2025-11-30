@@ -1,0 +1,50 @@
+{
+  "node": {
+    "709b06963c171009acfd83a588612fc384c4a8e416": {
+      "workers": {
+        "app/detailer/settings/organization/page": {
+          "moduleId": 70731,
+          "async": false,
+          "exportedName": "updateOrganizationProfile",
+          "filename": "cleanswift/web-dashboard/app/detailer/settings/organization/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/settings/organization/page": "action-browser"
+      },
+      "exportedName": "updateOrganizationProfile",
+      "filename": "cleanswift/web-dashboard/app/detailer/settings/organization/actions.ts"
+    },
+    "603770e5a48b96d8d00ad458991787563799043663": {
+      "workers": {
+        "app/detailer/settings/organization/page": {
+          "moduleId": 70731,
+          "async": false,
+          "exportedName": "addServiceZone",
+          "filename": "cleanswift/web-dashboard/app/detailer/settings/organization/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/settings/organization/page": "action-browser"
+      },
+      "exportedName": "addServiceZone",
+      "filename": "cleanswift/web-dashboard/app/detailer/settings/organization/actions.ts"
+    },
+    "606f0f38e051e50ed1610101cd1cc4fb871c1aa6af": {
+      "workers": {
+        "app/detailer/settings/organization/page": {
+          "moduleId": 70731,
+          "async": false,
+          "exportedName": "deleteServiceZone",
+          "filename": "cleanswift/web-dashboard/app/detailer/settings/organization/actions.ts"
+        }
+      },
+      "layer": {
+        "app/detailer/settings/organization/page": "action-browser"
+      },
+      "exportedName": "deleteServiceZone",
+      "filename": "cleanswift/web-dashboard/app/detailer/settings/organization/actions.ts"
+    }
+  },
+  "edge": {}
+}
