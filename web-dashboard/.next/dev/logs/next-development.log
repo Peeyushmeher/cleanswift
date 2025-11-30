@@ -1,16 +1,338 @@
-[00:00:00.862] Server  LOG      ✓ Ready in 670ms
-[00:10:03.304] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:10:06.279] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:10:06.279] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:10:07.019] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:28:21.637] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:28:21.638] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:28:22.789] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:28:25.069] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:28:32.948] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:28:32.948] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:28:36.955] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:28:36.955] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:32:41.125] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:40:04.593] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
-[00:40:10.985] Browser ERROR   Error updating status: {"code":"P0001","details":null,"hint":null,"message":"Detailer not assigned to this booking"}
+[00:00:00.950] Server  LOG      ✓ Ready in 774ms
+[00:00:02.546] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:00:03.142] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:03.273] Browser ERROR   A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <ScrollAndFocusHandler segmentPath={[...]}>
+      <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="bookings/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/admin/boo..." tree={[...]} params={{}} cacheNode={{lazyData:null, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="/cleanswif...">
+                      <SegmentTrieNode>
+                      <AdminBookingsPage>
+                        <div className="p-6 lg:p-8">
+                          <div>
+                          <div className="bg-[#0A1A2...">
+                            <div>
+                            <div className="mt-4 pt-4 ...">
+                              <BookingsFilters cities={[...]}>
+                                <select>
+                                <select>
+                                <input
+                                  type="date"
+                                  value=""
+                                  onChange={function onChange}
+                                  className="px-3 py-1.5 rounded-lg text-sm bg-[#050B12] text-[#C6CFD9] border border-..."
+-                                 data-np-intersection-state="visible"
+                                >
+                                <input
+                                  type="date"
+                                  value=""
+                                  onChange={function onChange}
+                                  className="px-3 py-1.5 rounded-lg text-sm bg-[#050B12] text-[#C6CFD9] border border-..."
+-                                 data-np-intersection-state="visible"
+                                >
+                          ...
+                    ...
+                  ...
+        ...
+
+[00:00:08.104] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:00:09.134] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:32.864] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:02:42.380] Server  LOG      ✓ Compiled in 97ms
+[02:02:50.455] Server  LOG      ✓ Compiled in 98ms
+[00:02:43.827] Server  ERROR    ⨯ ReferenceError: createClient is not defined
+[00:02:43.914] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:02:44.071] Browser ERROR   uncaughtError: ReferenceError: createClient is not defined
+[00:02:55.501] Server  LOG      ✓ Compiled in 155ms
+[02:03:03.652] Server  LOG      ✓ Compiled in 192ms
+[00:02:55.975] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:02:56.661] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:56.833] Browser ERROR   A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <ScrollAndFocusHandler segmentPath={[...]}>
+      <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="bookings/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/admin/boo..." tree={[...]} params={{}} cacheNode={{lazyData:null, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="/cleanswif...">
+                      <SegmentTrieNode>
+                      <AdminBookingsPage>
+                        <div className="p-6 lg:p-8">
+                          <div>
+                          <div className="bg-[#0A1A2...">
+                            <div>
+                            <div className="mt-4 pt-4 ...">
+                              <BookingsFilters cities={[...]}>
+                                <select>
+                                <select>
+                                <input
+                                  type="date"
+                                  value=""
+                                  onChange={function onChange}
+                                  className="px-3 py-1.5 rounded-lg text-sm bg-[#050B12] text-[#C6CFD9] border border-..."
+-                                 data-np-intersection-state="visible"
+                                >
+                                <input
+                                  type="date"
+                                  value=""
+                                  onChange={function onChange}
+                                  className="px-3 py-1.5 rounded-lg text-sm bg-[#050B12] text-[#C6CFD9] border border-..."
+-                                 data-np-intersection-state="visible"
+                                >
+                          ...
+                    ...
+                  ...
+        ...
+
+[00:03:05.984] Server  LOG      ✓ Compiled in 25ms
+[02:03:13.997] Server  LOG      ✓ Compiled in 25ms
+[00:03:06.184] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[02:03:29.630] Server  LOG      ✓ Compiled in 50ms
+[00:03:21.617] Server  LOG      ✓ Compiled in 53ms
+[00:03:21.836] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:03:35.037] Server  LOG      ✓ Compiled in 65ms
+[02:03:43.052] Server  LOG      ✓ Compiled in 65ms
+[00:03:35.276] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[02:03:48.125] Server  LOG      ✓ Compiled in 31ms
+[00:03:40.111] Server  LOG      ✓ Compiled in 31ms
+[00:03:40.331] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:03:49.406] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:03:53.177] Server  ERROR    ⨯ ReferenceError: createClient is not defined
+[00:03:53.327] Browser ERROR   uncaughtError: ReferenceError: createClient is not defined
+[00:03:59.656] Server  LOG      ✓ Compiled in 181ms
+[02:04:07.738] Server  LOG      ✓ Compiled in 190ms
+[00:03:59.988] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:04:00.579] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:04:02.158] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[02:04:16.516] Server  LOG      ✓ Compiled in 123ms
+[00:04:13.075] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[02:04:28.504] Server  LOG      ✓ Compiled in 44ms
+[00:04:47.189] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:04:49.301] Server  LOG      ✓ Compiled in 69ms
+[02:04:57.412] Server  LOG      ✓ Compiled in 84ms
+[00:04:49.452] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:05:11.368] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:06:08.260] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:06:13.083] Server  ERROR    ⨯ ReferenceError: page is not defined
+[00:06:13.292] Server  ERROR    ⨯ ReferenceError: page is not defined
+[00:06:13.437] Browser ERROR   uncaughtError: ReferenceError: page is not defined
+[00:06:44.584] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:06:45.490] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:49.754] Server  ERROR    ⨯ ReferenceError: page is not defined
+[00:06:49.880] Browser ERROR   uncaughtError: ReferenceError: page is not defined
+[00:06:52.653] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:06:53.011] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:06:55.717] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:07:03.644] Server  LOG      ✓ Compiled in 63ms
+[02:07:11.746] Server  LOG      ✓ Compiled in 70ms
+[00:07:03.882] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:07:36.807] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:07:49.872] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:10:12.223] Server  LOG      ✓ Compiled in 324ms
+[02:10:20.257] Server  LOG      ✓ Compiled in 347ms
+[00:10:12.630] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:11:41.129] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:11:42.416] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:11:42.614] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:12:42.267] Server  LOG      ✓ Compiled in 69ms
+[02:12:50.299] Server  LOG      ✓ Compiled in 68ms
+[00:12:42.872] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:12:42.994] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[02:12:59.783] Server  LOG      ✓ Compiled in 18ms
+[00:12:51.773] Server  LOG      ✓ Compiled in 20ms
+[00:12:52.068] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:12:52.075] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:12:58.965] Server  LOG      ✓ Compiled in 19ms
+[02:13:06.978] Server  LOG      ✓ Compiled in 20ms
+[00:12:59.257] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:12:59.263] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:13:04.689] Browser ERROR   ./cleanswift/web-dashboard/app/admin/detailers/page.tsx:328:20
+Parsing ecmascript source code failed
+  326 |                       </td>
+  327 |                     </tr>
+> 328 |                   );
+      |                    ^
+  329 |                 })}
+  330 |               </tbody>
+  331 |             </table>
+
+Expected '</', got ';'
+[00:13:09.322] Server  LOG      ✓ Compiled in 17ms
+[02:13:17.336] Server  LOG      ✓ Compiled in 18ms
+[00:13:09.632] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:13:09.639] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:13:15.360] Server  LOG      ✓ Compiled in 57ms
+[02:13:23.413] Server  LOG      ✓ Compiled in 62ms
+[00:13:15.739] Server  WARN    Error: Route "/admin/detailers" used `searchParams.type`. `searchParams` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:13:15.745] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:13:32.377] Server  LOG      ✓ Compiled in 59ms
+[02:13:40.450] Server  LOG      ✓ Compiled in 64ms
+[00:13:32.699] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[02:14:02.352] Server  LOG      ✓ Compiled in 21ms
+[00:13:54.343] Server  LOG      ✓ Compiled in 24ms
+[00:13:54.644] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:14:04.140] Server  LOG      ✓ Compiled in 64ms
+[02:14:12.197] Server  LOG      ✓ Compiled in 67ms
+[00:14:04.512] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[02:14:18.024] Server  LOG      ✓ Compiled in 17ms
+[00:14:10.012] Server  LOG      ✓ Compiled in 17ms
+[00:14:10.509] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:16:06.978] Server  LOG      ✓ Compiled in 73ms
+[02:16:15.024] Server  LOG      ✓ Compiled in 74ms
+[00:16:07.370] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[02:16:23.106] Server  LOG      ✓ Compiled in 19ms
+[00:16:15.094] Server  LOG      ✓ Compiled in 20ms
+[00:16:15.799] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:16:24.378] Server  LOG      ✓ Compiled in 77ms
+[02:16:32.456] Server  LOG      ✓ Compiled in 76ms
+[00:16:24.744] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:16:31.430] Server  LOG      ✓ Compiled in 63ms
+[02:16:39.450] Server  LOG      ✓ Compiled in 70ms
+[00:16:31.719] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:21:14.636] Server  LOG      ✓ Compiled in 376ms
+[02:21:22.747] Server  LOG      ✓ Compiled in 378ms
+[00:21:15.142] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:21:15.188] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:21:15.497] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:15.709] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:15.903] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:16.033] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:16.157] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:16.290] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:16.416] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:16.542] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:16.868] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:16.998] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:17.127] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:17.258] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:17.377] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:17.606] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:17.732] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:17.858] Server  ERROR    ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:21:18.304] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:21:18.451] Browser ERROR   uncaughtError: Error: Event handlers cannot be passed to Client Component props.
+  <form action=... onSubmit={function onSubmit} children=...>
+                            ^^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+[00:22:30.994] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:22:31.913] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:22:43.877] Server  LOG      ✓ Compiled in 102ms
+[02:22:51.941] Server  LOG      ✓ Compiled in 111ms
+[00:22:44.233] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:22:56.598] Server  LOG      ✓ Compiled in 197ms
+[02:23:04.645] Server  LOG      ✓ Compiled in 214ms
+[00:22:56.948] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:23:05.721] Server  LOG      ✓ Compiled in 78ms
+[02:23:13.812] Server  LOG      ✓ Compiled in 86ms
+[00:23:06.186] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:24:04.128] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:24:04.517] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:26:40.891] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:27:09.640] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:27:10.771] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:27:11.975] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:27:44.184] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:27:46.638] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:28:09.021] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:28:21.669] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:28:22.255] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:29:59.209] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:30:11.937] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:30:12.916] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:30:47.623] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:31:22.324] Server  WARN    Error: Route "/admin/bookings/[id]" used `params.id`. `params` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+[00:31:51.154] Server  LOG      ✓ Compiled in 62ms
+[00:31:52.140] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:32:08.302] Server  LOG      ✓ Compiled in 279ms
+[00:32:08.880] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:32:14.541] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:32:16.162] Server  LOG      ✓ Compiled in 34ms
+[00:32:16.321] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:32:26.198] Server  LOG      ✓ Compiled in 38ms
+[00:32:26.332] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:32:26.550] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:32:33.338] Server  LOG      ✓ Compiled in 18ms
+[00:32:33.526] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:37:23.007] Server  LOG      ✓ Compiled in 82ms
+[00:37:23.503] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.
+[00:38:00.203] Server  LOG      ✓ Compiled in 183ms
+[00:38:00.709] Server  WARN    Using the user object as returned from supabase.auth.getSession() or from some supabase.auth.onAuthStateChange() events could be insecure! This value comes directly from the storage medium (usually cookies on the server) and may not be authentic. Use supabase.auth.getUser() instead which authenticates the data by contacting the Supabase Auth server.

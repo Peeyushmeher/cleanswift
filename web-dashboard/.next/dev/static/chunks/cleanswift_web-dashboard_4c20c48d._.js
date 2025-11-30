@@ -59,9 +59,25 @@ function LoginPage() {
                 setLoading(false);
                 return;
             }
-            // Login successful - do a full page navigation to ensure middleware sees new cookies
-            // Keep showing "Signing in..." while redirecting
-            window.location.href = '/detailer/dashboard';
+            // Fetch user profile to determine role
+            const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+            if (profileError) {
+                console.error('Profile fetch error:', profileError);
+                // Default to detailer dashboard if profile fetch fails
+                window.location.href = '/detailer/dashboard';
+                return;
+            }
+            // Redirect based on role
+            if (profile?.role === 'admin') {
+                window.location.href = '/admin/dashboard';
+            } else if (profile?.role === 'detailer') {
+                window.location.href = '/detailer/dashboard';
+            } else {
+                // Regular users shouldn't be logging in here, but handle gracefully
+                setError('This portal is for detailers and admins only.');
+                setLoading(false);
+                return;
+            }
         } catch (err) {
             console.error('Unexpected login error:', err);
             setError(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -83,7 +99,7 @@ function LoginPage() {
                                 children: "CleanSwift"
                             }, void 0, false, {
                                 fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                lineNumber: 53,
+                                lineNumber: 75,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$cleanswift$2f$web$2d$dashboard$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -91,13 +107,13 @@ function LoginPage() {
                                 children: "Detailer & Admin Dashboard"
                             }, void 0, false, {
                                 fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                lineNumber: 54,
+                                lineNumber: 76,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                        lineNumber: 52,
+                        lineNumber: 74,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$cleanswift$2f$web$2d$dashboard$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("form", {
@@ -109,7 +125,7 @@ function LoginPage() {
                                 children: error
                             }, void 0, false, {
                                 fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                lineNumber: 59,
+                                lineNumber: 81,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$cleanswift$2f$web$2d$dashboard$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -120,7 +136,7 @@ function LoginPage() {
                                         children: "Email"
                                     }, void 0, false, {
                                         fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                        lineNumber: 65,
+                                        lineNumber: 87,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$cleanswift$2f$web$2d$dashboard$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -134,13 +150,13 @@ function LoginPage() {
                                         placeholder: "you@example.com"
                                     }, void 0, false, {
                                         fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                        lineNumber: 68,
+                                        lineNumber: 90,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                lineNumber: 64,
+                                lineNumber: 86,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$cleanswift$2f$web$2d$dashboard$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -151,7 +167,7 @@ function LoginPage() {
                                         children: "Password"
                                     }, void 0, false, {
                                         fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                        lineNumber: 81,
+                                        lineNumber: 103,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$cleanswift$2f$web$2d$dashboard$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -165,13 +181,13 @@ function LoginPage() {
                                         placeholder: "••••••••"
                                     }, void 0, false, {
                                         fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                        lineNumber: 84,
+                                        lineNumber: 106,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                lineNumber: 80,
+                                lineNumber: 102,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$cleanswift$2f$web$2d$dashboard$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -181,29 +197,29 @@ function LoginPage() {
                                 children: loading ? 'Signing in...' : 'Sign In'
                             }, void 0, false, {
                                 fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                                lineNumber: 96,
+                                lineNumber: 118,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                        lineNumber: 57,
+                        lineNumber: 79,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-                lineNumber: 51,
+                lineNumber: 73,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-            lineNumber: 50,
+            lineNumber: 72,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/cleanswift/web-dashboard/app/auth/login/page.tsx",
-        lineNumber: 49,
+        lineNumber: 71,
         columnNumber: 5
     }, this);
 }

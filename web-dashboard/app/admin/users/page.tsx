@@ -1,23 +1,29 @@
-import { requireAdmin } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient, createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: { role?: string };
+  searchParams: Promise<{ role?: string }>;
 }) {
-  const profile = await requireAdmin();
-  const supabase = await createClient();
+  // Use service client since proxy.ts already verified admin access
+  const supabase = createServiceClient();
+  const params = await searchParams;
 
-  const roleFilter = searchParams.role || null;
+  const roleFilter = params.role || null;
 
   // Get all users
-  const { data: users } = await supabase.rpc('get_all_users', {
-    p_role_filter: roleFilter as any,
-    p_limit: 100,
-    p_offset: 0,
-  });
+  let query = supabase
+    .from('profiles')
+    .select('id, full_name, email, phone, role, created_at')
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (roleFilter) {
+    query = query.eq('role', roleFilter);
+  }
+
+  const { data: users } = await query;
 
   async function updateRole(formData: FormData) {
     'use server';

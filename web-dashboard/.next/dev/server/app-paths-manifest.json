@@ -1,5 +1,12 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/detailer/bookings/[id]/page": "app/detailer/bookings/[id]/page.js",
-  "/detailer/bookings/page": "app/detailer/bookings/page.js"
+  "/admin/bookings/[id]/page": "app/admin/bookings/[id]/page.js",
+  "/admin/bookings/page": "app/admin/bookings/page.js",
+  "/admin/customers/page": "app/admin/customers/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/admin/detailers/page": "app/admin/detailers/page.js",
+  "/admin/finance/page": "app/admin/finance/page.js",
+  "/admin/organizations/page": "app/admin/organizations/page.js",
+  "/admin/services/page": "app/admin/services/page.js",
+  "/admin/settings/page": "app/admin/settings/page.js",
+  "/page": "app/page.js"
 }

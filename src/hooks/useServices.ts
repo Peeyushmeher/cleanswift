@@ -40,6 +40,23 @@ export function useServices(): UseServicesReturn {
 
   useEffect(() => {
     fetchServices();
+
+    // Subscribe to real-time changes on services table
+    const subscription = supabase
+      .channel('services-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'services' },
+        () => {
+          // Refetch when any change happens (insert, update, delete)
+          fetchServices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [fetchServices]);
 
   return {
