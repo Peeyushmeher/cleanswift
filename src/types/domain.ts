@@ -57,6 +57,18 @@ export interface Detailer {
   review_count: number;
   years_experience: number;
   is_active: boolean;
+  bio: string | null;
+  specialties: string[] | null;
+}
+
+/**
+ * FavoriteDetailer - A user's saved favorite detailer
+ */
+export interface FavoriteDetailer {
+  id: string;
+  user_id: string;
+  detailer_id: string;
+  created_at: string;
 }
 
 /**

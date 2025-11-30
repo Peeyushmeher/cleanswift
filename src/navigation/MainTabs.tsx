@@ -1,17 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigatorScreenParams } from '@react-navigation/native';
+import { CommonActions, NavigatorScreenParams } from '@react-navigation/native';
 import { useEffect } from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/home/HomeScreen';
 import BookingStack, { BookingStackParamList } from './BookingStack';
+import DetailersStack, { DetailersStackParamList } from './DetailersStack';
 import OrdersStack from './OrdersStack';
 import ProfileStack, { ProfileStackParamList } from './ProfileStack';
 
 export type MainTabsParamList = {
   Home: undefined;
+  Detailers: NavigatorScreenParams<DetailersStackParamList> | undefined;
   Book: NavigatorScreenParams<BookingStackParamList> | undefined;
   Orders: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList> | undefined;
@@ -80,6 +82,36 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             canPreventDefault: true,
           });
 
+          // For Detailers tab, ALWAYS reset to the list screen (even if already focused)
+          if (route.name === 'Detailers') {
+            // Get current navigation state
+            const currentState = navigation.getState();
+            const detailersIndex = currentState.routes.findIndex(r => r.name === 'Detailers');
+            
+            // Create new routes array with reset Detailers stack
+            const newRoutes = currentState.routes.map((r, i) => {
+              if (i === detailersIndex) {
+                return {
+                  ...r,
+                  state: {
+                    index: 0,
+                    routes: [{ name: 'DetailersList' }],
+                  },
+                };
+              }
+              return r;
+            });
+
+            // Reset navigation with Detailers tab focused
+            navigation.dispatch(
+              CommonActions.reset({
+                index: detailersIndex,
+                routes: newRoutes,
+              })
+            );
+            return;
+          }
+
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name, route.params);
           }
@@ -95,6 +127,8 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         let iconName: keyof typeof Ionicons.glyphMap;
         if (route.name === 'Home') {
           iconName = 'home-outline';
+        } else if (route.name === 'Detailers') {
+          iconName = 'people-outline';
         } else if (route.name === 'Book') {
           iconName = 'calendar-outline';
         } else if (route.name === 'Orders') {
@@ -162,6 +196,7 @@ export default function MainTabs() {
       tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Detailers" component={DetailersStack} />
       <Tab.Screen name="Book" component={BookingStack} />
       <Tab.Screen name="Orders" component={OrdersStack} />
       <Tab.Screen name="Profile" component={ProfileStack} />
