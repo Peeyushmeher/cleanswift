@@ -14,6 +14,7 @@ export type BookingStackParamList = {
   ServiceSelection:
     | {
         rebookFromBookingId?: string;
+        preselectedDetailerId?: string;
       }
     | undefined;
   BookingDateTime: {
@@ -23,6 +24,7 @@ export type BookingStackParamList = {
   CombinedSelection: {
     selectedService: string;
     selectedAddons: string[];
+    preselectedDetailerId?: string;
   };
   ChooseDetailer: {
     selectedService: string;

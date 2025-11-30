@@ -178,17 +178,36 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
     });
   };
 
+  const handleViewDetailerProfile = () => {
+    if (!booking?.detailer) return;
+    tabsNavigation.navigate('Detailers', {
+      screen: 'DetailerProfile',
+      params: { detailerId: booking.detailer.id },
+    });
+  };
+
   const renderDetailerCard = () => {
     if (!booking?.detailer) {
       return (
         <View style={styles.card}>
           <Text style={styles.sectionHeading}>Assigned Detailer</Text>
-          <Text style={styles.emptyCopy}>We’ll assign a pro once you reschedule.</Text>
+          <Text style={styles.emptyCopy}>We'll assign a pro once you reschedule.</Text>
         </View>
       );
     }
     return (
-      <View style={styles.card}>
+      <TouchableOpacity 
+        onPress={handleViewDetailerProfile} 
+        activeOpacity={0.8} 
+        style={styles.card}
+      >
+        <View style={styles.detailerCardHeader}>
+          <Text style={styles.sectionHeading}>Your Detailer</Text>
+          <View style={styles.viewProfileHint}>
+            <Text style={styles.viewProfileText}>View Profile</Text>
+            <Ionicons name="chevron-forward" size={16} color="#1DA4F3" />
+          </View>
+        </View>
         <View style={styles.rowStart}>
           <View style={styles.detailerAvatar}>
             <Text style={styles.detailerInitials}>{getInitials(booking.detailer.full_name)}</Text>
@@ -209,7 +228,7 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
             <Text style={styles.rebookButtonText}>Book again with this detailer</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -524,6 +543,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   // Detailer Information
+  detailerCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  viewProfileHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewProfileText: {
+    color: '#1DA4F3',
+    fontSize: 14,
+    fontWeight: '500',
+  },
   detailerAvatar: {
     width: 56,
     height: 56,

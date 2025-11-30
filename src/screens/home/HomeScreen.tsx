@@ -4,10 +4,12 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useBooking } from '../../contexts/BookingContext';
 import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
+import { useFavoriteDetailers } from '../../hooks/useFavoriteDetailers';
 import { supabase } from '../../lib/supabase';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
@@ -194,7 +196,9 @@ interface PrimaryCar {
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
+  const { setDetailer } = useBooking();
   const { data: bookings, loading: bookingsLoading } = useBookings();
+  const { favorites, loading: favoritesLoading, refetch: refetchFavorites } = useFavoriteDetailers();
   const [primaryCar, setPrimaryCar] = useState<PrimaryCar | null>(null);
   const [isLoadingCar, setIsLoadingCar] = useState(true);
 
@@ -279,6 +283,33 @@ export default function HomeScreen() {
   const handleOrders = () => {
     navigation.navigate('Orders');
   };
+
+  const handleViewDetailerProfile = (detailerId: string) => {
+    (navigation as any).navigate('Detailers', {
+      screen: 'DetailerProfile',
+      params: { detailerId },
+    });
+  };
+
+  const handleBookFavoriteDetailer = (detailer: typeof favorites[0]['detailer']) => {
+    // Pre-select the detailer and navigate to booking
+    setDetailer(detailer);
+    (navigation as any).navigate('Book', {
+      screen: 'ServiceSelection',
+      params: { preselectedDetailerId: detailer.id },
+    });
+  };
+
+  const handleBrowseDetailers = () => {
+    (navigation as any).navigate('Detailers');
+  };
+
+  // Refetch favorites when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refetchFavorites();
+    }, [refetchFavorites])
+  );
 
   return (
     <View style={styles.container}>
@@ -381,6 +412,95 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+          </View>
+
+          {/* Favorite Detailers */}
+          <View style={styles.favoritesContainer}>
+            <View style={styles.favoritesTitleRow}>
+              <Text style={styles.sectionTitle}>Favorite Detailers</Text>
+              <TouchableOpacity onPress={handleBrowseDetailers} activeOpacity={0.7}>
+                <Text style={styles.browseLink}>Browse All</Text>
+              </TouchableOpacity>
+            </View>
+            {favoritesLoading ? (
+              <View style={styles.favoritesEmptyCard}>
+                <Text style={styles.favoritesEmptyText}>Loading favorites...</Text>
+              </View>
+            ) : favorites.length === 0 ? (
+              <TouchableOpacity
+                onPress={handleBrowseDetailers}
+                activeOpacity={0.8}
+                style={styles.favoritesEmptyCard}
+              >
+                <View style={styles.favoritesEmptyIconContainer}>
+                  <Ionicons name="heart-outline" size={28} color="#FF6B8A" />
+                </View>
+                <View style={styles.favoritesEmptyContent}>
+                  <Text style={styles.favoritesEmptyTitle}>No favorites yet</Text>
+                  <Text style={styles.favoritesEmptySubtitle}>
+                    Browse detailers and save your favorites
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#C6CFD9" />
+              </TouchableOpacity>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.favoritesScroll}
+              >
+                {favorites.map((favorite) => {
+                  const detailer = favorite.detailer;
+                  const initials = detailer.full_name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase();
+
+                  return (
+                    <TouchableOpacity
+                      key={favorite.id}
+                      onPress={() => handleViewDetailerProfile(detailer.id)}
+                      activeOpacity={0.8}
+                      style={styles.favoriteCard}
+                    >
+                      {/* Avatar */}
+                      {detailer.avatar_url ? (
+                        <Image
+                          source={{ uri: detailer.avatar_url }}
+                          style={styles.favoriteAvatar}
+                        />
+                      ) : (
+                        <View style={styles.favoriteAvatarFallback}>
+                          <Text style={styles.favoriteAvatarInitials}>{initials}</Text>
+                        </View>
+                      )}
+
+                      {/* Info */}
+                      <Text style={styles.favoriteName} numberOfLines={1}>
+                        {detailer.full_name.split(' ')[0]}
+                      </Text>
+                      <View style={styles.favoriteRatingRow}>
+                        <Ionicons name="star" size={12} color="#6FF0C4" />
+                        <Text style={styles.favoriteRatingText}>
+                          {detailer.rating.toFixed(1)}
+                        </Text>
+                      </View>
+
+                      {/* Quick Book Button */}
+                      <TouchableOpacity
+                        onPress={() => handleBookFavoriteDetailer(detailer)}
+                        activeOpacity={0.8}
+                        style={styles.favoriteBookButton}
+                      >
+                        <Text style={styles.favoriteBookButtonText}>Book</Text>
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
           </View>
 
           {/* Upcoming Bookings */}
@@ -642,5 +762,118 @@ const styles = StyleSheet.create({
   },
   upcomingCardEmpty: {
     borderColor: 'rgba(111, 240, 196, 0.2)',
+  },
+  favoritesContainer: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  favoritesTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  browseLink: {
+    color: '#1DA4F3',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  favoritesScroll: {
+    paddingRight: 24,
+  },
+  favoriteCard: {
+    width: 110,
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  favoriteAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginBottom: 10,
+  },
+  favoriteAvatarFallback: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(111,240,196,0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(111,240,196,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  favoriteAvatarInitials: {
+    color: '#6FF0C4',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  favoriteName: {
+    color: '#F5F7FA',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  favoriteRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  favoriteRatingText: {
+    color: '#C6CFD9',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  favoriteBookButton: {
+    backgroundColor: '#1DA4F3',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  favoriteBookButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  favoritesEmptyCard: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,138,0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  favoritesEmptyIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,107,138,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  favoritesEmptyContent: {
+    flex: 1,
+  },
+  favoritesEmptyTitle: {
+    color: '#F5F7FA',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  favoritesEmptySubtitle: {
+    color: '#C6CFD9',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  favoritesEmptyText: {
+    color: '#C6CFD9',
+    fontSize: 14,
   },
 });

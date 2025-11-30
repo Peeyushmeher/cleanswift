@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DetailerProfileCard from '../../components/DetailerProfileCard';
@@ -127,6 +127,20 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
       });
     }
   }, [parentNavigation]);
+
+  // Sync selectedDetailerId when detailer is pre-selected from context or route params
+  useEffect(() => {
+    // Priority: route params > context > current state
+    const preselectedId = route.params?.preselectedDetailerId;
+    if (preselectedId && !selectedDetailerId) {
+      setSelectedDetailerId(preselectedId);
+      // Expand detailer section to show the pre-selection
+      setDetailerExpanded(true);
+    } else if (selectedDetailer?.id && !selectedDetailerId) {
+      setSelectedDetailerId(selectedDetailer.id);
+      setDetailerExpanded(true);
+    }
+  }, [route.params?.preselectedDetailerId, selectedDetailer?.id, selectedDetailerId]);
 
   const handleShowProfile = (detailer: Detailer) => {
     setProfileDetailer(detailer);
@@ -965,142 +979,144 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             )}
           </TouchableOpacity>
 
-          {/* Detailer Selection Card (Optional) */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setDetailerExpanded(!detailerExpanded)}
-            style={styles.mainCard}
-          >
-            <View style={styles.cardHeader}>
-              <View style={styles.cardHeaderLeft}>
-                {selectedDetailerId && (
-                  <View style={styles.cardCheckmark}>
-                    <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
-                  </View>
-                )}
-                <Ionicons name="person-circle" size={24} color="#1DA4F3" style={styles.cardIcon} />
-                <View style={styles.cardHeaderContent}>
-                  <Text style={styles.cardTitle}>Choose Your Detailer (Optional)</Text>
-                  {selectedDetailerId && selectedDetailerData && (
-                    <Text style={styles.cardSubtitle}>
-                      {selectedDetailerData.full_name}
-                    </Text>
+          {/* Detailer Selection Card (Optional) - Hidden when user came from detailer profile */}
+          {!route.params?.preselectedDetailerId && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setDetailerExpanded(!detailerExpanded)}
+              style={styles.mainCard}
+            >
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderLeft}>
+                  {selectedDetailerId && (
+                    <View style={styles.cardCheckmark}>
+                      <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
+                    </View>
                   )}
+                  <Ionicons name="person-circle" size={24} color="#1DA4F3" style={styles.cardIcon} />
+                  <View style={styles.cardHeaderContent}>
+                    <Text style={styles.cardTitle}>Choose Your Detailer (Optional)</Text>
+                    {selectedDetailerId && selectedDetailerData && (
+                      <Text style={styles.cardSubtitle}>
+                        {selectedDetailerData.full_name}
+                      </Text>
+                    )}
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Detailer Selection Content (Expanded) */}
-            {detailerExpanded && (
-              <View style={styles.expandedContent}>
-                {selectedDetailerId && selectedDetailerData ? (
-                  <View style={styles.selectedDetailerContent}>
-                    <View style={styles.detailerAvatarLarge}>
-                      <Text style={styles.detailerInitialsLarge}>
-                        {selectedDetailerData.full_name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </Text>
-                    </View>
-                    <View style={styles.detailerInfo}>
-                      <Text style={styles.detailerNameMain}>{selectedDetailerData.full_name}</Text>
-                      <View style={styles.ratingInfo}>
-                        <Text style={styles.ratingValueMain}>{selectedDetailerData.rating}</Text>
-                        <Text style={styles.reviewsCountMain}>{selectedDetailerData.review_count} reviews</Text>
+              {/* Detailer Selection Content (Expanded) */}
+              {detailerExpanded && (
+                <View style={styles.expandedContent}>
+                  {selectedDetailerId && selectedDetailerData ? (
+                    <View style={styles.selectedDetailerContent}>
+                      <View style={styles.detailerAvatarLarge}>
+                        <Text style={styles.detailerInitialsLarge}>
+                          {selectedDetailerData.full_name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')}
+                        </Text>
+                      </View>
+                      <View style={styles.detailerInfo}>
+                        <Text style={styles.detailerNameMain}>{selectedDetailerData.full_name}</Text>
+                        <View style={styles.ratingInfo}>
+                          <Text style={styles.ratingValueMain}>{selectedDetailerData.rating}</Text>
+                          <Text style={styles.reviewsCountMain}>{selectedDetailerData.review_count} reviews</Text>
+                        </View>
+                      </View>
+                      <View style={styles.selectedDetailerActions}>
+                        <TouchableOpacity
+                          onPress={() => handleShowProfile(selectedDetailerData)}
+                          activeOpacity={0.8}
+                          style={styles.infoPill}
+                        >
+                          <Ionicons name="information-circle-outline" size={16} color="#6FF0C4" />
+                          <Text style={styles.infoPillText}>Profile</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => setSelectedDetailerId('')}
+                          activeOpacity={0.8}
+                          style={styles.changeButton}
+                        >
+                          <Text style={styles.changeButtonText}>Change</Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
-                    <View style={styles.selectedDetailerActions}>
-                      <TouchableOpacity
-                        onPress={() => handleShowProfile(selectedDetailerData)}
-                        activeOpacity={0.8}
-                        style={styles.infoPill}
-                      >
-                        <Ionicons name="information-circle-outline" size={16} color="#6FF0C4" />
-                        <Text style={styles.infoPillText}>Profile</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => setSelectedDetailerId('')}
-                        activeOpacity={0.8}
-                        style={styles.changeButton}
-                      >
-                        <Text style={styles.changeButtonText}>Change</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.detailerSelectionContent}>
-                    {detailersLoading && (
-                      <View style={styles.centerContainer}>
-                        <ActivityIndicator size="large" color="#6FF0C4" />
-                      </View>
-                    )}
+                  ) : (
+                    <View style={styles.detailerSelectionContent}>
+                      {detailersLoading && (
+                        <View style={styles.centerContainer}>
+                          <ActivityIndicator size="large" color="#6FF0C4" />
+                        </View>
+                      )}
 
-                    {detailersError && !detailersLoading && (
-                      <View style={styles.errorContainer}>
-                        <Ionicons name="alert-circle" size={32} color="#FF6B6B" />
-                        <Text style={styles.errorTextCenter}>{detailersError.message}</Text>
-                      </View>
-                    )}
+                      {detailersError && !detailersLoading && (
+                        <View style={styles.errorContainer}>
+                          <Ionicons name="alert-circle" size={32} color="#FF6B6B" />
+                          <Text style={styles.errorTextCenter}>{detailersError.message}</Text>
+                        </View>
+                      )}
 
-                    {!detailersLoading && !detailersError && (
-                      <View style={styles.detailersListCompact}>
-                        {detailers.map((detailer) => {
-                          const isSelected = selectedDetailerId === detailer.id;
-                          return (
-                            <TouchableOpacity
-                              key={detailer.id}
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                setSelectedDetailerId(detailer.id);
-                              }}
-                              activeOpacity={0.8}
-                              style={[
-                                styles.detailerItem,
-                                isSelected && styles.detailerItemSelected,
-                              ]}
-                            >
-                              <View style={styles.detailerItemAvatar}>
-                                <Text style={styles.detailerItemInitials}>
-                                  {detailer.full_name
-                                    .split(' ')
-                                    .map((n) => n[0])
-                                    .join('')}
-                                </Text>
-                              </View>
-                              <View style={styles.detailerItemInfo}>
-                                <View style={styles.detailerItemHeader}>
-                                  <Text style={styles.detailerItemName}>{detailer.full_name}</Text>
-                                  <TouchableOpacity
-                                    onPress={(e) => {
-                                      e.stopPropagation();
-                                      handleShowProfile(detailer);
-                                    }}
-                                    activeOpacity={0.7}
-                                    style={styles.detailerInfoButton}
-                                  >
-                                    <Ionicons name="information-circle-outline" size={18} color="#C6CFD9" />
-                                  </TouchableOpacity>
+                      {!detailersLoading && !detailersError && (
+                        <View style={styles.detailersListCompact}>
+                          {detailers.map((detailer) => {
+                            const isSelected = selectedDetailerId === detailer.id;
+                            return (
+                              <TouchableOpacity
+                                key={detailer.id}
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDetailerId(detailer.id);
+                                }}
+                                activeOpacity={0.8}
+                                style={[
+                                  styles.detailerItem,
+                                  isSelected && styles.detailerItemSelected,
+                                ]}
+                              >
+                                <View style={styles.detailerItemAvatar}>
+                                  <Text style={styles.detailerItemInitials}>
+                                    {detailer.full_name
+                                      .split(' ')
+                                      .map((n) => n[0])
+                                      .join('')}
+                                  </Text>
                                 </View>
-                                <View style={styles.detailerItemRating}>
-                                  <Ionicons name="star" size={14} color="#6FF0C4" />
-                                  <Text style={styles.detailerItemRatingText}>{detailer.rating}</Text>
-                                  <Text style={styles.detailerItemReviews}>({detailer.review_count} reviews)</Text>
+                                <View style={styles.detailerItemInfo}>
+                                  <View style={styles.detailerItemHeader}>
+                                    <Text style={styles.detailerItemName}>{detailer.full_name}</Text>
+                                    <TouchableOpacity
+                                      onPress={(e) => {
+                                        e.stopPropagation();
+                                        handleShowProfile(detailer);
+                                      }}
+                                      activeOpacity={0.7}
+                                      style={styles.detailerInfoButton}
+                                    >
+                                      <Ionicons name="information-circle-outline" size={18} color="#C6CFD9" />
+                                    </TouchableOpacity>
+                                  </View>
+                                  <View style={styles.detailerItemRating}>
+                                    <Ionicons name="star" size={14} color="#6FF0C4" />
+                                    <Text style={styles.detailerItemRatingText}>{detailer.rating}</Text>
+                                    <Text style={styles.detailerItemReviews}>({detailer.review_count} reviews)</Text>
+                                  </View>
                                 </View>
-                              </View>
-                              {isSelected && (
-                                <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
-                              )}
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    )}
-                  </View>
-                )}
-              </View>
-            )}
-          </TouchableOpacity>
+                                {isSelected && (
+                                  <Ionicons name="checkmark-circle" size={24} color="#1DA4F3" />
+                                )}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
 
           {/* Spacer for bottom button */}
           <View style={{ height: 100 }} />

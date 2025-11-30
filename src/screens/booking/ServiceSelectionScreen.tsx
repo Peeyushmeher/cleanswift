@@ -71,9 +71,11 @@ export default function ServiceSelectionScreen({ navigation, route }: Props) {
 
     // Navigate to next screen with IDs
     // Use CombinedSelectionScreen instead of separate BookingDateTime/ChooseDetailer screens
+    // Pass preselectedDetailerId if coming from a detailer profile
     navigation.navigate('CombinedSelection', {
       selectedService: selectedServiceId,
       selectedAddons: selectedAddonIds,
+      preselectedDetailerId: route?.params?.preselectedDetailerId,
     });
   };
 
