@@ -35,9 +35,31 @@ export default function LoginPage() {
         return;
       }
 
-      // Login successful - do a full page navigation to ensure middleware sees new cookies
-      // Keep showing "Signing in..." while redirecting
-      window.location.href = '/detailer/dashboard';
+      // Fetch user profile to determine role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        // Default to detailer dashboard if profile fetch fails
+        window.location.href = '/detailer/dashboard';
+        return;
+      }
+
+      // Redirect based on role
+      if (profile?.role === 'admin') {
+        window.location.href = '/admin/dashboard';
+      } else if (profile?.role === 'detailer') {
+        window.location.href = '/detailer/dashboard';
+      } else {
+        // Regular users shouldn't be logging in here, but handle gracefully
+        setError('This portal is for detailers and admins only.');
+        setLoading(false);
+        return;
+      }
     } catch (err) {
       console.error('Unexpected login error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');

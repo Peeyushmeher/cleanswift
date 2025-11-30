@@ -40,6 +40,23 @@ export function useServiceAddons(): UseServiceAddonsReturn {
 
   useEffect(() => {
     fetchServiceAddons();
+
+    // Subscribe to real-time changes on service_addons table
+    const subscription = supabase
+      .channel('service-addons-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'service_addons' },
+        () => {
+          // Refetch when any change happens (insert, update, delete)
+          fetchServiceAddons();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [fetchServiceAddons]);
 
   return {

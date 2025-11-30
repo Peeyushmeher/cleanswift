@@ -1,26 +1,289 @@
 {
   "node": {
-    "60a99119db695fbd12e3fb361d3ea7fb0228ee8bda": {
+    "402cea2742c10f5049e40949055e619e730e906f91": {
       "workers": {
-        "app/detailer/bookings/[id]/page": {
-          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/bookings/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/bookings/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+        "app/admin/detailers/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/detailers/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/detailers/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
-          "exportedName": "assignJobToDetailer",
-          "filename": "cleanswift/web-dashboard/app/detailer/bookings/actions.ts"
-        },
-        "app/detailer/bookings/page": {
-          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/bookings/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/bookings/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false,
-          "exportedName": "assignJobToDetailer",
-          "filename": "cleanswift/web-dashboard/app/detailer/bookings/actions.ts"
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "cleanswift/web-dashboard/app/admin/detailers/page.tsx"
         }
       },
       "layer": {
-        "app/detailer/bookings/[id]/page": "action-browser",
-        "app/detailer/bookings/page": "action-browser"
+        "app/admin/detailers/page": "rsc"
       },
-      "filename": "cleanswift/web-dashboard/app/detailer/bookings/actions.ts",
-      "exportedName": "assignJobToDetailer"
+      "filename": "cleanswift/web-dashboard/app/admin/detailers/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    },
+    "4002008d7270e951d4184e10d38c83dc2a46f5262c": {
+      "workers": {
+        "app/admin/organizations/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/organizations/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "cleanswift/web-dashboard/app/admin/organizations/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/organizations/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/organizations/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    },
+    "403f8aeac39a54d70eb4f57a683b637290cbab0e66": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_2",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_2"
+    },
+    "4044cd66dd1b63af97601968d0fb03537c2c0984d0": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    },
+    "404852db9cb733429beea3de52b545f1964b5422d4": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_7",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_7"
+    },
+    "404d654bba0c0e123c42ecbe527c8ea8d6c16d8f42": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_6",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_6"
+    },
+    "40a99515db6614f646270e8038daacee57dbe1e225": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_3",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_3"
+    },
+    "40b022977781d51552b21d65463cc9059f115c9318": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_1",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_1"
+    },
+    "40b12c51a8ae5fd2d8ce62f0740ec024d2a82f9140": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_4",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_4"
+    },
+    "40d57cf68bd92662f18dac99597c927e056476f30c": {
+      "workers": {
+        "app/admin/services/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/services/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/services/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_5",
+          "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/services/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/services/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_5"
+    },
+    "400265002942c97c2310f85d1c63bba18c554fe95a": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/settings/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_2",
+          "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_2"
+    },
+    "4036eb8bfcb8b58ac46c68422d36027ddc6bc86b45": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/settings/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_4",
+          "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_4"
+    },
+    "407295fd821181937bb5b46d7ad37ff00899a65aeb": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/settings/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_1",
+          "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_1"
+    },
+    "407b6823dcac5dfc5699eb3a786bbe510c4e9ff594": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/settings/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_3",
+          "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_3"
+    },
+    "40a4e242826bd1c60e3095afbc0a53d5adec6da5f6": {
+      "workers": {
+        "app/admin/settings/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/settings/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/settings/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/settings/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/settings/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    },
+    "604980fa902c0ff700732f36c9ae427c22abbf276f": {
+      "workers": {
+        "app/admin/bookings/[id]/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/bookings/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_0",
+          "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/bookings/[id]/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_0"
+    },
+    "6071ffc8f39d56a6cac6b08de48edc54b92924686a": {
+      "workers": {
+        "app/admin/bookings/[id]/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/bookings/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_2",
+          "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/bookings/[id]/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_2"
+    },
+    "609aa676a9e50e2ce22fce9a373d3d4915e8c1c43a": {
+      "workers": {
+        "app/admin/bookings/[id]/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/bookings/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_3",
+          "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/bookings/[id]/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_3"
+    },
+    "60f184680998112ca514bc33b1183a94a46fc0e207": {
+      "workers": {
+        "app/admin/bookings/[id]/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/admin/bookings/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "$$RSC_SERVER_ACTION_1",
+          "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx"
+        }
+      },
+      "layer": {
+        "app/admin/bookings/[id]/page": "rsc"
+      },
+      "filename": "cleanswift/web-dashboard/app/admin/bookings/[id]/page.tsx",
+      "exportedName": "$$RSC_SERVER_ACTION_1"
     }
   },
   "edge": {},
