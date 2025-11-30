@@ -2,6 +2,12 @@
   "node": {
     "60a99119db695fbd12e3fb361d3ea7fb0228ee8bda": {
       "workers": {
+        "app/detailer/bookings/[id]/page": {
+          "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/bookings/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/bookings/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "assignJobToDetailer",
+          "filename": "cleanswift/web-dashboard/app/detailer/bookings/actions.ts"
+        },
         "app/detailer/bookings/page": {
           "moduleId": "[project]/cleanswift/web-dashboard/.next-internal/server/app/detailer/bookings/page/actions.js { ACTIONS_MODULE0 => \"[project]/cleanswift/web-dashboard/app/detailer/bookings/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false,
@@ -10,6 +16,7 @@
         }
       },
       "layer": {
+        "app/detailer/bookings/[id]/page": "action-browser",
         "app/detailer/bookings/page": "action-browser"
       },
       "filename": "cleanswift/web-dashboard/app/detailer/bookings/actions.ts",
