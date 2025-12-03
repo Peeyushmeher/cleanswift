@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EditCarCard, type Car } from '../../components/EditCarCard';
 import { useAuth } from '../../contexts/AuthContext';
@@ -136,10 +136,45 @@ export default function SelectCarScreen({ navigation }: Props) {
     }
   };
 
-  const handleContinue = () => {
-    // TODO: Pass selected car to next screen
-    console.log('Selected car:', selectedCar);
-    navigation.goBack();
+  const [isSavingPrimary, setIsSavingPrimary] = useState(false);
+
+  const handleContinue = async () => {
+    if (!user || !selectedCar) {
+      navigation.goBack();
+      return;
+    }
+
+    setIsSavingPrimary(true);
+    try {
+      // First, unset all cars as primary for this user
+      const { error: unsetError } = await supabase
+        .from('cars')
+        .update({ is_primary: false })
+        .eq('user_id', user.id);
+
+      if (unsetError) {
+        throw unsetError;
+      }
+
+      // Then set the selected car as primary
+      const { error: setError } = await supabase
+        .from('cars')
+        .update({ is_primary: true })
+        .eq('id', selectedCar)
+        .eq('user_id', user.id);
+
+      if (setError) {
+        throw setError;
+      }
+
+      console.log('Primary car updated:', selectedCar);
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error setting primary car:', error);
+      Alert.alert('Error', 'Failed to update primary car');
+    } finally {
+      setIsSavingPrimary(false);
+    }
   };
 
   return (
@@ -251,10 +286,20 @@ export default function SelectCarScreen({ navigation }: Props) {
           <View style={styles.buttonSafeArea}>
             <TouchableOpacity
               onPress={handleContinue}
+              disabled={isSavingPrimary || !selectedCar}
               activeOpacity={0.8}
-              style={styles.continueButton}
+              style={[
+                styles.continueButton,
+                (isSavingPrimary || !selectedCar) && styles.continueButtonDisabled,
+              ]}
             >
-              <Text style={styles.continueButtonText}>Continue</Text>
+              {isSavingPrimary ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.continueButtonText}>
+                  {selectedCar ? 'Set as Primary' : 'Select a Car'}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -444,6 +489,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#0A1A2F',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   continueButtonText: {
     color: '#FFFFFF',

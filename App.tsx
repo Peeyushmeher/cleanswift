@@ -1,5 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Alert, Linking, View } from 'react-native';
@@ -15,6 +16,9 @@ import { ReceiptProvider, useReceipt } from './src/contexts/ReceiptContext';
 import { useBookingNotifications } from './src/hooks/useBookingNotifications';
 import { supabase } from './src/lib/supabase';
 import RootNavigator from './src/navigation/RootNavigator';
+
+// Prevent the splash screen from auto-hiding before app is ready
+SplashScreen.preventAutoHideAsync();
 
 // Component to initialize notifications and handle notification taps
 function NotificationListener() {
@@ -267,6 +271,18 @@ export default function App() {
     console.log('✅ Stripe publishable key loaded');
   }
 
+  // Fallback: Hide splash screen after 3 seconds if navigation doesn't fire onReady
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      console.log('Fallback: Hiding splash screen after timeout');
+      SplashScreen.hideAsync().catch((error) => {
+        console.error('Error hiding splash screen:', error);
+      });
+    }, 3000);
+
+    return () => clearTimeout(fallbackTimer);
+  }, []);
+
   return (
     <SafeAreaProvider>
       <StripeProvider
@@ -275,7 +291,13 @@ export default function App() {
         urlScheme="cleanswift"
       >
         <NavigationContainer
-          onReady={() => console.log('NavigationContainer ready')}
+          onReady={() => {
+            console.log('NavigationContainer ready');
+            // Hide the splash screen after navigation is ready
+            SplashScreen.hideAsync().catch((error) => {
+              console.error('Error hiding splash screen:', error);
+            });
+          }}
           onStateChange={() => console.log('Navigation state changed')}
         >
           <AuthProvider>

@@ -1,10 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
 import { COLORS } from '../../theme/colors';
+
+// Support contact info - update these with your real details
+const SUPPORT_PHONE = '+1-800-CLEAN-SW'; // Replace with real number
+const SUPPORT_EMAIL = 'support@cleanswift.app'; // Replace with real email
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'HelpSupport'>;
 
@@ -51,6 +55,46 @@ const policies = [
 
 export default function HelpSupportScreen({ navigation }: Props) {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const handleContactAction = async (action: string) => {
+    try {
+      switch (action) {
+        case 'call':
+          const phoneUrl = `tel:${SUPPORT_PHONE.replace(/[^0-9+]/g, '')}`;
+          const canCall = await Linking.canOpenURL(phoneUrl);
+          if (canCall) {
+            await Linking.openURL(phoneUrl);
+          } else {
+            Alert.alert('Unable to Call', 'Phone calls are not supported on this device.');
+          }
+          break;
+        case 'email':
+          const emailUrl = `mailto:${SUPPORT_EMAIL}?subject=CleanSwift Support Request`;
+          const canEmail = await Linking.canOpenURL(emailUrl);
+          if (canEmail) {
+            await Linking.openURL(emailUrl);
+          } else {
+            Alert.alert('Unable to Email', 'Email is not configured on this device.');
+          }
+          break;
+        case 'chat':
+          // For now, show a message. In future, integrate with Intercom/Zendesk/etc.
+          Alert.alert(
+            'Live Chat', 
+            'Live chat support is coming soon! In the meantime, please email us or call our support line.',
+            [
+              { text: 'Email Us', onPress: () => handleContactAction('email') },
+              { text: 'Call Us', onPress: () => handleContactAction('call') },
+              { text: 'OK', style: 'cancel' },
+            ]
+          );
+          break;
+      }
+    } catch (error) {
+      console.error('Error handling contact action:', error);
+      Alert.alert('Error', 'Unable to complete this action. Please try again.');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -137,6 +181,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
                   <TouchableOpacity
                     key={index}
                     activeOpacity={0.8}
+                    onPress={() => handleContactAction(option.action)}
                     style={[
                       styles.contactOption,
                       !isLast && styles.contactOptionWithBorder,

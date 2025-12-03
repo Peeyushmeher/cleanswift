@@ -1,14 +1,18 @@
-import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'AddCar'>;
 
 export default function AddCarScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -18,10 +22,53 @@ export default function AddCarScreen({ navigation }: Props) {
     color: '',
   });
 
-  const handleSubmit = () => {
-    // TODO: Implement save logic
-    console.log('Save car:', formData);
-    navigation.goBack();
+  const handleSubmit = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to add a car');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Check if user has any cars to determine if this should be primary
+      const { data: existingCars, error: countError } = await supabase
+        .from('cars')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (countError) {
+        throw countError;
+      }
+
+      const isPrimary = !existingCars || existingCars.length === 0;
+
+      const { error } = await supabase
+        .from('cars')
+        .insert({
+          user_id: user.id,
+          make: formData.make.trim(),
+          model: formData.model.trim(),
+          year: formData.year.trim(),
+          trim: formData.trim.trim() || null,
+          license_plate: formData.license.trim().toUpperCase(),
+          color: formData.color.trim() || null,
+          is_primary: isPrimary,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      Alert.alert('Success', 'Car added successfully!', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
+    } catch (error) {
+      console.error('Error saving car:', error);
+      Alert.alert('Error', 'Failed to save car. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const updateField = (field: string, value: string) => {
@@ -153,21 +200,25 @@ export default function AddCarScreen({ navigation }: Props) {
           <View style={styles.buttonSafeArea}>
           <TouchableOpacity
             onPress={handleSubmit}
-            disabled={!isFormValid}
-            activeOpacity={isFormValid ? 0.8 : 1}
+            disabled={!isFormValid || isSaving}
+            activeOpacity={isFormValid && !isSaving ? 0.8 : 1}
             style={[
               styles.saveButton,
-              !isFormValid && styles.saveButtonDisabled,
+              (!isFormValid || isSaving) && styles.saveButtonDisabled,
             ]}
           >
-            <Text
-              style={[
-                styles.saveButtonText,
-                !isFormValid && styles.saveButtonTextDisabled,
-              ]}
-            >
-              Save Car
-            </Text>
+            {isSaving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  !isFormValid && styles.saveButtonTextDisabled,
+                ]}
+              >
+                Save Car
+              </Text>
+            )}
           </TouchableOpacity>
           </View>
         </View>
