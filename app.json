@@ -4,25 +4,26 @@
     "slug": "cleanswift",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/cleanswift_logo_1024x1024.png",
     "scheme": "cleanswift",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.cleanswift.app",
+      "buildNumber": "2",
+      "icon": "./assets/cleanswift_logo_1024x1024.png",
       "entitlements": {
         "com.apple.developer.in-app-payments": [
           "merchant.com.cleanswift",
           "merchant.com.cleanswift"
         ]
       },
-      "ios": {
-        "infoPlist": {
-          "ITSAppUsesNonExemptEncryption": false,
-          "NSCameraUsageDescription": "This app uses the camera to scan payment cards and capture photos for service documentation."
-        }
-      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app uses the camera to scan payment cards and capture photos for service documentation."
+      }
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -41,20 +42,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "image": "./assets/cleanswift_logo_1024x1024.png",
+          "imageWidth": 400,
+          "resizeMode": "cover",
+          "backgroundColor": "#0a1929",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0a1929"
           }
-        }
-      ],
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "merchant.com.cleanswift",
-          "enableGooglePay": false
         }
       ]
     ],
