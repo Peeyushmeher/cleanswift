@@ -1,26 +1,21 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, Platform } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useStripe, isPlatformPaySupported } from '@stripe/stripe-react-native';
-import { BookingStackParamList } from '../../navigation/BookingStack';
-import { useBooking } from '../../contexts/BookingContext';
+import { isPlatformPaySupported, useStripe } from '@stripe/stripe-react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useBooking } from '../../contexts/BookingContext';
 import { supabase } from '../../lib/supabase';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 import {
-  createPaymentIntent,
-  updateBookingPaymentStatus,
-  createBooking,
-  createBookingAddons,
+    createBooking,
+    createBookingAddons,
+    createPaymentIntent,
+    updateBookingPaymentStatus,
 } from '../../services/paymentService';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'PaymentMethod'>;
-
-const savedCards = [
-  { id: '1', type: 'visa', last4: '2741', expiry: '10/27' },
-  { id: '2', type: 'mastercard', last4: '8392', expiry: '03/26' },
-];
 
 export default function PaymentMethodScreen({ navigation, route }: Props) {
   const {
@@ -32,16 +27,53 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     selectedTimeSlot,
     selectedDetailer,
     selectedLocation,
+    setDetailer,
   } = useBooking();
   const { user } = useAuth();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const insets = useSafeAreaInsets();
-  const [selectedCard, setSelectedCard] = useState<string>('apple-pay');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
   const showPriceSummary = route.params?.showPrice ?? true;
   const testPaymentSecret = process.env.EXPO_PUBLIC_TEST_PAYMENT_SECRET;
   const isTestPaymentEnabled = __DEV__ && !!testPaymentSecret;
+
+  // Fallback: If detailerId is in route params but not in context, fetch it
+  useEffect(() => {
+    const restoreDetailerFromParams = async () => {
+      const detailerIdFromParams = route.params?.detailerId;
+      if (detailerIdFromParams && !selectedDetailer) {
+        console.log('🔄 Restoring detailer from route params:', detailerIdFromParams);
+        // Fetch detailer data from Supabase
+        const { data: detailerData, error } = await supabase
+          .from('detailers')
+          .select('*')
+          .eq('id', detailerIdFromParams)
+          .single();
+        
+        if (!error && detailerData) {
+          // Map to Detailer type and set in context
+          const detailer = {
+            id: detailerData.id,
+            profile_id: detailerData.profile_id,
+            full_name: detailerData.full_name || '',
+            bio: detailerData.bio || null,
+            rating: detailerData.rating || 0,
+            review_count: detailerData.review_count || 0,
+            years_experience: detailerData.years_experience || 0,
+            specialties: detailerData.specialties || [],
+            avatar_url: detailerData.avatar_url || null,
+            is_active: detailerData.is_active ?? true,
+            organization_id: detailerData.organization_id || null,
+          };
+          setDetailer(detailer);
+          console.log('✅ Detailer restored from params:', detailer.full_name);
+        }
+      }
+    };
+
+    restoreDetailerFromParams();
+  }, [route.params?.detailerId, selectedDetailer, setDetailer]);
 
   // Check if Apple Pay is available on the device
   useEffect(() => {
@@ -63,7 +95,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     checkApplePayAvailability();
   }, []);
 
-  const handleCompletePayment = async () => {
+  const handleCompletePayment = async (paymentMethod: 'apple-pay' | 'stripe') => {
     if (isProcessing) return;
 
     try {
@@ -134,11 +166,22 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         }
 
         // Step 1: Create booking record in Supabase (old method)
+        // Use detailer from context, or fallback to route params detailerId
+        const finalDetailerId = selectedDetailer?.id || route.params?.detailerId || null;
+        
+        console.log('📝 Creating booking with detailer:', {
+          detailerId: finalDetailerId,
+          detailerName: selectedDetailer?.full_name || 'None selected',
+          hasDetailer: !!selectedDetailer,
+          fromContext: !!selectedDetailer,
+          fromParams: !!route.params?.detailerId,
+        });
+        
         bookingId = await createBooking({
           user_id: user.id,
           service_id: selectedService.id,
           car_id: finalCarId,
-          detailer_id: selectedDetailer?.id || null,
+          detailer_id: finalDetailerId,
           scheduled_date: scheduledDate,
           scheduled_time_start: scheduledTime,
           total_amount: priceBreakdown.totalAmount,
@@ -181,7 +224,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       };
 
       // Enable Apple Pay if available and selected
-      if (Platform.OS === 'ios' && isApplePayAvailable && selectedCard === 'apple-pay') {
+      if (Platform.OS === 'ios' && isApplePayAvailable && paymentMethod === 'apple-pay') {
         paymentSheetConfig.applePay = {
           merchantCountryCode: 'US',
         };
@@ -224,8 +267,17 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         payment_status: 'paid',
       });
 
-      // Step 7: Navigate to success screen
-      navigation.navigate('ServiceProgress');
+      // Step 7: Navigate to Home tab
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate('Home');
+      } else {
+        // Fallback: reset to ServiceSelection if parent navigation not available
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'ServiceSelection' }],
+        });
+      }
     } catch (error) {
       console.error('Payment error:', error);
       Alert.alert(
@@ -299,11 +351,14 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           return;
         }
 
+        // Use detailer from context, or fallback to route params detailerId
+        const finalDetailerId = selectedDetailer?.id || route.params?.detailerId || null;
+        
         bookingId = await createBooking({
           user_id: user.id,
           service_id: selectedService.id,
           car_id: finalCarId,
-          detailer_id: selectedDetailer?.id || null,
+          detailer_id: finalDetailerId,
           scheduled_date: scheduledDate,
           scheduled_time_start: scheduledTime,
           total_amount: priceBreakdown.totalAmount,
@@ -332,7 +387,18 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
 
       await markBookingAsPaidForTest(bookingId);
       console.log('🧪 TEST: booking marked as paid via Edge Function');
-      navigation.navigate('ServiceProgress');
+      
+      // Navigate to Home tab
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate('Home');
+      } else {
+        // Fallback: reset to ServiceSelection if parent navigation not available
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'ServiceSelection' }],
+        });
+      }
     } catch (error) {
       console.error('Test skip payment error:', error);
       Alert.alert(
@@ -342,10 +408,6 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleAddCard = () => {
-    navigation.navigate('AddPaymentCard');
   };
 
   const formatCurrency = (amount: number) => {
@@ -382,16 +444,13 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           {Platform.OS === 'ios' && isApplePayAvailable && (
             <TouchableOpacity
               onPress={async () => {
-                setSelectedCard('apple-pay');
                 console.log('🍎 Apple Pay selected - triggering payment flow');
-                // Directly trigger payment when Apple Pay button is tapped
-                await handleCompletePayment();
+                await handleCompletePayment('apple-pay');
               }}
               activeOpacity={0.8}
               disabled={isProcessing}
               style={[
                 styles.applePayButton,
-                selectedCard === 'apple-pay' && styles.applePayButtonSelected,
                 isProcessing && styles.applePayButtonDisabled,
               ]}
             >
@@ -401,70 +460,33 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
               </Text>
             </TouchableOpacity>
           )}
-          
-          {/* Show message if Apple Pay not available */}
-          {Platform.OS === 'ios' && !isApplePayAvailable && (
-            <View style={styles.applePayUnavailableContainer}>
-              <Text style={styles.applePayUnavailableText}>
-                Apple Pay is not available on this device
-              </Text>
+
+          {/* Divider */}
+          {(Platform.OS === 'ios' && isApplePayAvailable) && (
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
             </View>
           )}
 
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Saved Cards */}
-          <View style={styles.cardsList}>
-            {savedCards.map((card) => {
-              const isSelected = selectedCard === card.id;
-
-              return (
-                <TouchableOpacity
-                  key={card.id}
-                  onPress={() => setSelectedCard(card.id)}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.cardOption,
-                    isSelected && styles.cardOptionSelected,
-                  ]}
-                >
-                  {isSelected && (
-                    <View style={styles.cardCheckmark}>
-                      <Ionicons name="checkmark" size={12} color="#050B12" />
-                    </View>
-                  )}
-
-                  <View style={styles.cardContent}>
-                    <Ionicons name="card" size={48} color="white" style={{ opacity: 0.9 }} />
-                    <View style={styles.cardDetails}>
-                      <Text style={styles.cardNumber}>
-                        {card.type === 'visa' ? 'Visa' : 'Mastercard'} •••• {card.last4}
-                      </Text>
-                      <Text style={styles.cardExpiry}>Exp {card.expiry}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Add New Card */}
+          {/* Stripe Payment Button */}
           <TouchableOpacity
-            onPress={handleAddCard}
+            onPress={async () => {
+              console.log('💳 Stripe selected - triggering payment flow');
+              await handleCompletePayment('stripe');
+            }}
             activeOpacity={0.8}
-            style={styles.addCardButton}
+            disabled={isProcessing}
+            style={[
+              styles.stripeButton,
+              isProcessing && styles.stripeButtonDisabled,
+            ]}
           >
-            <View style={styles.addCardContent}>
-              <View style={styles.addCardIcon}>
-                <Ionicons name="add" size={20} color="#6FF0C4" />
-              </View>
-              <Text style={styles.addCardText}>Add New Card</Text>
-            </View>
+            <Ionicons name="card" size={24} color="white" />
+            <Text style={styles.stripeButtonText}>
+              {isProcessing ? 'Processing...' : 'Pay with Stripe'}
+            </Text>
           </TouchableOpacity>
 
           {/* Price Summary */}
@@ -505,43 +527,24 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           )}
         </ScrollView>
 
-        {/* Bottom CTA */}
-        <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
-          {/* Test Skip Payment Button */}
-          <TouchableOpacity
-            onPress={handleTestSkipPayment}
-            activeOpacity={0.8}
-            disabled={isProcessing || !isTestPaymentEnabled}
-            style={[
-              styles.testSkipButton,
-              (isProcessing || !isTestPaymentEnabled) && styles.testSkipButtonDisabled,
-            ]}
-          >
-            <Text style={styles.testSkipButtonText}>
-              {isProcessing
-                ? 'Processing...'
-                : isTestPaymentEnabled
-                ? 'Test: Mark Paid'
-                : 'Test Payment Disabled'}
-            </Text>
-          </TouchableOpacity>
-          
-          {/* Complete Payment Button */}
-          <TouchableOpacity
-            onPress={handleCompletePayment}
-            activeOpacity={0.8}
-            disabled={isProcessing}
-            style={[styles.completeButton, isProcessing && styles.completeButtonDisabled]}
-          >
-            <Text style={styles.completeButtonText}>
-              {isProcessing
-                ? 'Processing...'
-                : showPriceSummary
-                ? 'Complete Payment'
-                : 'Save'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Bottom CTA - Test Payment Button (Dev Only) */}
+        {isTestPaymentEnabled && (
+          <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
+            <TouchableOpacity
+              onPress={handleTestSkipPayment}
+              activeOpacity={0.8}
+              disabled={isProcessing}
+              style={[
+                styles.testSkipButton,
+                isProcessing && styles.testSkipButtonDisabled,
+              ]}
+            >
+              <Text style={styles.testSkipButtonText}>
+                {isProcessing ? 'Processing...' : 'Test: Mark Paid'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -596,15 +599,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 24,
   },
-  applePayButtonSelected: {
-    borderWidth: 2,
-    borderColor: '#6FF0C4',
-    shadowColor: '#6FF0C4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
   applePayButtonDisabled: {
     opacity: 0.6,
   },
@@ -614,19 +608,26 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginLeft: 12,
   },
-  applePayUnavailableContainer: {
+  stripeButton: {
     width: '100%',
-    padding: 16,
-    backgroundColor: '#0A1A2F',
-    borderRadius: 16,
+    height: 56,
+    backgroundColor: '#635BFF',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 24,
   },
-  applePayUnavailableText: {
-    color: '#C6CFD9',
-    fontSize: 14,
-    textAlign: 'center',
+  stripeButtonDisabled: {
+    opacity: 0.6,
+  },
+  stripeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 12,
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -642,86 +643,6 @@ const styles = StyleSheet.create({
     color: '#C6CFD9',
     fontSize: 14,
     marginHorizontal: 16,
-  },
-  cardsList: {
-    marginBottom: 16,
-  },
-  cardOption: {
-    width: '100%',
-    backgroundColor: '#0A1A2F',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    position: 'relative',
-    marginBottom: 12,
-  },
-  cardOptionSelected: {
-    borderWidth: 2,
-    borderColor: '#6FF0C4',
-    shadowColor: '#6FF0C4',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cardCheckmark: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#6FF0C4',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardDetails: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  cardNumber: {
-    color: '#F5F7FA',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  cardExpiry: {
-    color: '#C6CFD9',
-    fontSize: 14,
-  },
-  addCardButton: {
-    width: '100%',
-    backgroundColor: '#0A1A2F',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(111,240,196,0.3)',
-    borderStyle: 'dashed',
-    marginBottom: 32,
-  },
-  addCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addCardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(111,240,196,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  addCardText: {
-    color: '#6FF0C4',
-    fontSize: 16,
-    fontWeight: '500',
   },
   priceSummary: {
     backgroundColor: '#0A1A2F',
@@ -803,29 +724,6 @@ const styles = StyleSheet.create({
   testSkipButtonText: {
     color: '#050B12',
     fontSize: 15,
-    fontWeight: '600',
-  },
-  completeButton: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 56,
-    backgroundColor: '#1DA4F3',
-    shadowColor: '#1DA4F3',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  completeButtonDisabled: {
-    backgroundColor: '#0A1A2F',
-    opacity: 0.6,
-  },
-  completeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
     fontWeight: '600',
   },
 });

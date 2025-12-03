@@ -1,27 +1,27 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { useUserProfile } from '../../hooks/useUserProfile';
+import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 import { useProfileCompleteness } from '../../hooks/useProfileCompleteness';
 import { useUserAddresses } from '../../hooks/useUserAddresses';
-import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
-import { normalizePostalCode, normalizeProvince } from '../../utils/addressValidation';
-import { isGoogleMapsConfigured } from '../../services/googleGeocoding';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import { supabase } from '../../lib/supabase';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
+import { isGoogleMapsConfigured } from '../../services/googleGeocoding';
+import { normalizePostalCode, normalizeProvince } from '../../utils/addressValidation';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 
@@ -341,6 +341,22 @@ export default function OnboardingWizard() {
       );
 
       console.log('Address saved successfully to user_addresses as "Home"');
+
+      // Mark onboarding as completed in the database
+      // This ensures the user won't be forced through onboarding again
+      if (user) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ onboarding_completed: true })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Error marking onboarding as completed:', updateError);
+          // Continue anyway - don't block the flow
+        } else {
+          console.log('Onboarding marked as completed');
+        }
+      }
 
       // Refetch profile first to ensure it's updated
       await refetchProfile();

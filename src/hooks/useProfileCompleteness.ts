@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserProfile } from './useUserProfile';
 import { supabase } from '../lib/supabase';
+import { useUserProfile } from './useUserProfile';
 
 interface UseProfileCompletenessReturn {
   isComplete: boolean;
@@ -13,6 +13,8 @@ interface UseProfileCompletenessReturn {
 /**
  * Hook to check if user profile is complete
  * Profile is complete when:
+ * - onboarding_completed flag is true (user has completed onboarding before)
+ * OR
  * - full_name is not null/empty
  * - phone is not null/empty
  * - At least one car exists
@@ -37,10 +39,10 @@ export function useProfileCompleteness(): UseProfileCompletenessReturn {
       setLoading(true);
       console.log('Checking profile completeness for user:', user.id);
 
-      // Fetch profile
+      // Fetch profile with onboarding_completed flag
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('full_name, phone')
+        .select('full_name, phone, onboarding_completed')
         .eq('id', user.id)
         .maybeSingle(); // Use maybeSingle() instead of single() to handle missing profiles
 
@@ -50,6 +52,16 @@ export function useProfileCompleteness(): UseProfileCompletenessReturn {
       }
 
       const profile = profileData || null;
+
+      // If user has completed onboarding before, skip the completeness check
+      // This prevents forcing users through onboarding again
+      if (profile?.onboarding_completed === true) {
+        console.log('User has completed onboarding before, skipping completeness check');
+        setIsComplete(true);
+        setMissingItems([]);
+        setLoading(false);
+        return;
+      }
 
       // Fetch cars
       const { data: cars, error: carsError } = await supabase

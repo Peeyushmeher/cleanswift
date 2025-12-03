@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
 import { COLORS } from '../../theme/colors';
 
@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     question: 'How do payments work?',
-    answer: 'We securely store your payment method and charge you after service completion. You will receive a detailed receipt.',
+    answer: 'Payment is processed securely at the time of booking using Apple Pay or Stripe. You will receive a detailed receipt after service completion.',
   },
   {
     question: 'What happens during a detailing service?',

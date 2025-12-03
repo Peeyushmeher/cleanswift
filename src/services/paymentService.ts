@@ -237,6 +237,7 @@ export async function createBooking(bookingData: {
     };
 
     console.log('createBooking payload:', insertPayload);
+    console.log('🔍 Detailer ID being saved:', bookingData.detailer_id || 'NULL (will auto-assign)');
 
     const { data, error } = await supabase
       .from('bookings')
@@ -290,6 +291,91 @@ export async function createBookingAddons(
     console.log(`Created ${addons.length} addon(s) for booking ${bookingId}`);
   } catch (error) {
     console.error('createBookingAddons error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Creates a PaymentIntent for a tip payment
+ * This is separate from the booking payment and goes directly to the detailer
+ */
+export async function createTipPaymentIntent(
+  bookingId: string,
+  tipAmount: number,
+  detailerId: string
+): Promise<CreatePaymentIntentResponse> {
+  try {
+    // Get current session for authentication
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error('No active session. Please sign in.');
+    }
+
+    // Get Supabase URL and anon key for manual fetch
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      throw new Error('Supabase URL not configured');
+    }
+
+    // Call Edge Function for tip payment
+    const functionUrl = `${supabaseUrl}/functions/v1/create-tip-payment-intent`;
+    
+    console.log('📞 Calling Tip Payment Edge Function:', functionUrl);
+    console.log('📦 Request body:', { booking_id: bookingId, tip_amount: tipAmount, detailer_id: detailerId });
+
+    const fetchResponse = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+      },
+      body: JSON.stringify({
+        booking_id: bookingId,
+        tip_amount: tipAmount,
+        detailer_id: detailerId,
+      }),
+    });
+
+    // Parse response body
+    const responseData = await fetchResponse.json();
+
+    if (!fetchResponse.ok) {
+      const errorMessage = responseData.error || responseData.message || `HTTP ${fetchResponse.status}: ${fetchResponse.statusText}`;
+      console.error('❌ Tip Payment Edge Function error:', {
+        status: fetchResponse.status,
+        statusText: fetchResponse.statusText,
+        data: responseData,
+      });
+      throw new Error(errorMessage);
+    }
+
+    // Handle response format
+    let response: CreatePaymentIntentResponse;
+    
+    if (responseData.paymentIntentClientSecret) {
+      response = responseData as CreatePaymentIntentResponse;
+      console.log('✅ Tip PaymentIntent created successfully');
+      console.log(`  Booking ID: ${response.bookingId}`);
+      console.log(`  Tip Amount: ${response.amountCents} cents (${response.currency})`);
+    } else if (responseData.client_secret) {
+      // Fallback to old format
+      response = {
+        paymentIntentClientSecret: responseData.client_secret,
+        bookingId: bookingId,
+        amountCents: Math.round(tipAmount * 100),
+        currency: 'cad',
+      };
+      console.log('✅ Tip PaymentIntent created (fallback format)');
+    } else {
+      console.error('Invalid response from tip payment service:', responseData);
+      throw new Error('Invalid response from tip payment service');
+    }
+
+    return response;
+  } catch (error) {
+    console.error('createTipPaymentIntent error:', error);
     throw error;
   }
 }

@@ -7,7 +7,6 @@ import LiveTrackingScreen from '../screens/booking/LiveTrackingScreen';
 import OrderSummaryScreen from '../screens/booking/OrderSummaryScreen';
 import PaymentMethodScreen from '../screens/booking/PaymentMethodScreen';
 import ReceiptRatingScreen from '../screens/booking/ReceiptRatingScreen';
-import ServiceProgressScreen from '../screens/booking/ServiceProgressScreen';
 import ServiceSelectionScreen from '../screens/booking/ServiceSelectionScreen';
 
 export type BookingStackParamList = {
@@ -43,10 +42,10 @@ export type BookingStackParamList = {
     showPrice?: boolean;
     bookingId?: string;
     totalPriceCents?: number;
+    detailerId?: string; // Preserve selected detailer through navigation
   };
   AddPaymentCard: undefined;
   LiveTracking: undefined;
-  ServiceProgress: undefined;
   ReceiptRating: undefined;
 };
 
@@ -69,7 +68,6 @@ export default function BookingStack() {
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="AddPaymentCard" component={AddPaymentCardScreen} />
       <Stack.Screen name="LiveTracking" component={LiveTrackingScreen} />
-      <Stack.Screen name="ServiceProgress" component={ServiceProgressScreen} />
       <Stack.Screen name="ReceiptRating" component={ReceiptRatingScreen} />
     </Stack.Navigator>
   );

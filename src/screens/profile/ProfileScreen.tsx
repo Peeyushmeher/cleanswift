@@ -1,13 +1,13 @@
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { ProfileStackParamList } from '../../navigation/ProfileStack';
-import { useUserProfile } from '../../hooks/useUserProfile';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
+import { ProfileStackParamList } from '../../navigation/ProfileStack';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
 type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
@@ -19,7 +19,6 @@ const menuSections = [
       { icon: 'person' as const, label: 'Personal Info', action: 'edit-profile' },
       { icon: 'car-sport' as const, label: 'Manage Cars', action: 'manage-cars' },
       { icon: 'location' as const, label: 'Manage Addresses', action: 'manage-addresses' },
-      { icon: 'card' as const, label: 'Payment Methods', action: 'payment' },
     ],
   },
   {
@@ -54,10 +53,6 @@ export default function ProfileScreen({ navigation }: Props) {
         break;
       case 'manage-addresses':
         navigation.navigate('ManageAddresses');
-        break;
-      case 'payment':
-        // TODO: Navigate to payment methods screen when implemented
-        console.log('Navigate to payment methods');
         break;
       case 'notifications':
         navigation.navigate('Notifications');

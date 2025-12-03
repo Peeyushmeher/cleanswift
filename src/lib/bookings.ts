@@ -12,6 +12,7 @@ export interface CreateBookingParams {
   locationLng?: number | null;
   serviceIds: string[]; // Array of service UUIDs
   locationNotes?: string | null;
+  detailerId?: string | null; // Optional: Preserve user-selected detailer
 }
 
 export interface ServiceInfo {
@@ -88,6 +89,7 @@ export async function createBooking(
       p_location_lat: params.locationLat ?? null,
       p_location_lng: params.locationLng ?? null,
       p_location_notes: params.locationNotes ?? null,
+      p_detailer_id: params.detailerId ?? null, // Pass selected detailer_id
     });
 
     if (error) {

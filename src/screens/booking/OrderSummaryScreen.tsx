@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useLayoutEffect, useState, useEffect } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
@@ -184,6 +184,15 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
       setIsCreatingBooking(true);
 
       // Call create_booking RPC
+      // IMPORTANT: Pass detailerId to preserve user selection
+      const detailerId = selectedDetailer?.id || route.params?.detailerId || null;
+      console.log('📝 OrderSummary: Creating booking with detailer:', {
+        detailerId,
+        detailerName: selectedDetailer?.full_name || 'None selected',
+        fromContext: !!selectedDetailer,
+        fromParams: !!route.params?.detailerId,
+      });
+      
       const result = await createBooking({
         carId: finalCar.id,
         scheduledStart,
@@ -195,13 +204,16 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
         locationLng: selectedLocation.longitude,
         serviceIds: [selectedService.id], // Currently single service, but RPC supports multiple
         locationNotes: selectedLocation.location_notes,
+        detailerId: detailerId, // Preserve selected detailer
       });
 
       // Navigate to payment with booking ID and total price
+      // IMPORTANT: Pass detailerId to preserve user selection
       navigation.navigate('PaymentMethod', {
         showPrice: true,
         bookingId: result.booking.id,
         totalPriceCents: result.total_price_cents,
+        detailerId: selectedDetailer?.id || route.params?.detailerId || null,
       });
     } catch (error) {
       console.error('Failed to create booking:', error);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -9,6 +9,7 @@ export interface UserProfile {
   phone: string;
   role: 'user' | 'detailer' | 'admin';
   avatar_url: string | null;
+  onboarding_completed?: boolean;
 }
 
 interface UseUserProfileReturn {
@@ -42,7 +43,7 @@ export function useUserProfile(): UseUserProfileReturn {
 
       const { data, error: fetchError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, phone, role, avatar_url')
+        .select('id, full_name, email, phone, role, avatar_url, onboarding_completed')
         .eq('id', user.id)
         .single();
 

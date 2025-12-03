@@ -1,20 +1,132 @@
-import { StatusBar } from 'expo-status-bar';
-import { View, Linking, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Alert, Linking, View } from 'react-native';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './global.css';
 
-import { AuthProvider } from './src/contexts/AuthContext';
+import * as Notifications from 'expo-notifications';
+import ReceiptModal from './src/components/ReceiptModal';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { BookingProvider } from './src/contexts/BookingContext';
-import RootNavigator from './src/navigation/RootNavigator';
+import { ReceiptProvider, useReceipt } from './src/contexts/ReceiptContext';
 import { useBookingNotifications } from './src/hooks/useBookingNotifications';
 import { supabase } from './src/lib/supabase';
+import RootNavigator from './src/navigation/RootNavigator';
 
-// Component to initialize notifications
+// Component to initialize notifications and handle notification taps
 function NotificationListener() {
   useBookingNotifications();
+  const { showReceipt } = useReceipt();
+
+  useEffect(() => {
+    // Handle notification taps
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      const body = response.notification.request.content.body || '';
+      
+      // Show receipt modal when user taps any booking-related notification
+      if (data?.bookingId) {
+        // Check if it's a completion notification or if status is completed
+        if (data.status === 'completed' || 
+            body.toLowerCase().includes('complete') || 
+            body.toLowerCase().includes('rate')) {
+          // Small delay to ensure app is ready
+          setTimeout(() => {
+            showReceipt(data.bookingId);
+          }, 500);
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [showReceipt]);
+
+  return null;
+}
+
+// Component to check for pending receipts on app open
+function PendingReceiptChecker() {
+  const { user } = useAuth();
+  const { showReceipt } = useReceipt();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const checkPendingReceipts = async () => {
+      try {
+        // Check for completed bookings that haven't been reviewed
+        // We'll check if a review exists for each completed booking
+        const { data: completedBookings, error } = await supabase
+          .from('bookings')
+          .select('id, completed_at')
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: false })
+          .limit(5); // Check last 5 completed bookings
+
+        if (error) {
+          console.error('Error checking pending receipts:', error);
+          return;
+        }
+
+        if (!completedBookings || completedBookings.length === 0) {
+          return;
+        }
+
+        // Check which bookings don't have reviews
+        const bookingIds = completedBookings.map(b => b.id);
+        const { data: existingReviews, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('booking_id')
+          .in('booking_id', bookingIds);
+
+        if (reviewsError) {
+          console.error('Error checking existing reviews:', reviewsError);
+          return;
+        }
+
+        const reviewedBookingIds = new Set(
+          (existingReviews || []).map(r => r.booking_id)
+        );
+
+        // Find the most recent completed booking without a review
+        const unreviewedBooking = completedBookings.find(
+          b => !reviewedBookingIds.has(b.id)
+        );
+
+        if (unreviewedBooking) {
+          const completedAt = new Date(unreviewedBooking.completed_at);
+          const now = new Date();
+          const hoursSinceCompletion = (now.getTime() - completedAt.getTime()) / (1000 * 60 * 60);
+          
+          // Show receipt if completed within the last 7 days (extended from 24 hours)
+          if (hoursSinceCompletion < 168) { // 7 days = 168 hours
+            console.log('Showing receipt for completed booking:', unreviewedBooking.id);
+            // Small delay to ensure app is fully loaded
+            setTimeout(() => {
+              showReceipt(unreviewedBooking.id);
+            }, 2000);
+          }
+        }
+      } catch (error) {
+        console.error('Error in checkPendingReceipts:', error);
+      }
+    };
+
+    // Check after a short delay to ensure app is fully loaded
+    const timeout = setTimeout(checkPendingReceipts, 1000);
+    
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [user, showReceipt]);
+
   return null;
 }
 
@@ -156,26 +268,32 @@ export default function App() {
   }
 
   return (
-    <StripeProvider
-      publishableKey={stripePublishableKey || ''}
-      merchantIdentifier="merchant.com.cleanswift"
-      urlScheme="cleanswift"
-    >
-      <NavigationContainer
-        onReady={() => console.log('NavigationContainer ready')}
-        onStateChange={() => console.log('Navigation state changed')}
+    <SafeAreaProvider>
+      <StripeProvider
+        publishableKey={stripePublishableKey || ''}
+        merchantIdentifier="merchant.com.cleanswift"
+        urlScheme="cleanswift"
       >
-        <AuthProvider>
-          <BookingProvider>
-            <NotificationListener />
-            <OAuthDeepLinkHandler />
-            <View style={{ flex: 1 }}>
-              <RootNavigator />
-              <StatusBar style="light" />
-            </View>
-          </BookingProvider>
-        </AuthProvider>
-      </NavigationContainer>
-    </StripeProvider>
+        <NavigationContainer
+          onReady={() => console.log('NavigationContainer ready')}
+          onStateChange={() => console.log('Navigation state changed')}
+        >
+          <AuthProvider>
+            <BookingProvider>
+              <ReceiptProvider>
+                <NotificationListener />
+                <PendingReceiptChecker />
+                <OAuthDeepLinkHandler />
+                <View style={{ flex: 1 }}>
+                  <RootNavigator />
+                  <ReceiptModal />
+                  <StatusBar style="light" />
+                </View>
+              </ReceiptProvider>
+            </BookingProvider>
+          </AuthProvider>
+        </NavigationContainer>
+      </StripeProvider>
+    </SafeAreaProvider>
   );
 }
