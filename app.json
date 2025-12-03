@@ -13,10 +13,16 @@
       "bundleIdentifier": "com.cleanswift.app",
       "entitlements": {
         "com.apple.developer.in-app-payments": [
+          "merchant.com.cleanswift",
           "merchant.com.cleanswift"
         ]
-      }
-    },
+      },
+      "ios": {
+        "infoPlist": {
+          "ITSAppUsesNonExemptEncryption": false,
+          "NSCameraUsageDescription": "This app uses the camera to scan payment cards and capture photos for service documentation."
+        }
+      },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -54,6 +60,11 @@
     ],
     "experiments": {
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2e06ce0a-08c3-4d41-a30e-e000dcc8307e"
+      }
     }
   }
 }
