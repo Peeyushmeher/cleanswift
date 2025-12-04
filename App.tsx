@@ -3,22 +3,54 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Alert, Linking, View } from 'react-native';
+import { Alert, Linking, View, Platform } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './global.css';
 
 import * as Notifications from 'expo-notifications';
+import ConfigurationErrorScreen from './src/components/ConfigurationErrorScreen';
 import ReceiptModal from './src/components/ReceiptModal';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { BookingProvider } from './src/contexts/BookingContext';
 import { ReceiptProvider, useReceipt } from './src/contexts/ReceiptContext';
 import { useBookingNotifications } from './src/hooks/useBookingNotifications';
-import { supabase } from './src/lib/supabase';
+import { isSupabaseConfigured, supabase } from './src/lib/supabase';
 import RootNavigator from './src/navigation/RootNavigator';
 
-// Prevent the splash screen from auto-hiding before app is ready
-SplashScreen.preventAutoHideAsync();
+// Simple Error Boundary to prevent render-time crashes from blocking startup
+import React from 'react';
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, info: any) {
+    console.error('Unhandled render error:', error, info);
+    // Try to ensure splash is hidden even if an error occurs
+    SplashScreen.hideAsync().catch(() => {});
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
+          <StatusBar style="light" />
+        </View>
+      );
+    }
+    return this.props.children as any;
+  }
+}
+
+// Prevent the splash screen from auto-hiding before app is ready (guarded)
+try {
+  SplashScreen.preventAutoHideAsync();
+} catch (e) {
+  console.warn('preventAutoHideAsync failed (continuing):', e);
+}
 
 // Component to initialize notifications and handle notification taps
 function NotificationListener() {
@@ -261,61 +293,130 @@ function OAuthDeepLinkHandler() {
 export default function App() {
   console.log('=== App.tsx rendering ===');
 
+  // Check critical environment variables
   const stripePublishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const supabaseConfigured = isSupabaseConfigured();
+
+  if (!supabaseConfigured) {
+    console.error('❌ CRITICAL: Supabase is not configured!');
+    console.error('❌ App will not function properly without Supabase credentials');
+    console.error('❌ For EAS builds, set secrets with:');
+    console.error('   eas secret:create --name EXPO_PUBLIC_SUPABASE_URL --value <url>');
+    console.error('   eas secret:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <key>');
+  } else {
+    console.log('✅ Supabase configured');
+  }
 
   if (!stripePublishableKey) {
     console.error('⚠️ EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set in environment variables');
     console.error('⚠️ Payment functionality will not work without this key');
-    console.error('⚠️ Set it in your .env file or app.json config');
+    console.error('⚠️ Set it in your .env file or EAS secrets');
   } else {
     console.log('✅ Stripe publishable key loaded');
   }
 
-  // Fallback: Hide splash screen after 3 seconds if navigation doesn't fire onReady
+  // Hide splash screen after app initializes - use multiple strategies
+  // CRITICAL: Always hide splash screen, even if there are errors
   useEffect(() => {
+    let isHidden = false;
+    let hideAttempts = 0;
+    
+    const hideSplash = () => {
+      if (isHidden) return;
+      hideAttempts += 1;
+      const attempt = hideAttempts;
+      console.log(`Hiding splash screen (attempt ${attempt})`);
+      SplashScreen.hideAsync()
+        .then(() => {
+          isHidden = true;
+          console.log('Splash screen hidden');
+        })
+        .catch((error) => {
+          console.error('Error hiding splash screen:', error);
+        });
+    };
+
+    // Strategy 1: Hide after NavigationContainer is ready (handled in onReady callback)
+    
+    // Strategy 2: Fallback - hide after app has time to initialize
+    // This ensures splash hides even if NavigationContainer has issues or errors occur
     const fallbackTimer = setTimeout(() => {
       console.log('Fallback: Hiding splash screen after timeout');
-      SplashScreen.hideAsync().catch((error) => {
-        console.error('Error hiding splash screen:', error);
-      });
-    }, 3000);
+      hideSplash();
+    }, 2000); // Reduced to 2 seconds for faster feedback
 
-    return () => clearTimeout(fallbackTimer);
+    // Strategy 2b: Absolute safety timeout for production/TestFlight
+    const absoluteTimer = setTimeout(() => {
+      if (!__DEV__) {
+        console.log('Absolute fallback: Forcing splash hide for production');
+        hideSplash();
+      }
+    }, 4000);
+
+    // Strategy 3: Hide immediately if Supabase is not configured (show error screen instead)
+    if (!supabaseConfigured) {
+      console.log('Supabase not configured - hiding splash to show error');
+      setTimeout(hideSplash, 500);
+    }
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      clearTimeout(absoluteTimer);
+    };
+  }, [supabaseConfigured]);
+
+  // Only show the blocking configuration error in development; in production, warn but allow app to render
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const isUsingPlaceholder = supabaseUrl === 'https://placeholder.supabase.co';
+  const showConfigError = __DEV__ && !supabaseConfigured && isUsingPlaceholder;
+
+  // Ultra-safe: ensure splash hides shortly after mount regardless of state
+  useEffect(() => {
+    const t = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 5000);
+    return () => clearTimeout(t);
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <StripeProvider
-        publishableKey={stripePublishableKey || ''}
-        merchantIdentifier="merchant.com.cleanswift"
-        urlScheme="cleanswift"
-      >
-        <NavigationContainer
-          onReady={() => {
-            console.log('NavigationContainer ready');
-            // Hide the splash screen after navigation is ready
-            SplashScreen.hideAsync().catch((error) => {
-              console.error('Error hiding splash screen:', error);
-            });
-          }}
-          onStateChange={() => console.log('Navigation state changed')}
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <StripeProvider
+          publishableKey={stripePublishableKey || ''}
+          merchantIdentifier={Platform.OS === 'ios' ? 'merchant.com.cleanswift' : undefined}
+          urlScheme="cleanswift"
         >
-          <AuthProvider>
-            <BookingProvider>
-              <ReceiptProvider>
-                <NotificationListener />
-                <PendingReceiptChecker />
-                <OAuthDeepLinkHandler />
-                <View style={{ flex: 1 }}>
-                  <RootNavigator />
-                  <ReceiptModal />
-                  <StatusBar style="light" />
-                </View>
-              </ReceiptProvider>
-            </BookingProvider>
-          </AuthProvider>
-        </NavigationContainer>
-      </StripeProvider>
-    </SafeAreaProvider>
+          <NavigationContainer
+            onReady={() => {
+              console.log('NavigationContainer ready');
+              SplashScreen.hideAsync().catch((error) => {
+                console.error('Error hiding splash screen (onReady):', error);
+              });
+            }}
+            onStateChange={() => console.log('Navigation state changed')}
+          >
+            <AuthProvider>
+              <BookingProvider>
+                <ReceiptProvider>
+                  <NotificationListener />
+                  <PendingReceiptChecker />
+                  <OAuthDeepLinkHandler />
+                  <View style={{ flex: 1 }}>
+                    {showConfigError && (
+                      <View style={{ backgroundColor: '#7f1d1d', padding: 10 }}>
+                        <StatusBar style="light" />
+                      </View>
+                    )}
+                    <RootNavigator />
+                    <ReceiptModal />
+                    <StatusBar style="light" />
+                  </View>
+                </ReceiptProvider>
+              </BookingProvider>
+            </AuthProvider>
+          </NavigationContainer>
+        </StripeProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

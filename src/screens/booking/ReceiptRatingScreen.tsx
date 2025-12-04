@@ -201,6 +201,13 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
         const detailerName = detailer?.full_name || 'Unknown Detailer';
         const detailerRating = detailer?.rating || 0;
 
+        // Warn if detailer_id is missing or detailer info is not found
+        if (!booking.detailer_id) {
+          console.warn('⚠️ ReceiptRatingScreen: Booking has no detailer_id:', booking.id);
+        } else if (!detailer) {
+          console.warn('⚠️ ReceiptRatingScreen: Detailer not found for detailer_id:', booking.detailer_id);
+        }
+
         // Format addons
         const formattedAddons = (addons || []).map((addon: any) => ({
           name: addon.addon?.name || 'Add-on',
@@ -313,7 +320,17 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
   };
 
   const handleSubmitRating = async () => {
-    if (!bookingData || !user || !bookingData.detailerId || rating === 0) {
+    if (!bookingData) {
+      Alert.alert('Error', 'Unable to load booking details. Please try again.');
+      return;
+    }
+
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to submit a rating.');
+      return;
+    }
+
+    if (rating === 0) {
       Alert.alert('Error', 'Please provide a rating before submitting.');
       return;
     }
@@ -348,12 +365,13 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
       }
 
       // Submit review to database
+      // Note: detailer_id can be null if the detailer record doesn't exist
       const { error: reviewError } = await supabase
         .from('reviews')
         .insert({
           booking_id: bookingData.bookingId,
           user_id: user.id,
-          detailer_id: bookingData.detailerId,
+          detailer_id: bookingData.detailerId || null, // Allow null if detailer doesn't exist
           rating: rating,
           review_text: review.trim() || null,
           tip_amount: tipAmount,
@@ -361,7 +379,15 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
 
       if (reviewError) {
         console.error('Error submitting review:', reviewError);
-        Alert.alert('Error', 'Failed to submit review. Please try again.');
+        // Check if the error is due to NOT NULL constraint on detailer_id
+        if (reviewError.message?.includes('detailer_id') || reviewError.message?.includes('NOT NULL')) {
+          Alert.alert(
+            'Error',
+            'Unable to submit review: The detailer for this booking no longer exists. Please contact support for assistance.'
+          );
+        } else {
+          Alert.alert('Error', 'Failed to submit review. Please try again.');
+        }
         setSubmitting(false);
         return;
       }
@@ -529,7 +555,7 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
 
           {/* Tip Section */}
           <View style={styles.tipSection}>
-            <Text style={styles.sectionTitleLeft}>Add a Tip?</Text>
+            <Text style={styles.sectionTitleLeft}>Add a Tip? (Optional)</Text>
             <View style={styles.tipGrid}>
               {tipAmounts.map((amount) => (
                 <TouchableOpacity
@@ -645,7 +671,7 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
 
           {/* Review Text Field */}
           <View style={styles.reviewSection}>
-            <Text style={styles.sectionTitleLeft}>Share Your Experience</Text>
+            <Text style={styles.sectionTitleLeft}>Share Your Experience (Optional)</Text>
             <TextInput
               value={review}
               onChangeText={setReview}
@@ -677,13 +703,13 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text
-                style={[
-                  styles.submitButtonText,
-                  (rating === 0 || submitting) && styles.submitButtonTextDisabled,
-                ]}
-              >
-                Submit Rating
-              </Text>
+              style={[
+                styles.submitButtonText,
+                (rating === 0 || submitting) && styles.submitButtonTextDisabled,
+              ]}
+            >
+              Submit Rating
+            </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -1046,5 +1072,22 @@ const styles = StyleSheet.create({
   },
   submitButtonTextDisabled: {
     color: '#666666',
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 176, 32, 0.15)',
+    borderWidth: 1,
+    borderColor: '#FFB020',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 16,
+    gap: 8,
+  },
+  warningText: {
+    flex: 1,
+    color: '#FFB020',
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

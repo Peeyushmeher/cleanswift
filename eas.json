@@ -6,13 +6,34 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "@EXPO_PUBLIC_SUPABASE_URL",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@EXPO_PUBLIC_SUPABASE_ANON_KEY",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "@EXPO_PUBLIC_GOOGLE_MAPS_API_KEY",
+        "EXPO_PUBLIC_TEST_PAYMENT_SECRET": "@EXPO_PUBLIC_TEST_PAYMENT_SECRET"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "@EXPO_PUBLIC_SUPABASE_URL",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@EXPO_PUBLIC_SUPABASE_ANON_KEY",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "@EXPO_PUBLIC_GOOGLE_MAPS_API_KEY",
+        "EXPO_PUBLIC_TEST_PAYMENT_SECRET": "@EXPO_PUBLIC_TEST_PAYMENT_SECRET"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "@EXPO_PUBLIC_SUPABASE_URL",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "@EXPO_PUBLIC_SUPABASE_ANON_KEY",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "@EXPO_PUBLIC_GOOGLE_MAPS_API_KEY",
+        "EXPO_PUBLIC_TEST_PAYMENT_SECRET": "@EXPO_PUBLIC_TEST_PAYMENT_SECRET"
+      }
     }
   },
   "submit": {
@@ -25,3 +46,4 @@
     }
   }
 }
+

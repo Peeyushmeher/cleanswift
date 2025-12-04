@@ -256,6 +256,26 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
     return `$${amount.toFixed(2)}`;
   };
 
+  const handleCancel = () => {
+    Alert.alert(
+      'Cancel Booking',
+      'Are you sure you want to cancel this booking? All your selections will be lost.',
+      [
+        {
+          text: 'No, Keep Booking',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: () => {
+            navigation.goBack();
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -505,21 +525,29 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
         {/* Bottom CTA */}
         <View style={[styles.bottomCTA, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <View style={styles.buttonSafeArea}>
-          <TouchableOpacity
-            onPress={handleContinue}
-            disabled={isCreatingBooking}
-            activeOpacity={0.8}
-            style={[styles.continueButton, isCreatingBooking && styles.continueButtonDisabled]}
-          >
-            {isCreatingBooking ? (
-              <View style={styles.buttonLoadingContainer}>
-                <ActivityIndicator size="small" color="#FFFFFF" />
-                <Text style={styles.continueButtonText}>Creating Booking...</Text>
-              </View>
-            ) : (
-              <Text style={styles.continueButtonText}>Continue to Payment</Text>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleCancel}
+              disabled={isCreatingBooking}
+              activeOpacity={0.8}
+              style={[styles.cancelButton, isCreatingBooking && styles.cancelButtonDisabled]}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleContinue}
+              disabled={isCreatingBooking}
+              activeOpacity={0.8}
+              style={[styles.continueButton, isCreatingBooking && styles.continueButtonDisabled]}
+            >
+              {isCreatingBooking ? (
+                <View style={styles.buttonLoadingContainer}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.continueButtonText}>Creating Booking...</Text>
+                </View>
+              ) : (
+                <Text style={styles.continueButtonText}>Continue to Payment</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
@@ -696,6 +724,26 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
     backgroundColor: 'transparent',
+    gap: 12,
+  },
+  cancelButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 56,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(198,207,217,0.3)',
+  },
+  cancelButtonText: {
+    color: '#C6CFD9',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  cancelButtonDisabled: {
+    opacity: 0.5,
   },
   continueButton: {
     width: '100%',
