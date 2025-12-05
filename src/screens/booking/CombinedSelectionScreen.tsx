@@ -5,11 +5,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DetailerProfileCard from '../../components/DetailerProfileCard';
+import AvailabilityErrorCard from '../../components/AvailabilityErrorCard';
 import { useBooking, type BookingLocation, type Detailer } from '../../contexts/BookingContext';
 import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 import { useDetailers } from '../../hooks/useDetailers';
 import { useUserAddresses } from '../../hooks/useUserAddresses';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import { checkBookingAvailability } from '../../lib/bookings';
 import { geocodeAddress, isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import {
   normalizePostalCode,
@@ -101,6 +103,11 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
 
+  // Availability check state
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+  const [showAvailabilityError, setShowAvailabilityError] = useState(false);
+
   // Autocomplete hook
   const {
     suggestions,
@@ -142,6 +149,14 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     }
   }, [route.params?.preselectedDetailerId, selectedDetailer?.id, selectedDetailerId]);
 
+  // Cleanup: Reset loading states when component unmounts
+  useEffect(() => {
+    return () => {
+      setIsGeocoding(false);
+      setIsCheckingAvailability(false);
+    };
+  }, []);
+
   const handleShowProfile = (detailer: Detailer) => {
     setProfileDetailer(detailer);
     setProfileVisible(true);
@@ -153,6 +168,21 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   };
 
   const closeProfile = () => setProfileVisible(false);
+
+  // Helper function to convert "9:30 AM" to "09:30:00"
+  const convertTimeTo24Hour = (timeStr: string): string => {
+    const [time, period] = timeStr.split(' ');
+    const [hours, minutes] = time.split(':');
+    let hour24 = parseInt(hours, 10);
+    
+    if (period === 'PM' && hour24 !== 12) {
+      hour24 += 12;
+    } else if (period === 'AM' && hour24 === 12) {
+      hour24 = 0;
+    }
+    
+    return `${hour24.toString().padStart(2, '0')}:${minutes}:00`;
+  };
 
   const finalizeSelection = (
     normalizedProvince: string,
@@ -282,12 +312,34 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     const proceedWithGeocode = async () => {
       if (shouldAttemptGeocode) {
         setIsGeocoding(true);
+        setIsCheckingAvailability(false);
+        setGeocodeError(null);
+        
         try {
           // Build full address string for geocoding
           const fullAddress = `${locationData.address_line1}, ${locationData.city}, ${normalizedProvince} ${normalizedPostalCode}, Canada`;
 
-          // Geocode the address
-          const geocodeResult = await geocodeAddress(fullAddress);
+          // Geocode the address with timeout protection
+          let geocodeResult;
+          try {
+            geocodeResult = await geocodeAddress(fullAddress);
+          } catch (geocodeError) {
+            setIsGeocoding(false);
+            const errorMessage = geocodeError instanceof Error ? geocodeError.message : 'Failed to verify address. Please check and try again.';
+            setGeocodeError(errorMessage);
+            Alert.alert('Address Verification Failed', errorMessage, [
+              {
+                text: 'Skip Verification',
+                style: 'cancel',
+                onPress: () => handleContinue({ skipGeocode: true }),
+              },
+              {
+                text: 'Retry',
+                onPress: () => proceedWithGeocode(),
+              },
+            ]);
+            return;
+          }
 
           // Update location data with coordinates
           setLocationData((prev) => ({
@@ -296,22 +348,180 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             longitude: geocodeResult.longitude,
           }));
 
-          finalizeSelection(normalizedProvince, normalizedPostalCode, {
-            latitude: geocodeResult.latitude,
-            longitude: geocodeResult.longitude,
-          });
           setIsGeocoding(false);
+
+          // Check availability after geocoding succeeds
+          if (selectedDateValue && selectedTime && geocodeResult.latitude && geocodeResult.longitude) {
+            setIsCheckingAvailability(true);
+            setAvailabilityError(null);
+            setShowAvailabilityError(false);
+            
+            try {
+              // Format date as YYYY-MM-DD
+              const bookingDate = selectedDateValue.toISOString().split('T')[0];
+              
+              // Format time as HH:mm:ss
+              const time24 = convertTimeTo24Hour(selectedTime);
+              
+              // Get service duration from selectedService
+              const serviceDuration = selectedService?.duration_minutes || null;
+              
+              // Add timeout to availability check (10 seconds)
+              const availabilityPromise = checkBookingAvailability({
+                bookingDate,
+                bookingTimeStart: time24,
+                bookingLat: geocodeResult.latitude,
+                bookingLng: geocodeResult.longitude,
+                serviceDurationMinutes: serviceDuration,
+              });
+              
+              const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => reject(new Error('Availability check timed out. Please try again.')), 10000);
+              });
+              
+              const availability = await Promise.race([availabilityPromise, timeoutPromise]);
+              
+              setIsCheckingAvailability(false);
+              
+              if (!availability.available) {
+                // Show "no detailer available" message
+                setAvailabilityError(availability.message || 'No detailers are available in your area for this time slot.');
+                setShowAvailabilityError(true);
+                return; // Don't proceed to OrderSummary
+              }
+              
+              // Availability check passed, proceed with booking
+              finalizeSelection(normalizedProvince, normalizedPostalCode, {
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude,
+              });
+            } catch (error) {
+              setIsCheckingAvailability(false);
+              console.error('Availability check failed:', error);
+              const errorMessage = error instanceof Error ? error.message : 'Availability check failed';
+              
+              // Show alert but allow proceeding
+              Alert.alert(
+                'Availability Check Failed',
+                `${errorMessage}. You can still proceed, and a detailer will be assigned later if available.`,
+                [
+                  {
+                    text: 'Continue Anyway',
+                    onPress: () => {
+                      finalizeSelection(normalizedProvince, normalizedPostalCode, {
+                        latitude: geocodeResult.latitude,
+                        longitude: geocodeResult.longitude,
+                      });
+                    },
+                  },
+                  {
+                    text: 'Retry',
+                    onPress: () => proceedWithGeocode(),
+                  },
+                ]
+              );
+            }
+          } else {
+            // No coordinates or missing date/time, proceed without availability check
+            finalizeSelection(normalizedProvince, normalizedPostalCode, {
+              latitude: geocodeResult.latitude,
+              longitude: geocodeResult.longitude,
+            });
+          }
         } catch (error) {
+          // Catch-all for any unexpected errors
           setIsGeocoding(false);
+          setIsCheckingAvailability(false);
           const errorMessage = error instanceof Error ? error.message : 'Failed to verify address. Please check and try again.';
           setGeocodeError(errorMessage);
-          Alert.alert('Address Verification Failed', errorMessage);
+          Alert.alert('Address Verification Failed', errorMessage, [
+            {
+              text: 'Skip Verification',
+              style: 'cancel',
+              onPress: () => handleContinue({ skipGeocode: true }),
+            },
+            {
+              text: 'Retry',
+              onPress: () => proceedWithGeocode(),
+            },
+          ]);
         }
       } else {
-        finalizeSelection(normalizedProvince, normalizedPostalCode, {
-          latitude: null,
-          longitude: null,
-        });
+        // Skip geocoding - check if we have coordinates from saved address
+        const hasCoordinates = locationData.latitude && locationData.longitude;
+        
+        if (hasCoordinates && selectedDateValue && selectedTime) {
+          // Check availability with existing coordinates
+          setIsCheckingAvailability(true);
+          setAvailabilityError(null);
+          setShowAvailabilityError(false);
+          
+          try {
+            const bookingDate = selectedDateValue.toISOString().split('T')[0];
+            const time24 = convertTimeTo24Hour(selectedTime);
+            const serviceDuration = selectedService?.duration_minutes || null;
+            
+            // Add timeout to availability check (10 seconds)
+            const availabilityPromise = checkBookingAvailability({
+              bookingDate,
+              bookingTimeStart: time24,
+              bookingLat: locationData.latitude!,
+              bookingLng: locationData.longitude!,
+              serviceDurationMinutes: serviceDuration,
+            });
+            
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error('Availability check timed out. Please try again.')), 10000);
+            });
+            
+            const availability = await Promise.race([availabilityPromise, timeoutPromise]);
+            
+            setIsCheckingAvailability(false);
+            
+            if (!availability.available) {
+              setAvailabilityError(availability.message || 'No detailers are available in your area for this time slot.');
+              setShowAvailabilityError(true);
+              return;
+            }
+            
+            // Availability check passed
+            finalizeSelection(normalizedProvince, normalizedPostalCode, {
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+            });
+          } catch (error) {
+            setIsCheckingAvailability(false);
+            console.error('Availability check failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Availability check failed';
+            
+            // Show alert but allow proceeding
+            Alert.alert(
+              'Availability Check Failed',
+              `${errorMessage}. You can still proceed, and a detailer will be assigned later if available.`,
+              [
+                {
+                  text: 'Continue Anyway',
+                  onPress: () => {
+                    finalizeSelection(normalizedProvince, normalizedPostalCode, {
+                      latitude: locationData.latitude,
+                      longitude: locationData.longitude,
+                    });
+                  },
+                },
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                },
+              ]
+            );
+          }
+        } else {
+          // No coordinates, proceed without availability check
+          finalizeSelection(normalizedProvince, normalizedPostalCode, {
+            latitude: null,
+            longitude: null,
+          });
+        }
       }
     };
 
@@ -344,13 +554,82 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
     setShowNamePrompt(false);
     await handleSaveNewAddress(addressNameInput.trim() || undefined);
     setAddressNameInput('');
-    // Continue with booking
+    
+    // Check availability before proceeding
     const normalizedProvince = normalizeProvince(locationData.province || '');
     const normalizedPostalCode = normalizePostalCode(locationData.postal_code || '');
-    finalizeSelection(normalizedProvince, normalizedPostalCode, {
-      latitude: locationData.latitude || null,
-      longitude: locationData.longitude || null,
-    });
+    
+    if (locationData.latitude && locationData.longitude && selectedDateValue && selectedTime) {
+      setIsCheckingAvailability(true);
+      setAvailabilityError(null);
+      setShowAvailabilityError(false);
+      
+      try {
+        const bookingDate = selectedDateValue.toISOString().split('T')[0];
+        const time24 = convertTimeTo24Hour(selectedTime);
+        const serviceDuration = selectedService?.duration_minutes || null;
+        
+        // Add timeout to availability check (10 seconds)
+        const availabilityPromise = checkBookingAvailability({
+          bookingDate,
+          bookingTimeStart: time24,
+          bookingLat: locationData.latitude,
+          bookingLng: locationData.longitude,
+          serviceDurationMinutes: serviceDuration,
+        });
+        
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Availability check timed out. Please try again.')), 10000);
+        });
+        
+        const availability = await Promise.race([availabilityPromise, timeoutPromise]);
+        
+        setIsCheckingAvailability(false);
+        
+        if (!availability.available) {
+          setAvailabilityError(availability.message || 'No detailers are available in your area for this time slot.');
+          setShowAvailabilityError(true);
+          return;
+        }
+        
+        // Availability check passed
+        finalizeSelection(normalizedProvince, normalizedPostalCode, {
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+        });
+      } catch (error) {
+        setIsCheckingAvailability(false);
+        console.error('Availability check failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Availability check failed';
+        
+        // Show alert but allow proceeding
+        Alert.alert(
+          'Availability Check Failed',
+          `${errorMessage}. You can still proceed, and a detailer will be assigned later if available.`,
+          [
+            {
+              text: 'Continue Anyway',
+              onPress: () => {
+                finalizeSelection(normalizedProvince, normalizedPostalCode, {
+                  latitude: locationData.latitude || null,
+                  longitude: locationData.longitude || null,
+                });
+              },
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+          ]
+        );
+      }
+    } else {
+      // No coordinates or missing date/time, proceed without availability check
+      finalizeSelection(normalizedProvince, normalizedPostalCode, {
+        latitude: locationData.latitude || null,
+        longitude: locationData.longitude || null,
+      });
+    }
   };
 
   const handleBypassVerification = () => {
@@ -979,6 +1258,27 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             )}
           </TouchableOpacity>
 
+          {/* Availability Error Card */}
+          {showAvailabilityError && availabilityError && (
+            <AvailabilityErrorCard
+              message={availabilityError}
+              onTryDifferentTime={() => {
+                setShowAvailabilityError(false);
+                setAvailabilityError(null);
+                setTimeDropdownOpen(true);
+              }}
+              onTryDifferentLocation={() => {
+                setShowAvailabilityError(false);
+                setAvailabilityError(null);
+                setLocationExpanded(true);
+              }}
+              onDismiss={() => {
+                setShowAvailabilityError(false);
+                setAvailabilityError(null);
+              }}
+            />
+          )}
+
           {/* Detailer Selection Card (Optional) - Hidden when user came from detailer profile */}
           {!route.params?.preselectedDetailerId && (
             <TouchableOpacity
@@ -1126,20 +1426,25 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
         <View style={[styles.bottomSummary, { bottom: 68 + Math.max(insets.bottom, 0) }]}>
           <TouchableOpacity
             onPress={() => handleContinue()}
-            disabled={!isReady || isGeocoding}
-            activeOpacity={isReady && !isGeocoding ? 0.8 : 1}
-            style={[styles.continueButton, (!isReady || isGeocoding) && styles.continueButtonDisabled]}
+            disabled={!isReady || isGeocoding || isCheckingAvailability}
+            activeOpacity={isReady && !isGeocoding && !isCheckingAvailability ? 0.8 : 1}
+            style={[styles.continueButton, (!isReady || isGeocoding || isCheckingAvailability) && styles.continueButtonDisabled]}
           >
             {isGeocoding ? (
               <View style={styles.buttonLoadingContainer}>
                 <ActivityIndicator size="small" color="#FFFFFF" />
                 <Text style={styles.continueButtonText}>Verifying Address...</Text>
               </View>
+            ) : isCheckingAvailability ? (
+              <View style={styles.buttonLoadingContainer}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.continueButtonText}>Checking Availability...</Text>
+              </View>
             ) : (
               <Text
                 style={[
                   styles.continueButtonText,
-                  (!isReady || isGeocoding) && styles.continueButtonTextDisabled,
+                  (!isReady || isGeocoding || isCheckingAvailability) && styles.continueButtonTextDisabled,
                 ]}
               >
                 {isReady ? 'Continue to Review' : `Complete ${2 - stepsCompleted} more step${2 - stepsCompleted !== 1 ? 's' : ''}`}

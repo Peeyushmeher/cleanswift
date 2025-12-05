@@ -72,7 +72,22 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GOOGLE_MAPS_API_KEY}&region=ca`;
 
   try {
-    const response = await fetch(url);
+    // Add timeout to prevent hanging (15 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    let response: Response;
+    try {
+      response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new Error('Address verification timed out. Please check your connection and try again.');
+      }
+      throw fetchError;
+    }
+    
     const data = await response.json();
 
     if (data.status === 'ZERO_RESULTS') {

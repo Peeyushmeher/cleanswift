@@ -69,6 +69,23 @@ export interface CreateBookingResponse {
   services: ServiceInfo[];
 }
 
+export interface CheckAvailabilityParams {
+  bookingDate: string; // 'YYYY-MM-DD'
+  bookingTimeStart: string; // 'HH:mm:ss'
+  bookingLat: number;
+  bookingLng: number;
+  bookingTimeEnd?: string | null; // 'HH:mm:ss' (optional)
+  serviceDurationMinutes?: number | null; // (optional, if end_time not provided)
+  excludeOrgDetailers?: boolean; // (optional, default false)
+}
+
+export interface CheckAvailabilityResponse {
+  available: boolean;
+  detailer_count: number;
+  nearest_distance_km: number | null;
+  message?: string; // Only present if available=false
+}
+
 /**
  * Creates a booking via the Supabase RPC function.
  * This function handles validation, car ownership checks, and service validation
@@ -218,6 +235,55 @@ export async function acceptBooking(bookingId: string): Promise<BookingRow> {
     return data as BookingRow;
   } catch (error) {
     console.error('acceptBooking error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Checks if detailers are available for a booking at the specified location and time.
+ * This function calls the backend RPC to check availability before creating a booking.
+ * Uses two-tier matching: first tries detailers within their service radius, then falls back
+ * to detailers with larger service radii that can cover the booking distance.
+ * 
+ * @param params - Booking parameters including date, time, and location
+ * @returns Availability check result with detailer count and nearest distance
+ * @throws Error if the check fails or required parameters are missing
+ */
+export async function checkBookingAvailability(
+  params: CheckAvailabilityParams
+): Promise<CheckAvailabilityResponse> {
+  try {
+    const { data, error } = await supabase.rpc('check_detailer_availability_in_radius', {
+      p_booking_date: params.bookingDate,
+      p_booking_time_start: params.bookingTimeStart,
+      p_booking_lat: params.bookingLat,
+      p_booking_lng: params.bookingLng,
+      p_booking_time_end: params.bookingTimeEnd ?? null,
+      p_service_duration_minutes: params.serviceDurationMinutes ?? null,
+      p_exclude_org_detailers: params.excludeOrgDetailers ?? false,
+    });
+
+    if (error) {
+      console.error('check_detailer_availability_in_radius RPC error:', error);
+      // Provide user-friendly error messages
+      if (error.message.includes('required')) {
+        throw new Error('Booking date, time, and location are required');
+      } else if (error.message.includes('must be provided')) {
+        throw new Error('Either booking end time or service duration must be provided');
+      } else {
+        throw new Error(error.message || 'Failed to check availability');
+      }
+    }
+
+    if (!data) {
+      throw new Error('No data returned from availability check');
+    }
+
+    // The RPC function returns JSONB, so we need to parse it
+    const result = typeof data === 'string' ? JSON.parse(data) : data;
+    return result as CheckAvailabilityResponse;
+  } catch (error) {
+    console.error('checkBookingAvailability error:', error);
     throw error;
   }
 }

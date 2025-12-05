@@ -5,7 +5,8 @@ import { useLayoutEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBooking, type Detailer } from '../../contexts/BookingContext';
-import { useDetailers } from '../../hooks/useDetailers';
+import { useAvailableDetailers } from '../../hooks/useAvailableDetailers';
+import { parseDateFromRoute } from '../../utils/availabilityCheck';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import DetailerProfileCard from '../../components/DetailerProfileCard';
 
@@ -15,7 +16,19 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
   const { setDetailer, selectedService } = useBooking();
   const parentNavigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { data: detailers, loading, error } = useDetailers();
+  
+  // Parse date from route params (could be day number string or Date)
+  const bookingDate = parseDateFromRoute(route.params.date, route.params.time);
+  const bookingTime = route.params.time;
+  const serviceDurationMinutes = selectedService?.duration_minutes || null;
+
+  // Use availability-filtered hook when date/time/service are available
+  const { data: detailers, loading, error } = useAvailableDetailers({
+    date: bookingDate,
+    time: bookingTime,
+    serviceDurationMinutes: serviceDurationMinutes,
+  });
+
   const [selectedDetailerId, setSelectedDetailerId] = useState<string>('');
   const [profileDetailer, setProfileDetailer] = useState<Detailer | null>(null);
   const [profileVisible, setProfileVisible] = useState(false);
@@ -106,6 +119,17 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
             >
+              {/* No detailers available message */}
+              {detailers.length === 0 && bookingDate && bookingTime && (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="calendar-outline" size={64} color="#C6CFD9" />
+                  <Text style={styles.emptyTitle}>No detailers available</Text>
+                  <Text style={styles.emptyMessage}>
+                    No detailers are available at this time. Please try a different date or time.
+                  </Text>
+                </View>
+              )}
+
               <View style={styles.detailersList}>
                 {detailers.map((detailer) => {
               const isSelected = selectedDetailerId === detailer.id;
@@ -283,6 +307,27 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingBottom: 120,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 64,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    color: '#F5F7FA',
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyMessage: {
+    color: '#C6CFD9',
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
   },
   detailersList: {
   },

@@ -59,6 +59,10 @@ export interface Detailer {
   is_active: boolean;
   bio: string | null;
   specialties: string[] | null;
+  // Phase 4: Location and service radius
+  latitude?: number | null;
+  longitude?: number | null;
+  service_radius_km?: number | null;
 }
 
 /**
