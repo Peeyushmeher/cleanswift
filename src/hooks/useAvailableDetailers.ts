@@ -71,6 +71,13 @@ export function useAvailableDetailers(
       const formattedDate = formatDateForRPC(bookingDate);
       const formattedTime = formatTimeForRPC(time);
 
+      console.log('🔍 Checking availability:', {
+        formattedDate,
+        formattedTime,
+        serviceDurationMinutes,
+        dayOfWeek: bookingDate.getDay(),
+      });
+
       // First, fetch all active detailers
       const { data: allDetailers, error: fetchError } = await supabase
         .from('detailers')
@@ -106,24 +113,57 @@ export function useAvailableDetailers(
             .eq('is_active', true)
             .maybeSingle();
 
-          if (availError || !availability) {
+          if (availError) {
+            console.error(`Error fetching availability for detailer ${detailer.id}:`, availError);
+            continue;
+          }
+
+          if (!availability) {
+            console.log(`Detailer ${detailer.id} has no availability for day ${dayOfWeek}`);
             continue; // No availability for this day
           }
 
+          console.log(`Detailer ${detailer.id} availability:`, {
+            start_time: availability.start_time,
+            end_time: availability.end_time,
+            lunch_start: availability.lunch_start_time,
+            lunch_end: availability.lunch_end_time,
+          });
+
           // Check if booking time fits within availability window
-          const bookingStartTime = formattedTime;
+          // Normalize time formats - ensure both have seconds
+          const bookingStartTime = formattedTime; // Already in HH:mm:ss format
           const bookingEndTime = calculateEndTime(bookingStartTime, serviceDurationMinutes);
           
-          if (bookingStartTime < availability.start_time || bookingEndTime > availability.end_time) {
+          // Normalize database times to HH:mm:ss format for comparison
+          const normalizeTime = (timeStr: string | null): string => {
+            if (!timeStr) return '';
+            // If time is in HH:mm format, add :00
+            if (timeStr.match(/^\d{2}:\d{2}$/)) {
+              return `${timeStr}:00`;
+            }
+            return timeStr;
+          };
+
+          const availStart = normalizeTime(availability.start_time);
+          const availEnd = normalizeTime(availability.end_time);
+          const lunchStart = normalizeTime(availability.lunch_start_time);
+          const lunchEnd = normalizeTime(availability.lunch_end_time);
+          
+          console.log(`Checking time window: booking ${bookingStartTime}-${bookingEndTime} vs availability ${availStart}-${availEnd}`);
+          
+          if (bookingStartTime < availStart || bookingEndTime > availEnd) {
+            console.log(`Detailer ${detailer.id} booking time doesn't fit in availability window`);
             continue; // Booking doesn't fit in availability window
           }
 
           // Check if booking overlaps with lunch break
-          if (availability.lunch_start_time && availability.lunch_end_time) {
+          if (lunchStart && lunchEnd) {
             if (
-              bookingStartTime < availability.lunch_end_time &&
-              bookingEndTime > availability.lunch_start_time
+              bookingStartTime < lunchEnd &&
+              bookingEndTime > lunchStart
             ) {
+              console.log(`Detailer ${detailer.id} booking overlaps with lunch break ${lunchStart}-${lunchEnd}`);
               continue; // Booking overlaps with lunch break
             }
           }
@@ -143,6 +183,7 @@ export function useAvailableDetailers(
           }
 
           if (dayOff) {
+            console.log(`Detailer ${detailer.id} has a day off on ${formattedDate}`);
             continue; // Detailer has a day off
           }
 
@@ -170,19 +211,12 @@ export function useAvailableDetailers(
           });
 
           if (hasConflict) {
-            continue; // Detailer has a conflicting booking
-          }
-
-          if (bookingError) {
-            console.error('Error checking bookings:', bookingError);
-            continue; // Skip on error
-          }
-
-          if (conflictingBooking) {
+            console.log(`Detailer ${detailer.id} has conflicting booking`);
             continue; // Detailer has a conflicting booking
           }
 
           // If we get here, detailer is available
+          console.log(`Detailer ${detailer.id} (${detailer.full_name}) is available for ${formattedDate} at ${formattedTime}`);
           availableDetailers.push(detailer);
         } catch (err) {
           console.error(`Error checking availability for detailer ${detailer.id}:`, err);

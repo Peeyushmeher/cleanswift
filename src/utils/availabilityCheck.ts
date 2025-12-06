@@ -95,7 +95,16 @@ export function parseDateFromRoute(dateString: string | undefined, timeSlot?: st
   const dayNumber = parseInt(dateString, 10);
   if (!isNaN(dayNumber) && dayNumber >= 1 && dayNumber <= 31) {
     const today = new Date();
-    return new Date(today.getFullYear(), today.getMonth(), dayNumber);
+    const selectedDate = new Date(today.getFullYear(), today.getMonth(), dayNumber);
+    
+    // If the selected day is in the past (e.g., today is 15th, user selected 5th),
+    // it means they want next month's date
+    if (selectedDate < today) {
+      // Move to next month
+      return new Date(today.getFullYear(), today.getMonth() + 1, dayNumber);
+    }
+    
+    return selectedDate;
   }
 
   // Try to parse as ISO date string

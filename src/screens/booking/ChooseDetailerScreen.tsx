@@ -22,6 +22,15 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
   const bookingTime = route.params.time;
   const serviceDurationMinutes = selectedService?.duration_minutes || null;
 
+  // Debug logging
+  console.log('ChooseDetailerScreen params:', {
+    routeDate: route.params.date,
+    routeTime: route.params.time,
+    parsedDate: bookingDate,
+    serviceDuration: serviceDurationMinutes,
+    hasService: !!selectedService,
+  });
+
   // Use availability-filtered hook when date/time/service are available
   const { data: detailers, loading, error } = useAvailableDetailers({
     date: bookingDate,
