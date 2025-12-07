@@ -96,6 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: 'cleanswift://auth/confirm-email',
+        },
       });
 
       if (error) {

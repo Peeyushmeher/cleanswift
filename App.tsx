@@ -3,13 +3,12 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { Alert, Linking, View, Platform } from 'react-native';
+import { Alert, Linking, Platform, View } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './global.css';
 
 import * as Notifications from 'expo-notifications';
-import ConfigurationErrorScreen from './src/components/ConfigurationErrorScreen';
 import ReceiptModal from './src/components/ReceiptModal';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { BookingProvider } from './src/contexts/BookingContext';
@@ -290,6 +289,121 @@ function OAuthDeepLinkHandler() {
   return null;
 }
 
+// Component to handle email confirmation deep links globally
+function EmailConfirmationHandler() {
+  useEffect(() => {
+    const handleDeepLink = async (url: string | null) => {
+      if (!url || !url.startsWith('cleanswift://auth/confirm-email')) {
+        return;
+      }
+
+      console.log('Email confirmation callback received:', url);
+
+      try {
+        // Extract token_hash from URL
+        // Format: cleanswift://auth/confirm-email?token_hash=...&type=email
+        let tokenHash: string | null = null;
+        let type: string | null = null;
+        
+        try {
+          const urlObj = new URL(url);
+          tokenHash = urlObj.searchParams.get('token_hash');
+          type = urlObj.searchParams.get('type');
+        } catch (e) {
+          // Fallback parsing if URL constructor fails
+          const tokenMatch = url.match(/[?&]token_hash=([^&]+)/);
+          const typeMatch = url.match(/[?&]type=([^&]+)/);
+          tokenHash = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+          type = typeMatch ? decodeURIComponent(typeMatch[1]) : null;
+        }
+
+        if (tokenHash && type === 'email') {
+          console.log('Verifying email with token...');
+          // Verify the email using the token
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'email',
+          });
+
+          if (error) {
+            console.error('Email verification error:', error);
+            Alert.alert('Verification Failed', error.message || 'Failed to verify email. Please try again.');
+          } else {
+            console.log('Email verification successful');
+            Alert.alert('Email Verified', 'Your email has been verified successfully! You can now sign in.');
+            // Auth state change listener will handle navigation
+          }
+        } else {
+          // Try alternative format: Supabase might use #access_token format similar to OAuth
+          const hashMatch = url.match(/#(.+)/);
+          if (hashMatch) {
+            const hashString = hashMatch[1];
+            const params: Record<string, string> = {};
+            hashString.split('&').forEach((param) => {
+              const [key, value] = param.split('=');
+              if (key && value) {
+                params[decodeURIComponent(key)] = decodeURIComponent(value);
+              }
+            });
+
+            const accessToken = params['access_token'];
+            const refreshToken = params['refresh_token'];
+
+            if (accessToken && refreshToken) {
+              try {
+                console.log('Setting session with tokens from email verification...');
+                const { data, error: sessionError } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
+
+                if (sessionError) {
+                  console.error('Email verification session error:', sessionError);
+                  Alert.alert('Verification Error', sessionError.message);
+                } else {
+                  console.log('Email verification and authentication successful');
+                  Alert.alert('Email Verified', 'Your email has been verified and you are now signed in!');
+                  // Auth state change listener will handle navigation
+                }
+              } catch (error) {
+                console.error('Email verification error:', error);
+                Alert.alert('Error', 'Failed to complete email verification');
+              }
+            } else {
+              console.warn('No token_hash or access_token found in email confirmation URL');
+              Alert.alert('Verification Error', 'Invalid verification link. Please request a new verification email.');
+            }
+          } else {
+            console.warn('No token_hash or hash fragment found in email confirmation URL');
+            Alert.alert('Verification Error', 'Invalid verification link. Please request a new verification email.');
+          }
+        }
+      } catch (error) {
+        console.error('Email confirmation error:', error);
+        Alert.alert('Error', 'Failed to process email verification link');
+      }
+    };
+
+    // Check if app was opened with a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink(url);
+      }
+    });
+
+    // Listen for deep links while app is running
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  return null;
+}
+
 export default function App() {
   console.log('=== App.tsx rendering ===');
 
@@ -401,6 +515,7 @@ export default function App() {
                   <NotificationListener />
                   <PendingReceiptChecker />
                   <OAuthDeepLinkHandler />
+                  <EmailConfirmationHandler />
                   <View style={{ flex: 1 }}>
                     {showConfigError && (
                       <View style={{ backgroundColor: '#7f1d1d', padding: 10 }}>
