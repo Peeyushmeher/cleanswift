@@ -34,6 +34,12 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
+  const [bookingPrices, setBookingPrices] = useState<{
+    servicePrice: number;
+    addonsTotal: number;
+    taxAmount: number;
+    totalAmount: number;
+  } | null>(null);
   const showPriceSummary = route.params?.showPrice ?? true;
   const testPaymentSecret = process.env.EXPO_PUBLIC_TEST_PAYMENT_SECRET;
   const isTestPaymentEnabled = __DEV__ && !!testPaymentSecret;
@@ -74,6 +80,37 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
 
     restoreDetailerFromParams();
   }, [route.params?.detailerId, selectedDetailer, setDetailer]);
+
+  // Fetch booking prices when bookingId is provided
+  useEffect(() => {
+    const fetchBookingPrices = async () => {
+      if (route.params?.bookingId) {
+        try {
+          const { data: booking, error } = await supabase
+            .from('bookings')
+            .select('service_price, addons_total, tax_amount, total_amount')
+            .eq('id', route.params.bookingId)
+            .single();
+
+          if (error) {
+            console.error('Error fetching booking prices:', error);
+          } else if (booking) {
+            setBookingPrices({
+              servicePrice: booking.service_price,
+              addonsTotal: booking.addons_total,
+              taxAmount: booking.tax_amount,
+              totalAmount: booking.total_amount,
+            });
+            console.log('✅ Fetched booking prices:', booking);
+          }
+        } catch (error) {
+          console.error('Error fetching booking prices:', error);
+        }
+      }
+    };
+
+    fetchBookingPrices();
+  }, [route.params?.bookingId]);
 
   // Check if Apple Pay is available on the device
   useEffect(() => {
@@ -496,22 +533,28 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 <View style={styles.priceRow}>
                   <Text style={styles.priceLabel}>Service</Text>
                   <Text style={styles.priceValue}>
-                    {formatCurrency(priceBreakdown.servicePrice)}
+                    {formatCurrency(
+                      bookingPrices?.servicePrice ?? priceBreakdown.servicePrice
+                    )}
                   </Text>
                 </View>
-                {priceBreakdown.addonsTotal > 0 && (
+                {(bookingPrices?.addonsTotal ?? priceBreakdown.addonsTotal) > 0 && (
                   <View style={styles.priceRow}>
                     <Text style={styles.priceLabel}>Add-ons</Text>
                     <Text style={styles.priceValue}>
-                      {formatCurrency(priceBreakdown.addonsTotal)}
+                      {formatCurrency(
+                        bookingPrices?.addonsTotal ?? priceBreakdown.addonsTotal
+                      )}
                     </Text>
                   </View>
                 )}
-                {priceBreakdown.taxAmount > 0 && (
+                {(bookingPrices?.taxAmount ?? priceBreakdown.taxAmount) > 0 && (
                   <View style={styles.priceRow}>
                     <Text style={styles.priceLabel}>HST</Text>
                     <Text style={styles.priceValue}>
-                      {formatCurrency(priceBreakdown.taxAmount)}
+                      {formatCurrency(
+                        bookingPrices?.taxAmount ?? priceBreakdown.taxAmount
+                      )}
                     </Text>
                   </View>
                 )}
@@ -519,7 +562,9 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 <View style={styles.totalRow}>
                   <Text style={styles.totalLabel}>Total</Text>
                   <Text style={styles.totalValue}>
-                    {formatCurrency(priceBreakdown.totalAmount)}
+                    {formatCurrency(
+                      bookingPrices?.totalAmount ?? priceBreakdown.totalAmount
+                    )}
                   </Text>
                 </View>
               </View>

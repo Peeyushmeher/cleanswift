@@ -147,9 +147,10 @@ serve(async (req) => {
     }
 
     // Validate booking status allows payment
-    // Allow 'unpaid', 'requires_payment', and 'processing' statuses
+    // Allow 'unpaid', 'requires_payment', 'processing', and 'failed' statuses
     // 'processing' allows retries if user cancelled mid-payment
-    const allowedPaymentStatuses = ['unpaid', 'requires_payment', 'processing'];
+    // 'failed' allows retries after a payment failure
+    const allowedPaymentStatuses = ['unpaid', 'requires_payment', 'processing', 'failed'];
     if (!allowedPaymentStatuses.includes(booking.payment_status)) {
       console.error('Booking payment status does not allow payment:', booking.payment_status);
       return new Response(
@@ -197,8 +198,9 @@ serve(async (req) => {
     });
 
     // IDEMPOTENCY: Check if booking already has a PaymentIntent
+    // Skip retrieval if payment_status is 'failed' - always create a fresh PaymentIntent for retries
     let paymentIntent;
-    if (booking.stripe_payment_intent_id) {
+    if (booking.stripe_payment_intent_id && booking.payment_status !== 'failed') {
       console.log('Booking already has PaymentIntent, retrieving existing one:', booking.stripe_payment_intent_id);
       try {
         paymentIntent = await stripe.paymentIntents.retrieve(booking.stripe_payment_intent_id);
@@ -232,6 +234,9 @@ serve(async (req) => {
         // PaymentIntent might have been deleted or doesn't exist, create a new one
         paymentIntent = null;
       }
+    } else if (booking.payment_status === 'failed') {
+      console.log('Booking has failed payment status - creating fresh PaymentIntent (skipping old ID)');
+      paymentIntent = null; // Force creation of new PaymentIntent
     }
 
     // Create new PaymentIntent if we don't have a valid existing one

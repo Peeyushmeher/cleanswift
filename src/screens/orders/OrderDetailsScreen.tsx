@@ -186,6 +186,18 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
     });
   };
 
+  const handlePayNow = () => {
+    if (!booking) return;
+    // Navigate to PaymentMethod screen with the booking ID
+    tabsNavigation.navigate('Book', {
+      screen: 'PaymentMethod',
+      params: {
+        bookingId: booking.id,
+        showPrice: true,
+      },
+    });
+  };
+
   const renderDetailerCard = () => {
     if (!booking?.detailer) {
       return (
@@ -339,6 +351,11 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
           {rebookAvailable && (
             <TouchableOpacity onPress={handleRebook} style={styles.primaryButton} activeOpacity={0.9}>
               <Text style={styles.primaryButtonText}>Book again with this detailer</Text>
+            </TouchableOpacity>
+          )}
+          {booking.status === 'requires_payment' && (
+            <TouchableOpacity onPress={handlePayNow} style={styles.primaryButton} activeOpacity={0.9}>
+              <Text style={styles.primaryButtonText}>Pay Now</Text>
             </TouchableOpacity>
           )}
           {canCancel && (

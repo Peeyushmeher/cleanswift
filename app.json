@@ -17,6 +17,9 @@
         "com.apple.developer.in-app-payments": [
           "merchant.com.cleanswift",
           "merchant.com.cleanswift"
+        ],
+        "com.apple.developer.applesignin": [
+          "Default"
         ]
       },
       "infoPlist": {
