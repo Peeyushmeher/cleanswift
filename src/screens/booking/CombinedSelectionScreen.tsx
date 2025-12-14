@@ -4,22 +4,22 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import DetailerProfileCard from '../../components/DetailerProfileCard';
 import AvailabilityErrorCard from '../../components/AvailabilityErrorCard';
+import DetailerProfileCard from '../../components/DetailerProfileCard';
 import { useBooking, type BookingLocation, type Detailer } from '../../contexts/BookingContext';
 import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 import { useDetailers } from '../../hooks/useDetailers';
 import { useUserAddresses } from '../../hooks/useUserAddresses';
-import { BookingStackParamList } from '../../navigation/BookingStack';
 import { checkBookingAvailability } from '../../lib/bookings';
+import { BookingStackParamList } from '../../navigation/BookingStack';
 import { geocodeAddress, isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import {
-  normalizePostalCode,
-  normalizeProvince,
-  validateCity,
-  validatePostalCode,
-  validateProvince,
-  validateStreetAddress,
+    normalizePostalCode,
+    normalizeProvince,
+    validateCity,
+    validatePostalCode,
+    validateProvince,
+    validateStreetAddress,
 } from '../../utils/addressValidation';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'CombinedSelection'>;
@@ -35,16 +35,21 @@ const dates = [
   { day: 'Sun', date: 19, available: true },
 ];
 
-const timeSlots = [
-  { time: '8:00 AM', available: true },
-  { time: '9:30 AM', available: true },
-  { time: '11:00 AM', available: true },
-  { time: '1:00 PM', available: true },
-  { time: '3:30 PM', available: true },
-  { time: '5:00 PM', available: false },
-  { time: '6:30 PM', available: false },
-  { time: '8:00 PM', available: false },
-];
+// Generate time slots in 30-minute intervals from 8:00 AM to 8:00 PM
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 8; hour <= 20; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+      const timeStr = `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+      slots.push({ time: timeStr, available: true });
+    }
+  }
+  return slots;
+};
+
+const timeSlots = generateTimeSlots();
 
 export default function CombinedSelectionScreen({ navigation, route }: Props) {
   const {
@@ -69,6 +74,10 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
   const [selectedTime, setSelectedTime] = useState<string>(selectedTimeSlot || '');
   const [calendarExpanded, setCalendarExpanded] = useState(true);
   const [timeDropdownOpen, setTimeDropdownOpen] = useState(false);
+  const timePickerScrollRef = useRef<ScrollView>(null);
+  const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ITEM_HEIGHT = 50;
   const [locationExpanded, setLocationExpanded] = useState(false);
   const [detailerExpanded, setDetailerExpanded] = useState(false);
   const [showSaveAddressPrompt, setShowSaveAddressPrompt] = useState(false);
@@ -749,6 +758,173 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
 
   const availableTimes = timeSlots.filter(slot => slot.available);
   const selectedDetailerData = detailers.find(d => d.id === selectedDetailerId);
+  const [centerTimeIndex, setCenterTimeIndex] = useState<number | null>(null);
+
+  // Function to get the index of the item currently in the center
+  // The highlight box center is at 125px from top of container (50% of 250px)
+  // Items start after 2 spacer items (100px), so item centers are at: 125px + (index * 50px)
+  // To find which item is centered: (scrollY + 125 - 100) / 50 = (scrollY + 25) / 50
+  const getCenterItemIndex = (scrollY: number): number => {
+    // The center of the highlight box is at 125px from container top
+    // Scroll position 0 means spacers are at top, so item 0 center is at 125px
+    // When we scroll, we need to find which item's center aligns with 125px
+    // Item i's center is at: 100px (spacers) + (i * 50px) + 25px (half item) = 125px + (i * 50px)
+    // So: scrollY + 125px = 125px + (i * 50px) => scrollY = i * 50px
+    // But we have spacers, so: scrollY = (i * 50px) + (2 * 50px) = (i + 2) * 50px
+    // To reverse: i = (scrollY - 100) / 50
+    const adjustedOffset = scrollY - (2 * ITEM_HEIGHT);
+    const index = Math.round(adjustedOffset / ITEM_HEIGHT);
+    return Math.max(0, Math.min(index, availableTimes.length - 1));
+  };
+
+  // Don't track scroll in real-time - only update on scroll end to prevent glitching
+  const handleTimeScroll = (event: any) => {
+    // We don't update center index during scroll to prevent visual glitches
+    // Only update when scroll ends
+  };
+
+  // Scroll to selected time when picker opens
+  useEffect(() => {
+    if (timeDropdownOpen) {
+      if (selectedTime) {
+        const selectedIndex = availableTimes.findIndex(slot => slot.time === selectedTime);
+        if (selectedIndex >= 0 && timePickerScrollRef.current) {
+          setTimeout(() => {
+            // Scroll to center the selected item (item i is centered when scrollY = i * ITEM_HEIGHT)
+            const targetY = selectedIndex * ITEM_HEIGHT;
+            timePickerScrollRef.current?.scrollTo({
+              y: targetY,
+              animated: false,
+            });
+            setCenterTimeIndex(selectedIndex);
+          }, 100);
+        }
+      } else if (availableTimes.length > 0) {
+        // If no time selected, scroll to first item and select it
+        setTimeout(() => {
+          timePickerScrollRef.current?.scrollTo({
+            y: 0, // Center item 0
+            animated: false,
+          });
+          setCenterTimeIndex(0);
+          if (availableTimes[0]) {
+            setSelectedTime(availableTimes[0].time);
+          }
+        }, 100);
+      }
+    } else {
+      // Reset center index when picker closes
+      setCenterTimeIndex(null);
+    }
+  }, [timeDropdownOpen, selectedTime, availableTimes]);
+
+  // Handle scroll end - manually snap to nearest item
+  const handleTimeScrollEnd = (event: any) => {
+    // Prevent handling if we're already processing a scroll
+    if (isScrollingRef.current) {
+      return;
+    }
+    
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const centerIndex = getCenterItemIndex(offsetY);
+    
+    // Calculate the exact scroll position to center the item
+    // Item i is centered when scrollY = i * ITEM_HEIGHT
+    const targetY = centerIndex * ITEM_HEIGHT;
+    
+    // Only snap if we're not already at the correct position (within 5px tolerance to prevent infinite loops)
+    const distanceFromTarget = Math.abs(offsetY - targetY);
+    
+    if (distanceFromTarget > 5 && timePickerScrollRef.current) {
+      // Lock scrolling to prevent infinite loops
+      isScrollingRef.current = true;
+      
+      timePickerScrollRef.current.scrollTo({
+        y: targetY,
+        animated: true,
+      });
+      
+      // Clear any existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      
+      // Update center index and selected time after scroll completes
+      scrollTimeoutRef.current = setTimeout(() => {
+        // Double-check we're at the right position
+        if (timePickerScrollRef.current) {
+          timePickerScrollRef.current.scrollTo({
+            y: targetY,
+            animated: false,
+          });
+        }
+        
+        setCenterTimeIndex(centerIndex);
+        if (availableTimes[centerIndex]) {
+          setSelectedTime(availableTimes[centerIndex].time);
+        }
+        
+        // Reset scroll lock
+        isScrollingRef.current = false;
+        scrollTimeoutRef.current = null;
+      }, 400);
+    } else {
+      // We're already at the correct position - just update the center index
+      setCenterTimeIndex(centerIndex);
+      if (availableTimes[centerIndex]) {
+        setSelectedTime(availableTimes[centerIndex].time);
+      }
+    }
+  };
+
+  // Handle manual time selection - click any visible time to center it and select it
+  const handleTimeSelect = (time: string, index: number) => {
+    // Prevent multiple rapid clicks
+    if (isScrollingRef.current) {
+      return;
+    }
+    
+    // Clear any pending scroll timeouts
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+    
+    isScrollingRef.current = true;
+    
+    // Don't update selectedTime or centerTimeIndex yet - wait until scroll completes
+    // This ensures the item only appears selected when it's actually in the center
+    
+    if (timePickerScrollRef.current) {
+      // Scroll to center the item (item i is centered when scrollY = i * ITEM_HEIGHT)
+      const targetY = index * ITEM_HEIGHT;
+      timePickerScrollRef.current.scrollTo({
+        y: targetY,
+        animated: true,
+      });
+      
+      // Update center index and selected time after scroll completes
+      scrollTimeoutRef.current = setTimeout(() => {
+        // Ensure we're exactly at the target position
+        if (timePickerScrollRef.current) {
+          timePickerScrollRef.current.scrollTo({
+            y: targetY,
+            animated: false,
+          });
+        }
+        
+        setCenterTimeIndex(index);
+        setSelectedTime(time);
+        isScrollingRef.current = false;
+        scrollTimeoutRef.current = null;
+      }, 400);
+    } else {
+      // If no scroll ref, just update directly
+      setCenterTimeIndex(index);
+      setSelectedTime(time);
+      isScrollingRef.current = false;
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -940,36 +1116,62 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
               </View>
             )}
 
-            {/* Time Dropdown */}
+            {/* Time Picker (Scrollable Wheel) */}
             {timeDropdownOpen && (
-              <View style={styles.timeDropdownContainer}>
-                <View style={styles.timeDropdown}>
-                  {availableTimes.map((slot) => {
-                    const isSelected = selectedTime === slot.time;
-                    return (
-                      <TouchableOpacity
-                        key={slot.time}
-                        onPress={() => {
-                          setSelectedTime(slot.time);
-                          setTimeDropdownOpen(false);
-                        }}
-                        activeOpacity={0.8}
-                        style={[
-                          styles.timeDropdownItem,
-                          isSelected && styles.timeDropdownItemSelected,
-                        ]}
-                      >
-                        <Text
+              <View style={styles.timePickerContainer}>
+                <View style={styles.timePickerWrapper}>
+                  {/* Highlight overlay */}
+                  <View style={styles.timePickerHighlight} />
+                  
+                  {/* Scrollable time list */}
+                  <ScrollView
+                    ref={timePickerScrollRef}
+                    style={styles.timePickerScroll}
+                    contentContainerStyle={styles.timePickerContent}
+                    showsVerticalScrollIndicator={false}
+                    decelerationRate="fast"
+                    bounces={false}
+                    scrollEventThrottle={16}
+                    onMomentumScrollEnd={handleTimeScrollEnd}
+                    onScrollEndDrag={handleTimeScrollEnd}
+                  >
+                    {/* Top spacer items for centering */}
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <View key={`spacer-top-${i}`} style={{ height: ITEM_HEIGHT }} />
+                    ))}
+                    
+                    {/* Time items */}
+                    {availableTimes.map((slot, index) => {
+                      // Only show as selected if this item is in the center (highlighted zone)
+                      const isInCenter = centerTimeIndex === index;
+                      return (
+                        <TouchableOpacity
+                          key={slot.time}
+                          onPress={() => handleTimeSelect(slot.time, index)}
+                          activeOpacity={0.8}
                           style={[
-                            styles.timeDropdownText,
-                            isSelected && styles.timeDropdownTextSelected,
+                            styles.timePickerItem,
+                            { height: ITEM_HEIGHT },
+                            isInCenter && styles.timePickerItemSelected,
                           ]}
                         >
-                          {slot.time}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                          <Text
+                            style={[
+                              styles.timePickerText,
+                              isInCenter && styles.timePickerTextSelected,
+                            ]}
+                          >
+                            {slot.time}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    
+                    {/* Bottom spacer items for centering */}
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <View key={`spacer-bottom-${i}`} style={{ height: ITEM_HEIGHT }} />
+                    ))}
+                  </ScrollView>
                 </View>
               </View>
             )}
@@ -1913,35 +2115,66 @@ const styles = StyleSheet.create({
     color: '#C6CFD9',
     opacity: 0.5,
   },
-  timeDropdownContainer: {
+  timePickerContainer: {
     marginTop: 12,
     backgroundColor: '#050B12',
     borderRadius: 16,
-    padding: 8,
+    padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
+    height: 250,
+    overflow: 'hidden',
   },
-  timeDropdown: {
-    backgroundColor: 'transparent',
+  timePickerWrapper: {
+    position: 'relative',
+    height: '100%',
   },
-  timeDropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  timePickerHighlight: {
+    position: 'absolute',
+    top: '50%',
+    left: 8,
+    right: 8,
+    height: 50,
+    marginTop: -25,
+    backgroundColor: 'rgba(29, 164, 243, 0.12)',
     borderRadius: 12,
-    marginBottom: 4,
+    borderWidth: 1.5,
+    borderColor: 'rgba(29, 164, 243, 0.4)',
+    zIndex: 1,
+    pointerEvents: 'none',
   },
-  timeDropdownItemSelected: {
-    backgroundColor: '#1DA4F3',
+  timePickerScroll: {
+    flex: 1,
   },
-  timeDropdownText: {
-    color: '#F5F7FA',
-    fontSize: 16,
-    fontWeight: '500',
+  timePickerContent: {
+    paddingVertical: 0,
+    flexGrow: 0,
+  },
+  timePickerItem: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: ITEM_HEIGHT,
+  },
+  timePickerItemSelected: {
+    // Selected styling is handled by highlight overlay
+  },
+  timePickerText: {
+    color: 'rgba(198, 207, 217, 0.4)',
+    fontSize: 18,
+    fontWeight: '400',
     textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 20,
+    includeFontPadding: false,
   },
-  timeDropdownTextSelected: {
-    color: '#FFFFFF',
+  timePickerTextSelected: {
+    color: '#F5F7FA',
+    fontSize: 20,
     fontWeight: '600',
+    textAlignVertical: 'center',
+    lineHeight: 22,
+    includeFontPadding: false,
   },
   locationCard: {
     backgroundColor: '#050B12',
