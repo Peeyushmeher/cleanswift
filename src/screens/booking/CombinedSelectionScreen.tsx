@@ -14,12 +14,12 @@ import { checkBookingAvailability } from '../../lib/bookings';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { geocodeAddress, isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import {
-    normalizePostalCode,
-    normalizeProvince,
-    validateCity,
-    validatePostalCode,
-    validateProvince,
-    validateStreetAddress,
+  normalizePostalCode,
+  normalizeProvince,
+  validateCity,
+  validatePostalCode,
+  validateProvince,
+  validateStreetAddress,
 } from '../../utils/addressValidation';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'CombinedSelection'>;
@@ -495,8 +495,8 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             
             // Availability check passed
             finalizeSelection(normalizedProvince, normalizedPostalCode, {
-              latitude: locationData.latitude,
-              longitude: locationData.longitude,
+              latitude: locationData.latitude !== undefined ? locationData.latitude : null,
+              longitude: locationData.longitude !== undefined ? locationData.longitude : null,
             });
           } catch (error) {
             setIsCheckingAvailability(false);
@@ -512,8 +512,8 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                   text: 'Continue Anyway',
                   onPress: () => {
                     finalizeSelection(normalizedProvince, normalizedPostalCode, {
-                      latitude: locationData.latitude,
-                      longitude: locationData.longitude,
+                      latitude: locationData.latitude !== undefined ? locationData.latitude : null,
+                      longitude: locationData.longitude !== undefined ? locationData.longitude : null,
                     });
                   },
                 },
@@ -744,6 +744,8 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
       const selectedDate = new Date(currentYear, currentMonth, day);
       setSelectedDateValue(selectedDate);
       setCalendarExpanded(false);
+      // Automatically open time picker after date selection
+      setTimeDropdownOpen(true);
     }
   };
 
@@ -1151,7 +1153,6 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
                           activeOpacity={0.8}
                           style={[
                             styles.timePickerItem,
-                            { height: ITEM_HEIGHT },
                             isInCenter && styles.timePickerItemSelected,
                           ]}
                         >
@@ -2135,7 +2136,7 @@ const styles = StyleSheet.create({
     left: 8,
     right: 8,
     height: 50,
-    marginTop: -25,
+    marginTop: -10,
     backgroundColor: 'rgba(29, 164, 243, 0.12)',
     borderRadius: 12,
     borderWidth: 1.5,
@@ -2154,7 +2155,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    height: ITEM_HEIGHT,
+    height: 50,
+    paddingVertical: 0,
+    marginVertical: 0,
   },
   timePickerItemSelected: {
     // Selected styling is handled by highlight overlay
@@ -2164,17 +2167,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '400',
     textAlign: 'center',
-    textAlignVertical: 'center',
-    lineHeight: 20,
-    includeFontPadding: false,
+    lineHeight: 18,
+    paddingVertical: 0,
+    marginVertical: 0,
   },
   timePickerTextSelected: {
     color: '#F5F7FA',
     fontSize: 20,
     fontWeight: '600',
-    textAlignVertical: 'center',
-    lineHeight: 22,
-    includeFontPadding: false,
+    lineHeight: 20,
+    paddingVertical: 0,
+    marginVertical: 0,
   },
   locationCard: {
     backgroundColor: '#050B12',

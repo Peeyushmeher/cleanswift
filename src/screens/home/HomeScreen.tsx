@@ -3,8 +3,9 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Image } from 'expo-image';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBooking } from '../../contexts/BookingContext';
@@ -18,14 +19,6 @@ type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabsParamList, 'Home'>,
   NativeStackNavigationProp<ProfileStackParamList>
 >;
-
-const quickActions = [
-  { icon: 'water' as const, label: 'Quick Wash', color: '#1DA4F3' },
-  { icon: 'sparkles' as const, label: 'Full Detail', color: '#6FF0C4' },
-  { icon: 'leaf' as const, label: 'Interior', color: '#1DA4F3' },
-  { icon: 'star' as const, label: 'Exterior', color: '#6FF0C4' },
-  { icon: 'cube' as const, label: 'Luxury Package', color: '#1DA4F3' },
-];
 
 // Helper function to parse time string (handles "11:00 AM" format)
 const parseTimeString = (timeStr: string): { hours: number; minutes: number } | null => {
@@ -321,8 +314,15 @@ export default function HomeScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View>
-              <Text style={styles.greeting}>Good Morning</Text>
+            <View style={styles.logoContainer}>
+                <Image
+                  source={require('../../../assets/ChatGPT Image Dec 13, 2025, 07_43_20 PM.png')}
+                  style={styles.logo}
+                  contentFit="cover"
+                />
+            </View>
+            <View style={styles.headerCenter}>
+              <Text style={styles.greeting}>Welcome</Text>
               <Text style={styles.title}>CleanSwift</Text>
             </View>
             <TouchableOpacity
@@ -374,7 +374,7 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                   style={styles.primaryButton}
                 >
-                  <Text style={styles.primaryButtonText}>Book a Wash</Text>
+                  <Text style={styles.primaryButtonText}>Book Your Detail</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSelectCar}
@@ -385,33 +385,6 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
-          </View>
-
-          {/* Quick Actions */}
-          <View style={styles.quickActionsContainer}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickActionsScroll}
-            >
-              {quickActions.map((action, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={handleBookService}
-                  activeOpacity={0.8}
-                  style={styles.quickActionCard}
-                >
-                  <Ionicons
-                    name={action.icon}
-                    size={32}
-                    color={action.color}
-                    style={styles.quickActionIcon}
-                  />
-                  <Text style={styles.quickActionLabel}>{action.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
           </View>
 
           {/* Favorite Detailers */}
@@ -470,6 +443,7 @@ export default function HomeScreen() {
                         <Image
                           source={{ uri: detailer.avatar_url }}
                           style={styles.favoriteAvatar}
+                          contentFit="cover"
                         />
                       ) : (
                         <View style={styles.favoriteAvatarFallback}>
@@ -578,6 +552,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 32,
+    position: 'relative',
+  },
+  logoContainer: {
+    right : 10,
+    top : 0,
+    bottom : 32,
+    width: 90,
+    height: 90,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 32,
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
   },
   greeting: {
     color: '#C6CFD9',
@@ -686,36 +685,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  quickActionsContainer: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
-  },
   sectionTitle: {
     color: '#F5F7FA',
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 20,
-  },
-  quickActionsScroll: {
-    paddingRight: 24,
-  },
-  quickActionCard: {
-    width: 128,
-    backgroundColor: '#0A1A2F',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  quickActionIcon: {
-    marginBottom: 14,
-  },
-  quickActionLabel: {
-    color: '#C6CFD9',
-    fontSize: 13,
-    textAlign: 'center',
   },
   upcomingContainer: {
     paddingHorizontal: 24,
