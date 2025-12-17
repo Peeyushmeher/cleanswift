@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export interface Car {
   id: string;
@@ -121,102 +121,110 @@ export function EditCarCard({
             )}
           </View>
 
-          {/* Form Fields */}
-          <View style={styles.formSection}>
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Make</Text>
-              <TextInput
-                placeholder="e.g., BMW"
-                value={formData.make}
-                onChangeText={(value) => updateField('make', value)}
-                placeholderTextColor="rgba(198,207,217,0.5)"
-                style={styles.input}
-              />
+          {/* Scrollable Content */}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Form Fields */}
+            <View style={styles.formSection}>
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Make</Text>
+                <TextInput
+                  placeholder="e.g., BMW"
+                  value={formData.make}
+                  onChangeText={(value) => updateField('make', value)}
+                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Model</Text>
+                <TextInput
+                  placeholder="e.g., M4"
+                  value={formData.model}
+                  onChangeText={(value) => updateField('model', value)}
+                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Year</Text>
+                <TextInput
+                  placeholder="e.g., 2022"
+                  value={formData.year}
+                  onChangeText={(value) => updateField('year', value)}
+                  keyboardType="numeric"
+                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>
+                  Trim <Text style={styles.optionalLabel}>(Optional)</Text>
+                </Text>
+                <TextInput
+                  placeholder="e.g., Competition Package"
+                  value={formData.trim}
+                  onChangeText={(value) => updateField('trim', value)}
+                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>License Plate</Text>
+                <TextInput
+                  placeholder="e.g., ABC-123"
+                  value={formData.license_plate}
+                  onChangeText={(value) => updateField('license_plate', value)}
+                  autoCapitalize="characters"
+                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  style={styles.input}
+                />
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>
+                  Color <Text style={styles.optionalLabel}>(Optional)</Text>
+                </Text>
+                <TextInput
+                  placeholder="e.g., Black Sapphire Metallic"
+                  value={formData.color}
+                  onChangeText={(value) => updateField('color', value)}
+                  placeholderTextColor="rgba(198,207,217,0.5)"
+                  style={styles.input}
+                />
+              </View>
             </View>
 
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Model</Text>
-              <TextInput
-                placeholder="e.g., M4"
-                value={formData.model}
-                onChangeText={(value) => updateField('model', value)}
-                placeholderTextColor="rgba(198,207,217,0.5)"
-                style={styles.input}
-              />
+            {/* Action Buttons */}
+            <View style={styles.ctaGroup}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                activeOpacity={0.85}
+                onPress={handleSave}
+              >
+                <Text style={styles.primaryButtonText}>Save Changes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                activeOpacity={0.85}
+                onPress={handleDelete}
+              >
+                <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
+                <Text style={styles.deleteButtonText}>Delete Car</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={onClose}>
+                <Text style={styles.secondaryButtonText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
-
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Year</Text>
-              <TextInput
-                placeholder="e.g., 2022"
-                value={formData.year}
-                onChangeText={(value) => updateField('year', value)}
-                keyboardType="numeric"
-                placeholderTextColor="rgba(198,207,217,0.5)"
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>
-                Trim <Text style={styles.optionalLabel}>(Optional)</Text>
-              </Text>
-              <TextInput
-                placeholder="e.g., Competition Package"
-                value={formData.trim}
-                onChangeText={(value) => updateField('trim', value)}
-                placeholderTextColor="rgba(198,207,217,0.5)"
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>License Plate</Text>
-              <TextInput
-                placeholder="e.g., ABC-123"
-                value={formData.license_plate}
-                onChangeText={(value) => updateField('license_plate', value)}
-                autoCapitalize="characters"
-                placeholderTextColor="rgba(198,207,217,0.5)"
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.fieldContainer}>
-              <Text style={styles.label}>
-                Color <Text style={styles.optionalLabel}>(Optional)</Text>
-              </Text>
-              <TextInput
-                placeholder="e.g., Black Sapphire Metallic"
-                value={formData.color}
-                onChangeText={(value) => updateField('color', value)}
-                placeholderTextColor="rgba(198,207,217,0.5)"
-                style={styles.input}
-              />
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.ctaGroup}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              activeOpacity={0.85}
-              onPress={handleSave}
-            >
-              <Text style={styles.primaryButtonText}>Save Changes</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteButton}
-              activeOpacity={0.85}
-              onPress={handleDelete}
-            >
-              <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
-              <Text style={styles.deleteButtonText}>Delete Car</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.85} onPress={onClose}>
-              <Text style={styles.secondaryButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -239,6 +247,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     maxHeight: '90%',
+  },
+  scrollView: {
+    flex: 0,
+  },
+  scrollContent: {
+    paddingBottom: 8,
   },
   closeButton: {
     position: 'absolute',

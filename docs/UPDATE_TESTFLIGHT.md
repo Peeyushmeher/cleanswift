@@ -150,3 +150,4 @@ eas build:list --platform ios --limit 5
 3. **Test internally first** - Always test in TestFlight before App Store
 4. **Keep git in sync** - Commit changes before building
 
+

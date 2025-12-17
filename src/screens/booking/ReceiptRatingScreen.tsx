@@ -9,6 +9,7 @@ import { useBooking } from '../../contexts/BookingContext';
 import { supabase } from '../../lib/supabase';
 import { BookingStackParamList } from '../../navigation/BookingStack';
 import { createTipPaymentIntent } from '../../services/paymentService';
+import CustomerPaymentBreakdown from '../../components/customer/PaymentBreakdown';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'ReceiptRating'> & {
   bookingId?: string;
@@ -31,6 +32,8 @@ interface BookingData {
   servicePrice: number;
   addons: Array<{ name: string; price: number }>;
   taxAmount: number;
+  stripeProcessingFee: number;
+  stripeConnectFee: number;
   totalAmount: number;
 }
 
@@ -108,6 +111,8 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
           { name: 'Interior Refresh', price: 15.00 },
         ],
         taxAmount: 24.57,
+        stripeProcessingFee: 5.82,
+        stripeConnectFee: 0.73,
         totalAmount: 213.57,
       });
       setLoading(false);
@@ -129,6 +134,8 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
             service_price,
             addons_total,
             tax_amount,
+            stripe_processing_fee,
+            stripe_connect_fee,
             total_amount,
             service:service_id (
               id,
@@ -227,6 +234,8 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
           servicePrice: Number(booking.service_price) || 0,
           addons: formattedAddons,
           taxAmount: Number(booking.tax_amount) || 0,
+          stripeProcessingFee: Number(booking.stripe_processing_fee) || 0,
+          stripeConnectFee: Number(booking.stripe_connect_fee) || 0,
           totalAmount: Number(booking.total_amount) || 0,
         });
       } catch (error) {
@@ -507,29 +516,19 @@ export default function ReceiptRatingScreen({ navigation, bookingId, onClose, is
 
             {/* Price Breakdown */}
             <View style={styles.breakdownSection}>
-              <View style={styles.breakdownRows}>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Service</Text>
-                  <Text style={styles.priceValue}>${bookingData.servicePrice.toFixed(2)}</Text>
-                </View>
-                {bookingData.addons.map((addon, index) => (
-                  <View key={index} style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>{addon.name}</Text>
-                    <Text style={styles.priceValue}>${addon.price.toFixed(2)}</Text>
-                  </View>
-                ))}
-                {bookingData.taxAmount > 0 && (
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>HST</Text>
-                    <Text style={styles.priceValue}>${bookingData.taxAmount.toFixed(2)}</Text>
-                  </View>
-                )}
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>${bookingData.totalAmount.toFixed(2)}</Text>
-              </View>
+              <CustomerPaymentBreakdown
+                servicePrice={bookingData.servicePrice}
+                addons={bookingData.addons.map((addon, index) => ({
+                  id: `addon-${index}`,
+                  name: addon.name,
+                  price: addon.price,
+                }))}
+                addonsTotal={bookingData.addons.reduce((sum, addon) => sum + addon.price, 0)}
+                taxAmount={bookingData.taxAmount}
+                stripeProcessingFee={bookingData.stripeProcessingFee}
+                stripeConnectFee={bookingData.stripeConnectFee}
+                totalAmount={bookingData.totalAmount}
+              />
             </View>
           </View>
 

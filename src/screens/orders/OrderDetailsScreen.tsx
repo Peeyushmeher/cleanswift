@@ -10,6 +10,7 @@ import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
 import { updateBookingStatus } from '../../lib/bookings';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 import type { OrdersStackParamList } from '../../navigation/OrdersStack';
+import CustomerPaymentBreakdown from '../../components/customer/PaymentBreakdown';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrderDetails'>;
 type TabsNav = BottomTabNavigationProp<MainTabsParamList>;
@@ -270,27 +271,14 @@ export default function OrderDetailsScreen({ navigation, route }: Props) {
     return (
       <View style={styles.card}>
         <Text style={styles.paymentTitle}>Payment Summary</Text>
-        <View style={styles.lineItemsContainer}>
-          <View style={styles.lineItem}>
-            <Text style={styles.lineItemLabel}>{booking.service?.name || 'Detailing Service'}</Text>
-            <Text style={styles.lineItemValue}>${booking.service_price.toFixed(2)}</Text>
-          </View>
-          {booking.addons_total > 0 && (
-            <View style={styles.lineItem}>
-              <Text style={styles.lineItemLabel}>Add-ons</Text>
-              <Text style={styles.lineItemValue}>${booking.addons_total.toFixed(2)}</Text>
-            </View>
-          )}
-          <View style={styles.lineItem}>
-            <Text style={styles.lineItemLabel}>HST</Text>
-            <Text style={styles.lineItemValue}>${booking.tax_amount.toFixed(2)}</Text>
-          </View>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValue}>${booking.total_amount.toFixed(2)}</Text>
-        </View>
+        <CustomerPaymentBreakdown
+          servicePrice={booking.service_price}
+          addonsTotal={booking.addons_total}
+          taxAmount={booking.tax_amount}
+          stripeProcessingFee={booking.stripe_processing_fee}
+          stripeConnectFee={booking.stripe_connect_fee}
+          totalAmount={booking.total_amount}
+        />
         <View style={styles.metaSection}>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>Receipt ID</Text>

@@ -3,14 +3,14 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
@@ -36,7 +36,7 @@ export default function OnboardingWizard() {
   const { user } = useAuth();
   const { profile, refetch: refetchProfile } = useUserProfile();
   const { isComplete, refetch: refetchCompleteness } = useProfileCompleteness();
-  const { addAddress } = useUserAddresses();
+  const { addAddress, defaultAddress } = useUserAddresses();
 
   // Navigate to Main when profile becomes complete
   useFocusEffect(
@@ -109,13 +109,16 @@ export default function OnboardingWizard() {
       if (!fullName && profile.full_name) setFullName(profile.full_name);
       if (!email && (profile.email || user?.email)) setEmail(profile.email || user?.email || '');
       if (!phone && profile.phone) setPhone(profile.phone);
-      if (!addressLine1 && profile.address_line1) setAddressLine1(profile.address_line1);
-      if (!addressLine2 && profile.address_line2) setAddressLine2(profile.address_line2);
-      if (!city && profile.city) setCity(profile.city);
-      if (!province && profile.province) setProvince(profile.province);
-      if (!postalCode && profile.postal_code) setPostalCode(profile.postal_code);
     } else if (user?.email && !email) {
       setEmail(user.email);
+    }
+    // Pre-fill address data from default address if available
+    if (defaultAddress) {
+      if (!addressLine1 && defaultAddress.address_line1) setAddressLine1(defaultAddress.address_line1);
+      if (!addressLine2 && defaultAddress.address_line2) setAddressLine2(defaultAddress.address_line2);
+      if (!city && defaultAddress.city) setCity(defaultAddress.city);
+      if (!province && defaultAddress.province) setProvince(defaultAddress.province);
+      if (!postalCode && defaultAddress.postal_code) setPostalCode(defaultAddress.postal_code);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount

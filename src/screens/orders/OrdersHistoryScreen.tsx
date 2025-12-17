@@ -6,6 +6,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
 import type { OrdersStackParamList } from '../../navigation/OrdersStack';
+import { calculateTax } from '../../lib/utils/fee-calculations';
 
 type Props = NativeStackScreenProps<OrdersStackParamList, 'OrdersHistory'>;
 
@@ -126,7 +127,22 @@ export default function OrdersHistoryScreen({ navigation }: Props) {
                   <Text style={styles.serviceName} numberOfLines={1} ellipsizeMode="tail">
                     {booking.service?.name || 'Detailing Service'}
                   </Text>
-                  <Text style={styles.price}>${booking.total_amount.toFixed(2)}</Text>
+                  <Text style={styles.price}>
+                    ${(() => {
+                      // Calculate total the same way as CustomerPaymentBreakdown component
+                      const subtotal = booking.service_price + booking.addons_total;
+                      // Recalculate tax if it's 0 or undefined (same logic as component)
+                      const taxAmount = (booking.tax_amount === undefined || booking.tax_amount === 0)
+                        ? calculateTax(subtotal, 0.13) // Default 13% HST
+                        : booking.tax_amount;
+                      const processingFee = booking.stripe_processing_fee || 0;
+                      const connectFee = booking.stripe_connect_fee || 0;
+                      // Calculate total and round to 2 decimal places (same as component)
+                      const total = booking.service_price + booking.addons_total + taxAmount + processingFee + connectFee;
+                      const roundedTotal = Math.round(total * 100) / 100;
+                      return roundedTotal.toFixed(2);
+                    })()}
+                  </Text>
                 </View>
 
                 <Text style={styles.date}>{formatDateLabel(booking.scheduled_date, booking.scheduled_time_start)}</Text>

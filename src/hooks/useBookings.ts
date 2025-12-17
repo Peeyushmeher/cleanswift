@@ -24,6 +24,8 @@ export interface BookingHistoryItem {
   service_price: number;
   addons_total: number;
   tax_amount: number;
+  stripe_processing_fee: number;
+  stripe_connect_fee: number;
   total_amount: number;
   completed_at: string | null;
   created_at: string;
@@ -39,6 +41,8 @@ interface SupabaseBookingRow {
   service_price: number;
   addons_total: number;
   tax_amount: number;
+  stripe_processing_fee: number | null;
+  stripe_connect_fee: number | null;
   total_amount: number;
   completed_at: string | null;
   created_at: string;
@@ -105,6 +109,8 @@ const mapRowToHistoryItem = (row: SupabaseBookingRow): BookingHistoryItem => ({
   service_price: Number(row.service_price),
   addons_total: Number(row.addons_total),
   tax_amount: Number(row.tax_amount),
+  stripe_processing_fee: Number(row.stripe_processing_fee || 0),
+  stripe_connect_fee: Number(row.stripe_connect_fee || 0),
   total_amount: Number(row.total_amount),
   completed_at: row.completed_at,
   created_at: row.created_at,
@@ -147,6 +153,8 @@ export function useBookings(): UseBookingsReturn {
           service_price,
           addons_total,
           tax_amount,
+          stripe_processing_fee,
+          stripe_connect_fee,
           total_amount,
           completed_at,
           created_at,

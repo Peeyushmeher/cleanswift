@@ -2,8 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { openBrowserAsync } from 'expo-web-browser';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../config/urls';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
@@ -43,7 +45,7 @@ export default function ProfileScreen({ navigation }: Props) {
   const { user, signOut } = useAuth();
   const tabsNavigation = useNavigation<TabsNav>();
 
-  const handleAction = (action: string) => {
+  const handleAction = async (action: string) => {
     switch (action) {
       case 'edit-profile':
         navigation.navigate('EditProfile');
@@ -63,6 +65,22 @@ export default function ProfileScreen({ navigation }: Props) {
         break;
       case 'support':
         navigation.navigate('HelpSupport');
+        break;
+      case 'terms':
+        try {
+          await openBrowserAsync(TERMS_OF_SERVICE_URL);
+        } catch (error) {
+          console.error('Error opening Terms of Service:', error);
+          Alert.alert('Error', 'Unable to open Terms of Service. Please try again later.');
+        }
+        break;
+      case 'privacy':
+        try {
+          await openBrowserAsync(PRIVACY_POLICY_URL);
+        } catch (error) {
+          console.error('Error opening Privacy Policy:', error);
+          Alert.alert('Error', 'Unable to open Privacy Policy. Please try again later.');
+        }
         break;
     }
   };

@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useBooking } from '../../contexts/BookingContext';
 import { supabase } from '../../lib/supabase';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import CustomerPaymentBreakdown from '../../components/customer/PaymentBreakdown';
 import {
     createBooking,
     createBookingAddons,
@@ -38,6 +39,8 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     servicePrice: number;
     addonsTotal: number;
     taxAmount: number;
+    stripeProcessingFee: number;
+    stripeConnectFee: number;
     totalAmount: number;
   } | null>(null);
   const showPriceSummary = route.params?.showPrice ?? true;
@@ -88,7 +91,7 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         try {
           const { data: booking, error } = await supabase
             .from('bookings')
-            .select('service_price, addons_total, tax_amount, total_amount')
+            .select('service_price, addons_total, tax_amount, stripe_processing_fee, stripe_connect_fee, total_amount')
             .eq('id', route.params.bookingId)
             .single();
 
@@ -99,6 +102,8 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
               servicePrice: booking.service_price,
               addonsTotal: booking.addons_total,
               taxAmount: booking.tax_amount,
+              stripeProcessingFee: booking.stripe_processing_fee || 0,
+              stripeConnectFee: booking.stripe_connect_fee || 0,
               totalAmount: booking.total_amount,
             });
             console.log('✅ Fetched booking prices:', booking);
@@ -529,45 +534,15 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           {/* Price Summary */}
           {showPriceSummary && (
             <View style={styles.priceSummary}>
-              <View style={styles.priceRows}>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Service</Text>
-                  <Text style={styles.priceValue}>
-                    {formatCurrency(
-                      bookingPrices?.servicePrice ?? priceBreakdown.servicePrice
-                    )}
-                  </Text>
-                </View>
-                {(bookingPrices?.addonsTotal ?? priceBreakdown.addonsTotal) > 0 && (
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>Add-ons</Text>
-                    <Text style={styles.priceValue}>
-                      {formatCurrency(
-                        bookingPrices?.addonsTotal ?? priceBreakdown.addonsTotal
-                      )}
-                    </Text>
-                  </View>
-                )}
-                {(bookingPrices?.taxAmount ?? priceBreakdown.taxAmount) > 0 && (
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>HST</Text>
-                    <Text style={styles.priceValue}>
-                      {formatCurrency(
-                        bookingPrices?.taxAmount ?? priceBreakdown.taxAmount
-                      )}
-                    </Text>
-                  </View>
-                )}
-                <View style={styles.priceDivider} />
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Total</Text>
-                  <Text style={styles.totalValue}>
-                    {formatCurrency(
-                      bookingPrices?.totalAmount ?? priceBreakdown.totalAmount
-                    )}
-                  </Text>
-                </View>
-              </View>
+              <CustomerPaymentBreakdown
+                servicePrice={bookingPrices?.servicePrice ?? priceBreakdown.servicePrice}
+                addons={selectedAddons}
+                addonsTotal={bookingPrices?.addonsTotal ?? priceBreakdown.addonsTotal}
+                taxAmount={bookingPrices?.taxAmount ?? priceBreakdown.taxAmount}
+                stripeProcessingFee={bookingPrices?.stripeProcessingFee ?? priceBreakdown.stripeProcessingFee}
+                stripeConnectFee={bookingPrices?.stripeConnectFee ?? priceBreakdown.stripeConnectFee}
+                totalAmount={bookingPrices?.totalAmount ?? priceBreakdown.totalAmount}
+              />
             </View>
           )}
         </ScrollView>

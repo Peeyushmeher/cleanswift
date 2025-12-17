@@ -106,5 +106,7 @@ export interface PriceBreakdown {
   servicePrice: number;
   addonsTotal: number;
   taxAmount: number;
+  stripeProcessingFee: number;
+  stripeConnectFee: number;
   totalAmount: number;
 }

@@ -9,6 +9,7 @@ import { useBooking } from '../../contexts/BookingContext';
 import { createBooking } from '../../lib/bookings';
 import { supabase } from '../../lib/supabase';
 import { BookingStackParamList } from '../../navigation/BookingStack';
+import CustomerPaymentBreakdown from '../../components/customer/PaymentBreakdown';
 
 type Props = NativeStackScreenProps<BookingStackParamList, 'OrderSummary'>;
 
@@ -482,43 +483,17 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
 
           {/* Price Breakdown */}
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Price Breakdown</Text>
-
-            <View style={styles.priceRows}>
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>Service</Text>
-                <Text style={styles.priceValue}>
-                  {formatCurrency(priceBreakdown.servicePrice)}
-                </Text>
-              </View>
-
-              {selectedAddons.map((addon) => (
-                <View key={addon.id} style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>{addon.name}</Text>
-                  <Text style={styles.priceValue}>
-                    {formatCurrency(addon.price)}
-                  </Text>
-                </View>
-              ))}
-
-              {priceBreakdown.taxAmount > 0 && (
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>HST</Text>
-                  <Text style={styles.priceValue}>
-                    {formatCurrency(priceBreakdown.taxAmount)}
-                  </Text>
-                </View>
-              )}
-
-              <View style={styles.divider} />
-
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>
-                  {formatCurrency(priceBreakdown.totalAmount)}
-                </Text>
-              </View>
-            </View>
+            <CustomerPaymentBreakdown
+              servicePrice={priceBreakdown.servicePrice}
+              addons={selectedAddons}
+              addonsTotal={priceBreakdown.addonsTotal}
+              taxAmount={priceBreakdown.taxAmount}
+              stripeProcessingFee={priceBreakdown.stripeProcessingFee}
+              stripeConnectFee={priceBreakdown.stripeConnectFee}
+              totalAmount={priceBreakdown.totalAmount}
+              showTitle={true}
+              title="Price Breakdown"
+            />
           </View>
         </ScrollView>
 

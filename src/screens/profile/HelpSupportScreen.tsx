@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { openBrowserAsync } from 'expo-web-browser';
 import { useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PRIVACY_POLICY_URL, REFUND_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../config/urls';
 import { ProfileStackParamList } from '../../navigation/ProfileStack';
 import { COLORS } from '../../theme/colors';
 
@@ -93,6 +95,30 @@ export default function HelpSupportScreen({ navigation }: Props) {
     } catch (error) {
       console.error('Error handling contact action:', error);
       Alert.alert('Error', 'Unable to complete this action. Please try again.');
+    }
+  };
+
+  const handlePolicyAction = async (action: string) => {
+    try {
+      let url: string;
+      switch (action) {
+        case 'terms':
+          url = TERMS_OF_SERVICE_URL;
+          break;
+        case 'privacy':
+          url = PRIVACY_POLICY_URL;
+          break;
+        case 'refund':
+          url = REFUND_POLICY_URL;
+          break;
+        default:
+          console.error('Unknown policy action:', action);
+          return;
+      }
+      await openBrowserAsync(url);
+    } catch (error) {
+      console.error('Error opening policy document:', error);
+      Alert.alert('Error', 'Unable to open the document. Please try again later.');
     }
   };
 
@@ -209,6 +235,7 @@ export default function HelpSupportScreen({ navigation }: Props) {
                   <TouchableOpacity
                     key={index}
                     activeOpacity={0.8}
+                    onPress={() => handlePolicyAction(policy.action)}
                     style={[
                       styles.policyOption,
                       !isLast && styles.policyOptionWithBorder,

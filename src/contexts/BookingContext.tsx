@@ -1,12 +1,12 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
+import { calculateTotalAmount } from '../lib/utils/fee-calculations';
 import type {
-  Service,
-  ServiceAddon,
-  Car,
-  Detailer,
-  BookingLocation,
-  PaymentMethod,
-  PriceBreakdown,
+    BookingLocation,
+    Car,
+    Detailer,
+    PriceBreakdown,
+    Service,
+    ServiceAddon
 } from '../types/domain';
 
 interface BookingContextType {
@@ -49,21 +49,25 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     servicePrice: 0,
     addonsTotal: 0,
     taxAmount: 0,
+    stripeProcessingFee: 0,
+    stripeConnectFee: 0,
     totalAmount: 0,
   });
 
   const calculateTotals = useCallback(() => {
     const servicePrice = selectedService?.price || 0;
     const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
-    const subtotal = servicePrice + addonsTotal;
-    const taxAmount = subtotal * HST_RATE;
-    const totalAmount = subtotal + taxAmount;
+    
+    // Use fee calculation utilities to get complete breakdown including Stripe fees
+    const breakdown = calculateTotalAmount(servicePrice, HST_RATE, addonsTotal);
 
     setPriceBreakdown({
       servicePrice,
       addonsTotal,
-      taxAmount: Math.round(taxAmount * 100) / 100, // Round to 2 decimal places
-      totalAmount: Math.round(totalAmount * 100) / 100,
+      taxAmount: breakdown.taxAmount,
+      stripeProcessingFee: breakdown.processingFee,
+      stripeConnectFee: breakdown.connectFee,
+      totalAmount: breakdown.totalAmount,
     });
   }, [selectedService, selectedAddons]);
 
@@ -112,6 +116,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       servicePrice: 0,
       addonsTotal: 0,
       taxAmount: 0,
+      stripeProcessingFee: 0,
+      stripeConnectFee: 0,
       totalAmount: 0,
     });
   }, []);
@@ -154,4 +160,5 @@ export function useBooking() {
 }
 
 // Export types for use in other files
-export type { Service, ServiceAddon, Car, Detailer, PriceBreakdown, BookingLocation };
+export type { BookingLocation, Car, Detailer, PriceBreakdown, Service, ServiceAddon };
+
