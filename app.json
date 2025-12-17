@@ -24,7 +24,8 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "This app uses the camera to scan payment cards and capture photos for service documentation."
+        "NSCameraUsageDescription": "This app uses the camera to scan payment cards and capture photos for service documentation.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to set your profile picture."
       }
     },
     "android": {

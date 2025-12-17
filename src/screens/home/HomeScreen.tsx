@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useBooking } from '../../contexts/BookingContext';
 import { useBookings, type BookingHistoryItem } from '../../hooks/useBookings';
 import { useFavoriteDetailers } from '../../hooks/useFavoriteDetailers';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import { supabase } from '../../lib/supabase';
 import type { MainTabsParamList } from '../../navigation/MainTabs';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
@@ -189,6 +190,7 @@ interface PrimaryCar {
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const { setDetailer } = useBooking();
   const { data: bookings, loading: bookingsLoading } = useBookings();
   const { favorites, loading: favoritesLoading, refetch: refetchFavorites } = useFavoriteDetailers();
@@ -298,6 +300,8 @@ export default function HomeScreen() {
   };
 
   // Refetch favorites when screen comes into focus
+  // Profile refetch is handled by useUserProfile hook automatically on mount
+  // We don't refetch profile here to avoid glitching - it will update when user edits profile
   useFocusEffect(
     useCallback(() => {
       refetchFavorites();
@@ -315,23 +319,41 @@ export default function HomeScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-                <Image
-                  source={require('../../../assets/ChatGPT Image Dec 13, 2025, 07_43_20 PM.png')}
-                  style={styles.logo}
-                  contentFit="cover"
-                />
+              <Image
+                source={require('../../../assets/ChatGPT Image Dec 13, 2025, 07_43_20 PM.png')}
+                style={styles.logo}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
             </View>
             <View style={styles.headerCenter}>
               <Text style={styles.greeting}>Welcome</Text>
               <Text style={styles.title}>CleanSwift</Text>
             </View>
-            <TouchableOpacity
-              onPress={handleProfile}
-              activeOpacity={0.8}
-              style={styles.profileButton}
-            >
-              <Ionicons name="person" size={24} color="#6FF0C4" />
-            </TouchableOpacity>
+            <View style={styles.profileButtonContainer}>
+              <TouchableOpacity
+                onPress={handleProfile}
+                activeOpacity={0.8}
+                style={styles.profileButton}
+              >
+                {profile?.avatar_url ? (
+                  <Image 
+                    source={{ uri: profile.avatar_url }} 
+                    style={styles.profileButtonImage}
+                    contentFit="cover"
+                    transition={0}
+                    cachePolicy="memory-disk"
+                    placeholderContentFit="cover"
+                    onError={(error) => {
+                      console.error('❌ Profile image load error:', error);
+                      console.error('❌ Failed to load avatar URL:', profile.avatar_url);
+                    }}
+                  />
+                ) : (
+                  <Ionicons name="person" size={24} color="#6FF0C4" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Hero Car Card */}
@@ -555,24 +577,30 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   logoContainer: {
-    right : 10,
-    top : 0,
-    bottom : 32,
     width: 90,
     height: 90,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1,
   },
   headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 0,
+    top: 16,
     bottom: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 0,
+    pointerEvents: 'none', // Allow touches to pass through to buttons
+    // Ensure text doesn't overlap
+    flexDirection: 'column',
+  },
+  profileButtonContainer: {
+    width: 48,
+    height: 48,
+    zIndex: 1,
   },
   logo: {
     width: '100%',
@@ -582,11 +610,13 @@ const styles = StyleSheet.create({
     color: '#C6CFD9',
     fontSize: 14,
     marginBottom: 10,
+    textAlign: 'center',
   },
   title: {
     color: '#F5F7FA',
     fontSize: 28,
     fontWeight: '600',
+    textAlign: 'center',
   },
   profileButton: {
     width: 48,
@@ -601,6 +631,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
+    overflow: 'hidden',
+    // Prevent layout shifts
+    minWidth: 48,
+    minHeight: 48,
+  },
+  profileButtonImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+    // Prevent layout shifts during image load
+    backgroundColor: 'rgba(111, 240, 196, 0.05)',
   },
   carCardContainer: {
     paddingHorizontal: 24,

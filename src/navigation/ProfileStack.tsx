@@ -7,6 +7,7 @@ import SelectCarScreen from '../screens/profile/SelectCarScreen';
 import AddCarScreen from '../screens/profile/AddCarScreen';
 import ManageAddressesScreen from '../screens/profile/ManageAddressesScreen';
 import AddEditAddressScreen from '../screens/profile/AddEditAddressScreen';
+import SettingsScreen from '../screens/profile/SettingsScreen';
 
 export type ProfileStackParamList = {
   Profile: undefined;
@@ -20,6 +21,7 @@ export type ProfileStackParamList = {
   AddCar: undefined;
   ManageAddresses: undefined;
   AddEditAddress: { addressId?: string } | undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -40,6 +42,7 @@ export default function ProfileStack() {
       <Stack.Screen name="AddCar" component={AddCarScreen} />
       <Stack.Screen name="ManageAddresses" component={ManageAddressesScreen} />
       <Stack.Screen name="AddEditAddress" component={AddEditAddressScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }

@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { openBrowserAsync } from 'expo-web-browser';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from '../../config/urls';
 import { useAuth } from '../../contexts/AuthContext';
@@ -45,6 +46,9 @@ export default function ProfileScreen({ navigation }: Props) {
   const { user, signOut } = useAuth();
   const tabsNavigation = useNavigation<TabsNav>();
 
+  // Profile refetch is handled by useUserProfile hook automatically on mount
+  // We don't refetch here to avoid glitching - it will update when user edits profile
+
   const handleAction = async (action: string) => {
     switch (action) {
       case 'edit-profile':
@@ -60,8 +64,7 @@ export default function ProfileScreen({ navigation }: Props) {
         navigation.navigate('Notifications');
         break;
       case 'settings':
-        // TODO: Navigate to settings screen when implemented
-        console.log('Navigate to settings');
+        navigation.navigate('Settings');
         break;
       case 'support':
         navigation.navigate('HelpSupport');
@@ -121,9 +124,24 @@ export default function ProfileScreen({ navigation }: Props) {
         <View style={styles.profileHeader}>
           <View style={styles.profileRow}>
             {/* Profile Photo */}
-            <View style={styles.profileAvatar}>
-              <Ionicons name="person" size={40} color="#6FF0C4" />
-            </View>
+            {profile?.avatar_url ? (
+              <Image 
+                source={{ uri: profile.avatar_url }} 
+                style={styles.profileAvatarImage}
+                contentFit="cover"
+                transition={0}
+                cachePolicy="memory-disk"
+                placeholderContentFit="cover"
+                onError={(error) => {
+                  console.error('❌ Profile image load error:', error);
+                  console.error('❌ Failed to load avatar URL:', profile.avatar_url);
+                }}
+              />
+            ) : (
+              <View style={styles.profileAvatar}>
+                <Ionicons name="person" size={40} color="#6FF0C4" />
+              </View>
+            )}
 
             {/* User Info */}
             <View style={styles.userInfo}>
@@ -247,6 +265,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(111, 240, 196, 0.3)',
+    // Prevent layout shifts
+    minWidth: 80,
+    minHeight: 80,
+  },
+  profileAvatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: 'rgba(111, 240, 196, 0.3)',
+    // Prevent layout shifts during image load
+    backgroundColor: 'rgba(29, 164, 243, 0.15)',
+    minWidth: 80,
+    minHeight: 80,
   },
   userInfo: {
     flex: 1,

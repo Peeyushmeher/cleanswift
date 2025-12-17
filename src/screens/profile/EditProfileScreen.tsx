@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,27 +8,114 @@ import { ProfileStackParamList } from '../../navigation/ProfileStack';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { pickImage, uploadAvatar } from '../../utils/imageUpload';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
-  const { profile } = useUserProfile();
+  const { profile, refetch } = useUserProfile();
   const { user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [previewUri, setPreviewUri] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setName(profile.full_name || '');
       setEmail(profile.email || user?.email || '');
       setPhone(profile.phone || '');
+      // Only update avatarUrl if we don't have a previewUri (to avoid overwriting during upload)
+      if (!previewUri) {
+        setAvatarUrl(profile.avatar_url || null);
+      }
     }
-  }, [profile, user]);
+  }, [profile, user, previewUri]);
 
   const isFormValid = name.length > 0 && email.length > 0 && phone.length > 0;
+
+  const handleImagePicker = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to upload a profile picture');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      
+      // Pick image from library
+      const imageUri = await pickImage();
+      if (!imageUri) {
+        setUploadingImage(false);
+        return; // User cancelled
+      }
+
+      // Set preview
+      setPreviewUri(imageUri);
+
+      // Upload to Supabase Storage
+      const { url } = await uploadAvatar(user.id, imageUri);
+      console.log('✅ Uploaded avatar URL:', url);
+
+      // Update profile with new avatar URL
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          avatar_url: url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('❌ Error updating profile:', error);
+        throw error;
+      }
+
+      console.log('✅ Profile updated with avatar_url:', url);
+
+      // Update local state immediately - this will make the image show
+      setAvatarUrl(url);
+      console.log('✅ Set avatarUrl state to:', url);
+      
+      // Refetch profile to ensure consistency
+      await refetch();
+      console.log('✅ Profile refetched, profile.avatar_url:', profile?.avatar_url);
+      
+      // Don't clear previewUri - keep it visible so user sees the image
+      // When they navigate away and come back, avatarUrl from profile will be used
+      // This ensures the image is always visible
+
+      console.log('✅ Avatar upload complete');
+      console.log('✅ displayImageUri will be:', previewUri || url);
+      Alert.alert('Success', 'Profile picture updated successfully');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      setPreviewUri(null);
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload profile picture. Please try again.'
+      );
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Determine which image to display
+  const displayImageUri = previewUri || avatarUrl;
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('EditProfileScreen - displayImageUri:', displayImageUri);
+    console.log('EditProfileScreen - previewUri:', previewUri);
+    console.log('EditProfileScreen - avatarUrl:', avatarUrl);
+    console.log('EditProfileScreen - profile.avatar_url:', profile?.avatar_url);
+  }, [displayImageUri, previewUri, avatarUrl, profile?.avatar_url]);
 
   const handleSave = async () => {
     if (!user) {
@@ -92,17 +180,42 @@ export default function EditProfileScreen({ navigation }: Props) {
         >
           {/* Profile Photo */}
           <View style={styles.photoSection}>
-            <View style={styles.photoContainer}>
-              <View style={styles.avatar}>
-                <Ionicons name="person" size={48} color="#6FF0C4" />
-              </View>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.cameraButton}
-              >
-                <Ionicons name="camera" size={16} color="#050B12" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={handleImagePicker}
+              disabled={uploadingImage}
+              activeOpacity={0.8}
+              style={styles.photoContainer}
+            >
+              {displayImageUri ? (
+                <Image 
+                  source={{ uri: displayImageUri }} 
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                  transition={200}
+                  cachePolicy="memory-disk"
+                  onError={(error) => {
+                    console.error('❌ Image load error:', error);
+                    console.error('❌ Failed to load URI:', displayImageUri);
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Image loaded successfully:', displayImageUri);
+                  }}
+                />
+              ) : (
+                <View style={styles.avatar}>
+                  <Ionicons name="person" size={48} color="#6FF0C4" />
+                </View>
+              )}
+              {uploadingImage ? (
+                <View style={styles.cameraButton}>
+                  <ActivityIndicator size="small" color="#050B12" />
+                </View>
+              ) : (
+                <View style={styles.cameraButton}>
+                  <Ionicons name="camera" size={16} color="#050B12" />
+                </View>
+              )}
+            </TouchableOpacity>
             <Text style={styles.photoHint}>Tap to change photo</Text>
           </View>
 
@@ -232,6 +345,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(29,164,243,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(111,240,196,0.3)',
+  },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     borderWidth: 2,
     borderColor: 'rgba(111,240,196,0.3)',
   },
