@@ -24,7 +24,7 @@ const getServiceIcon = (serviceName: string): keyof typeof Ionicons.glyphMap => 
 export default function ServiceSelectionScreen({ navigation, route }: Props) {
   const { data: services, loading: servicesLoading, error: servicesError } = useServices();
   const { data: addons, loading: addonsLoading, error: addonsError } = useServiceAddons();
-  const { setService, setAddons, selectedService } = useBooking();
+  const { setService, setAddons, selectedService, clearBooking } = useBooking();
   const parentNavigation = useNavigation();
   const insets = useSafeAreaInsets();
 
@@ -45,6 +45,14 @@ export default function ServiceSelectionScreen({ navigation, route }: Props) {
       });
     }
   }, [parentNavigation]);
+
+  // Clear booking context when starting a new booking (not a rebook)
+  useEffect(() => {
+    if (!isRebook) {
+      // Only clear if we're not rebooking - rebooking will have its own logic to set context
+      clearBooking();
+    }
+  }, [isRebook, clearBooking]);
 
   useEffect(() => {
     if (selectedService?.id) {

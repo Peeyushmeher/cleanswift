@@ -29,12 +29,14 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     selectedDetailer,
     selectedLocation,
     setDetailer,
+    clearBooking,
   } = useBooking();
   const { user } = useAuth();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const insets = useSafeAreaInsets();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
+  const [isBookingValid, setIsBookingValid] = useState<boolean | null>(null); // null = checking, true = valid, false = invalid
   const [bookingPrices, setBookingPrices] = useState<{
     servicePrice: number;
     addonsTotal: number;
@@ -84,20 +86,93 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
     restoreDetailerFromParams();
   }, [route.params?.detailerId, selectedDetailer, setDetailer]);
 
-  // Fetch booking prices when bookingId is provided
+  // Fetch booking prices when bookingId is provided and validate booking status
   useEffect(() => {
     const fetchBookingPrices = async () => {
       if (route.params?.bookingId) {
+        setIsBookingValid(null); // Set to checking state
         try {
           const { data: booking, error } = await supabase
             .from('bookings')
-            .select('service_price, addons_total, tax_amount, stripe_processing_fee, stripe_connect_fee, total_amount')
+            .select('service_price, addons_total, tax_amount, stripe_processing_fee, stripe_connect_fee, total_amount, payment_status, status, user_id')
             .eq('id', route.params.bookingId)
             .single();
 
           if (error) {
             console.error('Error fetching booking prices:', error);
-          } else if (booking) {
+            setIsBookingValid(false);
+            // If booking not found or error, redirect to service selection
+            Alert.alert(
+              'Booking Not Found',
+              'This booking could not be found. Please start a new booking.',
+              [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    clearBooking();
+                    navigation.reset({
+                      index: 0,
+                      routes: [{ name: 'ServiceSelection' }],
+                    });
+                  },
+                },
+              ]
+            );
+            return;
+          }
+
+          if (booking) {
+            // Validate booking belongs to current user
+            if (user && booking.user_id !== user.id) {
+              console.warn('⚠️ Booking does not belong to current user');
+              setIsBookingValid(false);
+              Alert.alert(
+                'Invalid Booking',
+                'This booking does not belong to you. Please start a new booking.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      clearBooking();
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'ServiceSelection' }],
+                      });
+                    },
+                  },
+                ]
+              );
+              return;
+            }
+
+            // Check if booking is already paid or accepted
+            if (booking.payment_status === 'paid' || booking.status === 'accepted' || booking.status === 'in_progress' || booking.status === 'completed') {
+              console.warn('⚠️ Booking is already paid/accepted:', {
+                payment_status: booking.payment_status,
+                status: booking.status,
+              });
+              setIsBookingValid(false);
+              Alert.alert(
+                'Booking Already Paid',
+                'This booking has already been paid and accepted. Please start a new booking.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      clearBooking();
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'ServiceSelection' }],
+                      });
+                    },
+                  },
+                ]
+              );
+              return;
+            }
+
+            // Booking is valid, set prices
+            setIsBookingValid(true);
             setBookingPrices({
               servicePrice: booking.service_price,
               addonsTotal: booking.addons_total,
@@ -110,12 +185,16 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
           }
         } catch (error) {
           console.error('Error fetching booking prices:', error);
+          setIsBookingValid(false);
         }
+      } else {
+        // No bookingId in params - this is the fallback flow, consider it valid
+        setIsBookingValid(true);
       }
     };
 
     fetchBookingPrices();
-  }, [route.params?.bookingId]);
+  }, [route.params?.bookingId, user, navigation, clearBooking]);
 
   // Check if Apple Pay is available on the device
   useEffect(() => {
@@ -150,6 +229,86 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         // Booking already created via RPC, use the provided ID
         bookingId = route.params.bookingId;
         console.log('Using existing booking ID from RPC:', bookingId);
+        
+        // CRITICAL: Validate booking status before processing payment
+        // This prevents processing payment for already paid/accepted bookings
+        const { data: bookingCheck, error: checkError } = await supabase
+          .from('bookings')
+          .select('payment_status, status, user_id')
+          .eq('id', bookingId)
+          .single();
+
+        if (checkError || !bookingCheck) {
+          Alert.alert(
+            'Booking Not Found',
+            'This booking could not be found. Please start a new booking.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  clearBooking();
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'ServiceSelection' }],
+                  });
+                },
+              },
+            ]
+          );
+          return;
+        }
+
+        // Validate booking belongs to current user
+        if (user && bookingCheck.user_id !== user.id) {
+          Alert.alert(
+            'Invalid Booking',
+            'This booking does not belong to you. Please start a new booking.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  clearBooking();
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'ServiceSelection' }],
+                  });
+                },
+              },
+            ]
+          );
+          return;
+        }
+
+        // Check if booking is already paid or accepted
+        if (
+          bookingCheck.payment_status === 'paid' ||
+          bookingCheck.status === 'accepted' ||
+          bookingCheck.status === 'in_progress' ||
+          bookingCheck.status === 'completed'
+        ) {
+          console.warn('⚠️ Attempted to pay for already paid/accepted booking:', {
+            bookingId,
+            payment_status: bookingCheck.payment_status,
+            status: bookingCheck.status,
+          });
+          Alert.alert(
+            'Booking Already Paid',
+            'This booking has already been paid and accepted. Please start a new booking.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  clearBooking();
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'ServiceSelection' }],
+                  });
+                },
+              },
+            ]
+          );
+          return;
+        }
       } else {
         // Fallback: Create booking using old method (for backward compatibility)
         // This should not happen in normal flow, but kept for safety
@@ -309,16 +468,19 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
         payment_status: 'paid',
       });
 
-      // Step 7: Navigate to Home tab
+      // Step 7: Clear booking context and navigate to Home tab
+      clearBooking();
+      
+      // Reset the booking stack to clear navigation history
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ServiceSelection' }],
+      });
+      
+      // Navigate to Home tab
       const parent = navigation.getParent();
       if (parent) {
         parent.navigate('Home');
-      } else {
-        // Fallback: reset to ServiceSelection if parent navigation not available
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'ServiceSelection' }],
-        });
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -430,16 +592,19 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
       await markBookingAsPaidForTest(bookingId);
       console.log('🧪 TEST: booking marked as paid via Edge Function');
       
+      // Clear booking context and navigate to Home tab
+      clearBooking();
+      
+      // Reset the booking stack to clear navigation history
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ServiceSelection' }],
+      });
+      
       // Navigate to Home tab
       const parent = navigation.getParent();
       if (parent) {
         parent.navigate('Home');
-      } else {
-        // Fallback: reset to ServiceSelection if parent navigation not available
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'ServiceSelection' }],
-        });
       }
     } catch (error) {
       console.error('Test skip payment error:', error);
@@ -490,15 +655,15 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
                 await handleCompletePayment('apple-pay');
               }}
               activeOpacity={0.8}
-              disabled={isProcessing}
+              disabled={isProcessing || isBookingValid === false || isBookingValid === null}
               style={[
                 styles.applePayButton,
-                isProcessing && styles.applePayButtonDisabled,
+                (isProcessing || isBookingValid === false || isBookingValid === null) && styles.applePayButtonDisabled,
               ]}
             >
               <Ionicons name="logo-apple" size={24} color="white" />
               <Text style={styles.applePayText}>
-                {isProcessing ? 'Processing...' : 'Pay with Apple Pay'}
+                {isProcessing ? 'Processing...' : isBookingValid === null ? 'Validating booking...' : 'Pay with Apple Pay'}
               </Text>
             </TouchableOpacity>
           )}
@@ -519,15 +684,15 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
               await handleCompletePayment('stripe');
             }}
             activeOpacity={0.8}
-            disabled={isProcessing}
+            disabled={isProcessing || isBookingValid === false || isBookingValid === null}
             style={[
               styles.stripeButton,
-              isProcessing && styles.stripeButtonDisabled,
+              (isProcessing || isBookingValid === false || isBookingValid === null) && styles.stripeButtonDisabled,
             ]}
           >
             <Ionicons name="card" size={24} color="white" />
             <Text style={styles.stripeButtonText}>
-              {isProcessing ? 'Processing...' : 'Pay with Stripe'}
+              {isProcessing ? 'Processing...' : isBookingValid === null ? 'Validating booking...' : 'Pay with Stripe'}
             </Text>
           </TouchableOpacity>
 
@@ -553,14 +718,14 @@ export default function PaymentMethodScreen({ navigation, route }: Props) {
             <TouchableOpacity
               onPress={handleTestSkipPayment}
               activeOpacity={0.8}
-              disabled={isProcessing}
+              disabled={isProcessing || isBookingValid === false || isBookingValid === null}
               style={[
                 styles.testSkipButton,
-                isProcessing && styles.testSkipButtonDisabled,
+                (isProcessing || isBookingValid === false || isBookingValid === null) && styles.testSkipButtonDisabled,
               ]}
             >
               <Text style={styles.testSkipButtonText}>
-                {isProcessing ? 'Processing...' : 'Test: Mark Paid'}
+                {isProcessing ? 'Processing...' : isBookingValid === null ? 'Validating booking...' : 'Test: Mark Paid'}
               </Text>
             </TouchableOpacity>
           </View>
