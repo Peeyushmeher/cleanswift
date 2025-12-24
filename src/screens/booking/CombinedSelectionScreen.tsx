@@ -1461,26 +1461,25 @@ export default function CombinedSelectionScreen({ navigation, route }: Props) {
             )}
           </TouchableOpacity>
 
-          {/* Availability Error Card */}
-          {showAvailabilityError && availabilityError && (
-            <AvailabilityErrorCard
-              message={availabilityError}
-              onTryDifferentTime={() => {
-                setShowAvailabilityError(false);
-                setAvailabilityError(null);
-                setTimeDropdownOpen(true);
-              }}
-              onTryDifferentLocation={() => {
-                setShowAvailabilityError(false);
-                setAvailabilityError(null);
-                setLocationExpanded(true);
-              }}
-              onDismiss={() => {
-                setShowAvailabilityError(false);
-                setAvailabilityError(null);
-              }}
-            />
-          )}
+          {/* Availability Error Modal */}
+          <AvailabilityErrorCard
+            visible={showAvailabilityError}
+            message={availabilityError || 'No detailers are available in your area for this time slot. Please try a different time or location.'}
+            onTryDifferentTime={() => {
+              setShowAvailabilityError(false);
+              setAvailabilityError(null);
+              setTimeDropdownOpen(true);
+            }}
+            onTryDifferentLocation={() => {
+              setShowAvailabilityError(false);
+              setAvailabilityError(null);
+              setLocationExpanded(true);
+            }}
+            onDismiss={() => {
+              setShowAvailabilityError(false);
+              setAvailabilityError(null);
+            }}
+          />
 
           {/* Detailer Selection Card (Optional) - Hidden when user came from detailer profile */}
           {!route.params?.preselectedDetailerId && (
