@@ -320,9 +320,9 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <Image
-                source={require('../../../assets/ChatGPT Image Dec 13, 2025, 07_43_20 PM.png')}
+                source={require('../../../assets/cleanswift_logo_transparent.png')}
                 style={styles.logo}
-                contentFit="cover"
+                contentFit="contain"
                 cachePolicy="memory-disk"
               />
             </View>
@@ -577,8 +577,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   logoContainer: {
-    width: 90,
-    height: 90,
+    width: 48,
+    height: 48,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',

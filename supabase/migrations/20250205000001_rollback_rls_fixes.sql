@@ -50,3 +50,4 @@ CREATE POLICY "Admins can update all profiles"
 -- from before the fix_is_admin_rls_bypass migrations.
 -- ============================================================================
 
+
