@@ -388,10 +388,59 @@ export default function OnboardingWizard() {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     } else {
-      // On last step, allow user to proceed even with incomplete profile
-      // The RootNavigator will show MainTabs, but onboarding will reappear on next login
-      // if profile is still incomplete
-      await refetchCompleteness();
+      // On last step, mark onboarding as complete and navigate to Main
+      // User can complete their profile later from settings
+      try {
+        setLoading(true);
+
+        // Mark onboarding as completed in the database
+        const { error } = await supabase
+          .from('profiles')
+          .update({ onboarding_completed: true })
+          .eq('id', user?.id);
+
+        if (error) {
+          console.error('Error marking onboarding complete:', error);
+        }
+
+        // Refetch completeness - this will set isComplete=true because onboarding_completed=true
+        await refetchCompleteness();
+
+        // The useFocusEffect will navigate to Main when isComplete becomes true
+        // But add a fallback in case refetch doesn't trigger navigation
+        setTimeout(() => {
+          // If still on this screen after 500ms, force navigate
+          const parent = navigation.getParent();
+          if (parent) {
+            parent.reset({
+              index: 0,
+              routes: [{ name: 'Main' }],
+            });
+          } else {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Main' }],
+            });
+          }
+        }, 500);
+      } catch (error) {
+        console.error('Error skipping onboarding:', error);
+        // Fallback: Force navigate even on error
+        const parent = navigation.getParent();
+        if (parent) {
+          parent.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

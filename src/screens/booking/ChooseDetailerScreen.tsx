@@ -195,17 +195,11 @@ export default function ChooseDetailerScreen({ navigation, route }: Props) {
                         <Text style={styles.reviewsText}>({detailer.review_count} reviews)</Text>
                       </View>
 
-                      {/* Distance & ETA */}
+                      {/* Availability Status */}
                       <View style={styles.infoRow}>
                         <View style={styles.infoItem}>
-                          <Ionicons name="location" size={16} color="#C6CFD9" />
-                          <Text style={styles.infoText}>N/A</Text>
-                          {/* TODO: Replace with real distance when geolocation is implemented */}
-                        </View>
-                        <View style={styles.infoItem}>
-                          <Ionicons name="time" size={16} color="#1DA4F3" />
-                          <Text style={styles.etaText}>Estimated arrival: Calculating...</Text>
-                          {/* TODO: Replace with real ETA when geolocation is implemented */}
+                          <Ionicons name="checkmark-circle" size={16} color="#6FF0C4" />
+                          <Text style={styles.availableText}>Available</Text>
                         </View>
                       </View>
 
@@ -442,6 +436,12 @@ const styles = StyleSheet.create({
   infoText: {
     color: '#C6CFD9',
     fontSize: 14,
+    marginLeft: 8,
+  },
+  availableText: {
+    color: '#6FF0C4',
+    fontSize: 14,
+    fontWeight: '500',
     marginLeft: 8,
   },
   etaText: {
