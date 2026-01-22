@@ -1,7 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,20 +8,18 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAddressAutocomplete } from '../../hooks/useAddressAutocomplete';
 import { useProfileCompleteness } from '../../hooks/useProfileCompleteness';
 import { useUserAddresses } from '../../hooks/useUserAddresses';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { supabase } from '../../lib/supabase';
-import type { RootStackParamList } from '../../navigation/RootNavigator';
 import { isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import { normalizePostalCode, normalizeProvince } from '../../utils/addressValidation';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 
 const STEPS = [
   { title: 'Profile', label: 'Profile Setup' },
@@ -32,34 +28,20 @@ const STEPS = [
 ];
 
 export default function OnboardingWizard() {
-  const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
   const { profile, refetch: refetchProfile } = useUserProfile();
-  const { isComplete, refetch: refetchCompleteness } = useProfileCompleteness();
+  const { refetch: refetchCompleteness } = useProfileCompleteness();
   const { addAddress, defaultAddress } = useUserAddresses();
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const isTablet = windowWidth >= 768;
+  const contentMaxWidth = isTablet ? 560 : undefined;
+  const contentWidthStyle = contentMaxWidth
+    ? { width: '100%' as const, maxWidth: contentMaxWidth, alignSelf: 'center' as const }
+    : null;
 
-  // Navigate to Main when profile becomes complete
-  useFocusEffect(
-    useCallback(() => {
-      if (isComplete && user) {
-        console.log('OnboardingWizard: Profile is complete, navigating to Main...');
-        // Get parent navigator to reset the root stack
-        const parent = navigation.getParent();
-        if (parent) {
-          parent.reset({
-            index: 0,
-            routes: [{ name: 'Main' }],
-          });
-        } else {
-          // Fallback: try direct navigation
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Main' }],
-          });
-        }
-      }
-    }, [isComplete, user, navigation])
-  );
+  // Navigation to Main is handled automatically by RootNavigator's conditional rendering
+  // when refetchCompleteness() updates isComplete to true after onboarding completion
 
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -384,66 +366,6 @@ export default function OnboardingWizard() {
     }
   };
 
-  const handleSkip = async () => {
-    if (currentStep < 2) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      // On last step, mark onboarding as complete and navigate to Main
-      // User can complete their profile later from settings
-      try {
-        setLoading(true);
-
-        // Mark onboarding as completed in the database
-        const { error } = await supabase
-          .from('profiles')
-          .update({ onboarding_completed: true })
-          .eq('id', user?.id);
-
-        if (error) {
-          console.error('Error marking onboarding complete:', error);
-        }
-
-        // Refetch completeness - this will set isComplete=true because onboarding_completed=true
-        await refetchCompleteness();
-
-        // The useFocusEffect will navigate to Main when isComplete becomes true
-        // But add a fallback in case refetch doesn't trigger navigation
-        setTimeout(() => {
-          // If still on this screen after 500ms, force navigate
-          const parent = navigation.getParent();
-          if (parent) {
-            parent.reset({
-              index: 0,
-              routes: [{ name: 'Main' }],
-            });
-          } else {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Main' }],
-            });
-          }
-        }, 500);
-      } catch (error) {
-        console.error('Error skipping onboarding:', error);
-        // Fallback: Force navigate even on error
-        const parent = navigation.getParent();
-        if (parent) {
-          parent.reset({
-            index: 0,
-            routes: [{ name: 'Main' }],
-          });
-        } else {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Main' }],
-          });
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
@@ -451,261 +373,276 @@ export default function OnboardingWizard() {
   };
 
   const renderStep1 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
-      <Text style={styles.stepTitle}>Let's set up your profile</Text>
-      <Text style={styles.stepSubtitle}>We need some basic information to get started</Text>
+    <ScrollView
+      style={styles.stepScroll}
+      contentContainerStyle={styles.stepContentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={[styles.stepInner, contentWidthStyle]}>
+        <Text style={styles.stepTitle}>Let's set up your profile</Text>
+        <Text style={styles.stepSubtitle}>We need some basic information to get started</Text>
 
-      <View style={styles.form}>
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Full Name *</Text>
-          <TextInput
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Enter your full name"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
-        </View>
+        <View style={styles.form}>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Full Name *</Text>
+            <TextInput
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Enter your full name"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Email *</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            placeholder="Enter your email"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-            editable={!user?.email} // Make read-only if from auth
-          />
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Email *</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              placeholder="Enter your email"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+              editable={!user?.email} // Make read-only if from auth
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Phone Number *</Text>
-          <TextInput
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            autoComplete="tel"
-            placeholder="Enter your phone number"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Phone Number *</Text>
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              placeholder="Enter your phone number"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
         </View>
       </View>
     </ScrollView>
   );
 
   const renderStep2 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
-      <Text style={styles.stepTitle}>Add your vehicle</Text>
-      <Text style={styles.stepSubtitle}>We need at least one vehicle for booking</Text>
+    <ScrollView style={styles.stepScroll} contentContainerStyle={styles.stepContentContainer} showsVerticalScrollIndicator={false}>
+      <View style={[styles.stepInner, contentWidthStyle]}>
+        <Text style={styles.stepTitle}>Add your vehicle</Text>
+        <Text style={styles.stepSubtitle}>We need at least one vehicle for booking</Text>
 
-      <View style={styles.form}>
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Make *</Text>
-          <TextInput
-            value={make}
-            onChangeText={setMake}
-            placeholder="e.g., Toyota"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
-        </View>
+        <View style={styles.form}>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Make *</Text>
+            <TextInput
+              value={make}
+              onChangeText={setMake}
+              placeholder="e.g., Toyota"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Model *</Text>
-          <TextInput
-            value={model}
-            onChangeText={setModel}
-            placeholder="e.g., Camry"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Model *</Text>
+            <TextInput
+              value={model}
+              onChangeText={setModel}
+              placeholder="e.g., Camry"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Year *</Text>
-          <TextInput
-            value={year}
-            onChangeText={setYear}
-            placeholder="e.g., 2023"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-            keyboardType="numeric"
-          />
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Year *</Text>
+            <TextInput
+              value={year}
+              onChangeText={setYear}
+              placeholder="e.g., 2023"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+              keyboardType="numeric"
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>License Plate *</Text>
-          <TextInput
-            value={licensePlate}
-            onChangeText={setLicensePlate}
-            placeholder="e.g., ABC-1234"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-            autoCapitalize="characters"
-          />
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>License Plate *</Text>
+            <TextInput
+              value={licensePlate}
+              onChangeText={setLicensePlate}
+              placeholder="e.g., ABC-1234"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+              autoCapitalize="characters"
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Color</Text>
-          <TextInput
-            value={color}
-            onChangeText={setColor}
-            placeholder="e.g., Blue"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Color</Text>
+            <TextInput
+              value={color}
+              onChangeText={setColor}
+              placeholder="e.g., Blue"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Trim</Text>
-          <TextInput
-            value={trim}
-            onChangeText={setTrim}
-            placeholder="e.g., LE, XLE"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Trim</Text>
+            <TextInput
+              value={trim}
+              onChangeText={setTrim}
+              placeholder="e.g., LE, XLE"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
         </View>
       </View>
     </ScrollView>
   );
 
   const renderStep3 = () => (
-    <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-      <Text style={styles.stepTitle}>Add your service address</Text>
-      <Text style={styles.stepSubtitle}>Where should we provide the service?</Text>
+    <ScrollView
+      style={styles.stepScroll}
+      contentContainerStyle={styles.stepContentContainer}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={[styles.stepInner, contentWidthStyle]}>
+        <Text style={styles.stepTitle}>Add your service address</Text>
+        <Text style={styles.stepSubtitle}>Where should we provide the service?</Text>
 
-      <View style={styles.form}>
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Address Line 1 *</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              ref={addressInputRef}
-              value={addressLine1}
-              onChangeText={(value) => {
-                setAddressLine1(value);
-                // Clear stored coordinates when user types manually
-                setSelectedLatitude(null);
-                setSelectedLongitude(null);
-                if (geocodingEnabled && value.length >= 3) {
-                  setShowAutocomplete(true);
-                  searchAddress(value);
-                } else {
-                  setShowAutocomplete(false);
-                  clearSuggestions();
-                }
-              }}
-              onFocus={() => {
-                if (geocodingEnabled && addressLine1.length >= 3) {
-                  setShowAutocomplete(true);
-                  searchAddress(addressLine1);
-                }
-              }}
-              onBlur={() => {
-                // Delay hiding autocomplete to allow selection
-                setTimeout(() => setShowAutocomplete(false), 200);
-              }}
-              placeholder="Start typing to search..."
-              placeholderTextColor="rgba(198,207,217,0.5)"
-              style={styles.input}
-            />
-            {isAutocompleteLoading && (
-              <View style={styles.autocompleteLoader}>
-                <ActivityIndicator size="small" color="#1DA4F3" />
+        <View style={styles.form}>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Address Line 1 *</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                ref={addressInputRef}
+                value={addressLine1}
+                onChangeText={(value) => {
+                  setAddressLine1(value);
+                  // Clear stored coordinates when user types manually
+                  setSelectedLatitude(null);
+                  setSelectedLongitude(null);
+                  if (geocodingEnabled && value.length >= 3) {
+                    setShowAutocomplete(true);
+                    searchAddress(value);
+                  } else {
+                    setShowAutocomplete(false);
+                    clearSuggestions();
+                  }
+                }}
+                onFocus={() => {
+                  if (geocodingEnabled && addressLine1.length >= 3) {
+                    setShowAutocomplete(true);
+                    searchAddress(addressLine1);
+                  }
+                }}
+                onBlur={() => {
+                  // Delay hiding autocomplete to allow selection
+                  setTimeout(() => setShowAutocomplete(false), 200);
+                }}
+                placeholder="Start typing to search..."
+                placeholderTextColor="rgba(198,207,217,0.5)"
+                style={styles.input}
+              />
+              {isAutocompleteLoading && (
+                <View style={styles.autocompleteLoader}>
+                  <ActivityIndicator size="small" color="#1DA4F3" />
+                </View>
+              )}
+            </View>
+            
+            {/* Autocomplete Suggestions Dropdown */}
+            {geocodingEnabled && showAutocomplete && suggestions.length > 0 && (
+              <View style={styles.autocompleteDropdown}>
+                {suggestions.map((suggestion) => (
+                  <TouchableOpacity
+                    key={suggestion.placeId}
+                    style={styles.autocompleteItem}
+                    onPress={async () => {
+                      const placeDetails = await selectPlace(suggestion.placeId);
+                      if (placeDetails) {
+                        // Auto-fill form fields from place details
+                        const streetNumber = placeDetails.addressComponents.streetNumber || '';
+                        const streetName = placeDetails.addressComponents.streetName || '';
+                        const newAddressLine1 = streetNumber && streetName
+                          ? `${streetNumber} ${streetName}`
+                          : placeDetails.formattedAddress.split(',')[0];
+
+                        setAddressLine1(newAddressLine1);
+                        setCity(placeDetails.addressComponents.city || city);
+                        setProvince(placeDetails.addressComponents.province || province);
+                        setPostalCode(placeDetails.addressComponents.postalCode || postalCode);
+                        
+                        // Store coordinates from autocomplete
+                        setSelectedLatitude(placeDetails.latitude);
+                        setSelectedLongitude(placeDetails.longitude);
+                        
+                        setShowAutocomplete(false);
+                      }
+                    }}
+                  >
+                    <Ionicons name="location" size={18} color="#1DA4F3" style={styles.autocompleteIcon} />
+                    <View style={styles.autocompleteTextContainer}>
+                      <Text style={styles.autocompleteMainText}>{suggestion.mainText}</Text>
+                      <Text style={styles.autocompleteSecondaryText}>{suggestion.secondaryText}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
           </View>
-          
-          {/* Autocomplete Suggestions Dropdown */}
-          {geocodingEnabled && showAutocomplete && suggestions.length > 0 && (
-            <View style={styles.autocompleteDropdown}>
-              {suggestions.map((suggestion) => (
-                <TouchableOpacity
-                  key={suggestion.placeId}
-                  style={styles.autocompleteItem}
-                  onPress={async () => {
-                    const placeDetails = await selectPlace(suggestion.placeId);
-                    if (placeDetails) {
-                      // Auto-fill form fields from place details
-                      const streetNumber = placeDetails.addressComponents.streetNumber || '';
-                      const streetName = placeDetails.addressComponents.streetName || '';
-                      const newAddressLine1 = streetNumber && streetName
-                        ? `${streetNumber} ${streetName}`
-                        : placeDetails.formattedAddress.split(',')[0];
 
-                      setAddressLine1(newAddressLine1);
-                      setCity(placeDetails.addressComponents.city || city);
-                      setProvince(placeDetails.addressComponents.province || province);
-                      setPostalCode(placeDetails.addressComponents.postalCode || postalCode);
-                      
-                      // Store coordinates from autocomplete
-                      setSelectedLatitude(placeDetails.latitude);
-                      setSelectedLongitude(placeDetails.longitude);
-                      
-                      setShowAutocomplete(false);
-                    }
-                  }}
-                >
-                  <Ionicons name="location" size={18} color="#1DA4F3" style={styles.autocompleteIcon} />
-                  <View style={styles.autocompleteTextContainer}>
-                    <Text style={styles.autocompleteMainText}>{suggestion.mainText}</Text>
-                    <Text style={styles.autocompleteSecondaryText}>{suggestion.secondaryText}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Address Line 2</Text>
+            <TextInput
+              value={addressLine2}
+              onChangeText={setAddressLine2}
+              placeholder="Apt, suite, etc. (optional)"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Address Line 2</Text>
-          <TextInput
-            value={addressLine2}
-            onChangeText={setAddressLine2}
-            placeholder="Apt, suite, etc. (optional)"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>City *</Text>
+            <TextInput
+              value={city}
+              onChangeText={setCity}
+              placeholder="Enter city"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>City *</Text>
-          <TextInput
-            value={city}
-            onChangeText={setCity}
-            placeholder="Enter city"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-          />
-        </View>
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Province *</Text>
+            <TextInput
+              value={province}
+              onChangeText={setProvince}
+              placeholder="e.g., ON, BC, QC"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+              autoCapitalize="characters"
+            />
+          </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Province *</Text>
-          <TextInput
-            value={province}
-            onChangeText={setProvince}
-            placeholder="e.g., ON, BC, QC"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-            autoCapitalize="characters"
-          />
-        </View>
-
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Postal Code *</Text>
-          <TextInput
-            value={postalCode}
-            onChangeText={setPostalCode}
-            placeholder="e.g., M5H 2N2"
-            placeholderTextColor="rgba(198,207,217,0.5)"
-            style={styles.input}
-            autoCapitalize="characters"
-          />
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Postal Code *</Text>
+            <TextInput
+              value={postalCode}
+              onChangeText={setPostalCode}
+              placeholder="e.g., M5H 2N2"
+              placeholderTextColor="rgba(198,207,217,0.5)"
+              style={styles.input}
+              autoCapitalize="characters"
+            />
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -743,47 +680,46 @@ export default function OnboardingWizard() {
         {currentStep === 2 && renderStep3()}
 
         {/* Navigation Buttons */}
-        <View style={styles.buttonContainer}>
-          {currentStep > 0 && (
-            <TouchableOpacity
-              onPress={handleBack}
-              disabled={loading}
-              style={[styles.button, styles.backButton]}
-            >
-              <Ionicons name="chevron-back" size={20} color="#C6CFD9" />
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-          )}
+        <View
+          style={[
+            styles.footerOuter,
+            { paddingBottom: Math.max(16, insets.bottom + 12) },
+          ]}
+        >
+          <View style={[styles.footerInner, contentWidthStyle]}>
+            {currentStep > 0 && (
+              <TouchableOpacity
+                onPress={handleBack}
+                disabled={loading}
+                style={[styles.button, styles.backButton]}
+              >
+                <Ionicons name="chevron-back" size={20} color="#C6CFD9" />
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+            )}
 
-          <View style={styles.buttonGroup}>
-            <TouchableOpacity
-              onPress={handleSkip}
-              disabled={loading}
-              style={[styles.button, styles.skipButton]}
-            >
-              <Text style={styles.skipButtonText}>Skip for now</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={
-                currentStep === 0
-                  ? handleStep1Continue
-                  : currentStep === 1
-                  ? handleStep2Continue
-                  : handleStep3Continue
-              }
-              disabled={loading}
-              style={[styles.button, styles.continueButton]}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <>
-                  <Text style={styles.continueButtonText}>Continue</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
-                </>
-              )}
-            </TouchableOpacity>
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity
+                onPress={
+                  currentStep === 0
+                    ? handleStep1Continue
+                    : currentStep === 1
+                    ? handleStep2Continue
+                    : handleStep3Continue
+                }
+                disabled={loading}
+                style={[styles.button, styles.continueButton]}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.continueButtonText}>Continue</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </SafeAreaView>
@@ -835,9 +771,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
-  stepContent: {
+  stepScroll: {
     flex: 1,
+  },
+  stepContentContainer: {
     paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  stepInner: {
+    width: '100%',
   },
   stepTitle: {
     color: '#F5F7FA',
@@ -920,14 +862,16 @@ const styles = StyleSheet.create({
     color: '#C6CFD9',
     fontSize: 13,
   },
-  buttonContainer: {
+  footerOuter: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  footerInner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -951,14 +895,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
   },
   backButtonText: {
-    color: '#C6CFD9',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  skipButton: {
-    backgroundColor: 'transparent',
-  },
-  skipButtonText: {
     color: '#C6CFD9',
     fontSize: 16,
     fontWeight: '500',

@@ -118,31 +118,55 @@ export async function downloadUserData(): Promise<{ data: any; error: Error | nu
 /**
  * Delete user account and all associated data
  * WARNING: This is a destructive operation that cannot be undone
+ * 
+ * Calls the delete-user-account Edge Function which uses the Supabase Admin API
+ * to permanently delete the user. CASCADE constraints automatically clean up
+ * related data (profiles, cars, addresses, bookings, etc.)
  */
 export async function deleteAccount(): Promise<{ error: Error | null }> {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) {
       return { error: new Error('User not authenticated') };
     }
 
-    // Note: Deleting the auth user will cascade delete all related data
-    // due to foreign key constraints with ON DELETE CASCADE
-    // This is handled by Supabase automatically
+    // Get Supabase URL for Edge Function call
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      return { error: new Error('Supabase URL not configured') };
+    }
 
-    // Sign out first (this clears the session)
-    await supabase.auth.signOut();
-
-    // The actual account deletion should be done via Supabase Admin API
-    // or a database function/trigger, as regular users can't delete auth users
-    // For now, we'll just sign out and show a message that account deletion
-    // needs to be done through support or admin
+    // Call the delete-user-account Edge Function
+    const functionUrl = `${supabaseUrl}/functions/v1/delete-user-account`;
     
-    // TODO: If you have an admin function or API endpoint for account deletion,
-    // call it here. Otherwise, users will need to contact support.
+    console.log('📞 Calling delete-user-account Edge Function...');
+
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+      },
+      body: JSON.stringify({}),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = responseData.error || responseData.message || 'Failed to delete account';
+      console.error('❌ Account deletion failed:', errorMessage);
+      return { error: new Error(errorMessage) };
+    }
+
+    console.log('✅ Account deleted successfully');
+
+    // Sign out locally to clear the session
+    await supabase.auth.signOut();
 
     return { error: null };
   } catch (error) {
+    console.error('deleteAccount error:', error);
     return { error: error instanceof Error ? error : new Error('Failed to delete account') };
   }
 }

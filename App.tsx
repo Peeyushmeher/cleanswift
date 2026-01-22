@@ -12,6 +12,7 @@ import * as Notifications from 'expo-notifications';
 import ReceiptModal from './src/components/ReceiptModal';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { BookingProvider } from './src/contexts/BookingContext';
+import { ProfileCompletenessProvider } from './src/contexts/ProfileCompletenessContext';
 import { ReceiptProvider, useReceipt } from './src/contexts/ReceiptContext';
 import { useBookingNotifications } from './src/hooks/useBookingNotifications';
 import { isSupabaseConfigured, supabase } from './src/lib/supabase';
@@ -510,24 +511,26 @@ export default function App() {
             onStateChange={() => console.log('Navigation state changed')}
           >
             <AuthProvider>
-              <BookingProvider>
-                <ReceiptProvider>
-                  <NotificationListener />
-                  <PendingReceiptChecker />
-                  <OAuthDeepLinkHandler />
-                  <EmailConfirmationHandler />
-                  <View style={{ flex: 1 }}>
-                    {showConfigError && (
-                      <View style={{ backgroundColor: '#7f1d1d', padding: 10 }}>
-                        <StatusBar style="light" />
-                      </View>
-                    )}
-                    <RootNavigator />
-                    <ReceiptModal />
-                    <StatusBar style="light" />
-                  </View>
-                </ReceiptProvider>
-              </BookingProvider>
+              <ProfileCompletenessProvider>
+                <BookingProvider>
+                  <ReceiptProvider>
+                    <NotificationListener />
+                    <PendingReceiptChecker />
+                    <OAuthDeepLinkHandler />
+                    <EmailConfirmationHandler />
+                    <View style={{ flex: 1 }}>
+                      {showConfigError && (
+                        <View style={{ backgroundColor: '#7f1d1d', padding: 10 }}>
+                          <StatusBar style="light" />
+                        </View>
+                      )}
+                      <RootNavigator />
+                      <ReceiptModal />
+                      <StatusBar style="light" />
+                    </View>
+                  </ReceiptProvider>
+                </BookingProvider>
+              </ProfileCompletenessProvider>
             </AuthProvider>
           </NavigationContainer>
         </StripeProvider>

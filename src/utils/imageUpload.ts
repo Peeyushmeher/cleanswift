@@ -285,9 +285,7 @@ export async function uploadDetailerAvatarFromFile(
 
     if (!detailer) {
       throw new Error('Detailer profile update returned no data');
-    }
-
-    console.log('✅ Detailer profile updated with avatar_url:', avatarUrl);
+    }    console.log('✅ Detailer profile updated with avatar_url:', avatarUrl);
 
     return {
       detailer,
@@ -301,4 +299,3 @@ export async function uploadDetailerAvatarFromFile(
       : new Error('Failed to upload detailer profile picture');
   }
 }
-

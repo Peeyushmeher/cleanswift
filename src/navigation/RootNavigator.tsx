@@ -1,8 +1,7 @@
 import { View, ActivityIndicator } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserProfile } from '../hooks/useUserProfile';
-import { useProfileCompleteness } from '../hooks/useProfileCompleteness';
+import { useProfileCompleteness } from '../contexts/ProfileCompletenessContext';
 import AuthStack from './AuthStack';
 import MainTabs from './MainTabs';
 import OnboardingWizard from '../screens/onboarding/OnboardingWizard';
@@ -44,21 +43,18 @@ function OnboardingNavigator() {
 
 export default function RootNavigator() {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useUserProfile();
   const { isComplete, loading: completenessLoading } = useProfileCompleteness();
 
   // Debug logging
   console.log('RootNavigator state:', {
     hasUser: !!user,
-    hasProfile: !!profile,
     isComplete,
     authLoading,
-    profileLoading,
     completenessLoading,
   });
 
   // Show loading screen while checking auth state and profile completeness
-  if (authLoading || profileLoading || completenessLoading) {
+  if (authLoading || completenessLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#050B12', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#6FF0C4" />
