@@ -139,7 +139,7 @@ export default function SignInScreen() {
                         id: data.user.id,
                         email: data.user.email || '',
                         full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || '',
-                        phone: data.user.phone || '',
+                        phone: data.user.phone || null, // Use null for empty phone (optional per Apple guideline 5.1.1)
                         role: 'user',
                       }, {
                         onConflict: 'id',

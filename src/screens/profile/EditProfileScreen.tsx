@@ -36,7 +36,8 @@ export default function EditProfileScreen({ navigation }: Props) {
     }
   }, [profile, user, previewUri]);
 
-  const isFormValid = name.length > 0 && email.length > 0 && phone.length > 0;
+  // Phone is optional per Apple guideline 5.1.1
+  const isFormValid = name.length > 0 && email.length > 0;
 
   const handleImagePicker = async () => {
     if (!user) {
@@ -135,7 +136,7 @@ export default function EditProfileScreen({ navigation }: Props) {
         .update({
           full_name: name,
           email: email,
-          phone: phone,
+          phone: phone.trim() || null, // Use null for empty phone (optional per Apple guideline 5.1.1)
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -248,12 +249,13 @@ export default function EditProfileScreen({ navigation }: Props) {
 
             {/* Phone */}
             <View style={styles.fieldContainer}>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.label}>Phone Number (Optional)</Text>
               <TextInput
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
                 autoComplete="tel"
+                placeholder="Enter your phone number"
                 placeholderTextColor="rgba(198,207,217,0.5)"
                 style={styles.input}
               />

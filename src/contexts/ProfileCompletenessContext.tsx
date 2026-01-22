@@ -84,14 +84,11 @@ export function ProfileCompletenessProvider({ children }: { children: React.Reac
       if (!profile) {
         missing.push('Profile');
         missing.push('Full name');
-        missing.push('Phone number');
       } else {
         if (!profile.full_name || profile.full_name.trim() === '') {
           missing.push('Full name');
         }
-        if (!profile.phone || profile.phone.trim() === '') {
-          missing.push('Phone number');
-        }
+        // Phone is optional per Apple guideline 5.1.1 - not required for profile completeness
       }
 
       if (!cars || cars.length === 0) {

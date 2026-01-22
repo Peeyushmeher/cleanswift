@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { useBooking } from '../../contexts/BookingContext';
@@ -30,6 +30,24 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
   } = useBooking();
   const [isCreatingBooking, setIsCreatingBooking] = useState(false);
   const [isLoadingCar, setIsLoadingCar] = useState(false);
+
+  // Phone prompt modal state (Apple guideline 5.1.1 - phone is optional)
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [tempPhone, setTempPhone] = useState('');
+  const [pendingBookingData, setPendingBookingData] = useState<{
+    carId: string;
+    scheduledStart: string;
+    locationAddress: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    locationLat: number | null;
+    locationLng: number | null;
+    serviceIds: string[];
+    locationNotes?: string;
+    detailerId: string | null;
+    taxAmount: number;
+  } | null>(null);
 
   // Auto-fetch primary car if no car is selected
   useEffect(() => {
@@ -88,6 +106,80 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
       });
     }
   }, [parentNavigation]);
+
+  // Function to proceed with creating the booking
+  const proceedToPayment = async (bookingData: {
+    carId: string;
+    scheduledStart: string;
+    locationAddress: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    locationLat: number | null;
+    locationLng: number | null;
+    serviceIds: string[];
+    locationNotes?: string;
+    detailerId: string | null;
+    taxAmount: number;
+  }) => {
+    try {
+      setIsCreatingBooking(true);
+
+      console.log('📝 OrderSummary: Creating booking with detailer:', {
+        detailerId: bookingData.detailerId,
+        detailerName: selectedDetailer?.full_name || 'None selected',
+        fromContext: !!selectedDetailer,
+        fromParams: !!route.params?.detailerId,
+      });
+
+      const result = await createBooking(bookingData);
+
+      // Navigate to payment with booking ID and total price
+      navigation.navigate('PaymentMethod', {
+        showPrice: true,
+        bookingId: result.booking.id,
+        totalPriceCents: result.total_price_cents,
+        detailerId: selectedDetailer?.id || route.params?.detailerId || null,
+      });
+    } catch (error) {
+      console.error('Failed to create booking:', error);
+      Alert.alert(
+        'Booking Failed',
+        error instanceof Error ? error.message : 'Failed to create booking. Please try again.'
+      );
+    } finally {
+      setIsCreatingBooking(false);
+    }
+  };
+
+  // Handle skip phone button in modal
+  const handleSkipPhone = () => {
+    setShowPhoneModal(false);
+    if (pendingBookingData) {
+      proceedToPayment(pendingBookingData);
+      setPendingBookingData(null);
+    }
+  };
+
+  // Handle save phone button in modal
+  const handleSavePhone = async () => {
+    if (tempPhone.trim() && user) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ phone: tempPhone.trim() })
+          .eq('id', user.id);
+      } catch (error) {
+        console.warn('Failed to save phone:', error);
+      }
+    }
+    setShowPhoneModal(false);
+    setTempPhone('');
+    if (pendingBookingData) {
+      proceedToPayment(pendingBookingData);
+      setPendingBookingData(null);
+    }
+  };
 
   const handleContinue = async () => {
     // Validate required data
@@ -181,50 +273,44 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
       .filter(Boolean)
       .join(', ');
 
+    // Prepare booking data
+    const detailerId = selectedDetailer?.id || route.params?.detailerId || null;
+    const bookingData = {
+      carId: finalCar.id,
+      scheduledStart,
+      locationAddress,
+      city: selectedLocation.city,
+      province: selectedLocation.province,
+      postalCode: selectedLocation.postal_code,
+      locationLat: selectedLocation.latitude,
+      locationLng: selectedLocation.longitude,
+      serviceIds: [selectedService.id],
+      locationNotes: selectedLocation.location_notes,
+      detailerId,
+      taxAmount: priceBreakdown.taxAmount, // Pass tax amount for correct total calculation
+    };
+
+    // Check if user has phone number - if not, show optional phone prompt modal
     try {
-      setIsCreatingBooking(true);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('phone')
+        .eq('id', user.id)
+        .single();
 
-      // Call create_booking RPC
-      // IMPORTANT: Pass detailerId to preserve user selection
-      const detailerId = selectedDetailer?.id || route.params?.detailerId || null;
-      console.log('📝 OrderSummary: Creating booking with detailer:', {
-        detailerId,
-        detailerName: selectedDetailer?.full_name || 'None selected',
-        fromContext: !!selectedDetailer,
-        fromParams: !!route.params?.detailerId,
-      });
-      
-      const result = await createBooking({
-        carId: finalCar.id,
-        scheduledStart,
-        locationAddress,
-        city: selectedLocation.city,
-        province: selectedLocation.province,
-        postalCode: selectedLocation.postal_code,
-        locationLat: selectedLocation.latitude,
-        locationLng: selectedLocation.longitude,
-        serviceIds: [selectedService.id], // Currently single service, but RPC supports multiple
-        locationNotes: selectedLocation.location_notes,
-        detailerId: detailerId, // Preserve selected detailer
-      });
-
-      // Navigate to payment with booking ID and total price
-      // IMPORTANT: Pass detailerId to preserve user selection
-      navigation.navigate('PaymentMethod', {
-        showPrice: true,
-        bookingId: result.booking.id,
-        totalPriceCents: result.total_price_cents,
-        detailerId: selectedDetailer?.id || route.params?.detailerId || null,
-      });
+      if (!profile?.phone) {
+        // Show phone prompt modal - user can skip or add phone
+        setPendingBookingData(bookingData);
+        setShowPhoneModal(true);
+        return;
+      }
     } catch (error) {
-      console.error('Failed to create booking:', error);
-      Alert.alert(
-        'Booking Failed',
-        error instanceof Error ? error.message : 'Failed to create booking. Please try again.'
-      );
-    } finally {
-      setIsCreatingBooking(false);
+      console.warn('Failed to check profile phone:', error);
+      // Continue with booking even if check fails
     }
+
+    // User has phone, proceed directly
+    proceedToPayment(bookingData);
   };
 
   const formatDate = (date: Date | null) => {
@@ -525,6 +611,54 @@ export default function OrderSummaryScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Phone Prompt Modal - Optional phone collection (Apple guideline 5.1.1) */}
+        <Modal
+          visible={showPhoneModal}
+          transparent
+          animationType="fade"
+          onRequestClose={handleSkipPhone}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Ionicons name="call-outline" size={32} color="#1DA4F3" />
+                <Text style={styles.modalTitle}>Add Your Phone Number</Text>
+              </View>
+              <Text style={styles.modalDescription}>
+                Adding your phone helps your detailer contact you about your booking
+              </Text>
+
+              <TextInput
+                value={tempPhone}
+                onChangeText={setTempPhone}
+                keyboardType="phone-pad"
+                placeholder="Enter your phone number"
+                placeholderTextColor="rgba(198,207,217,0.5)"
+                style={styles.phoneInput}
+                autoFocus
+              />
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  onPress={handleSkipPhone}
+                  activeOpacity={0.8}
+                  style={styles.skipButton}
+                >
+                  <Text style={styles.skipButtonText}>Skip</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSavePhone}
+                  activeOpacity={0.8}
+                  style={[styles.savePhoneButton, !tempPhone.trim() && styles.savePhoneButtonDisabled]}
+                  disabled={!tempPhone.trim()}
+                >
+                  <Text style={styles.savePhoneButtonText}>Save & Continue</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </View>
   );
@@ -746,5 +880,86 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  // Phone prompt modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#0A1A2F',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    color: '#F5F7FA',
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    color: '#C6CFD9',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  phoneInput: {
+    backgroundColor: '#050B12',
+    borderWidth: 1,
+    borderColor: 'rgba(198,207,217,0.2)',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    color: '#F5F7FA',
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  skipButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(198,207,217,0.3)',
+  },
+  skipButtonText: {
+    color: '#C6CFD9',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  savePhoneButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1DA4F3',
+  },
+  savePhoneButtonDisabled: {
+    backgroundColor: 'rgba(29,164,243,0.3)',
+  },
+  savePhoneButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

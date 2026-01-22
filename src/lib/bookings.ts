@@ -13,6 +13,7 @@ export interface CreateBookingParams {
   serviceIds: string[]; // Array of service UUIDs
   locationNotes?: string | null;
   detailerId?: string | null; // Optional: Preserve user-selected detailer
+  taxAmount: number; // Required tax amount for correct total calculation
 }
 
 export interface ServiceInfo {
@@ -107,6 +108,7 @@ export async function createBooking(
       p_location_lng: params.locationLng ?? null,
       p_location_notes: params.locationNotes ?? null,
       p_detailer_id: params.detailerId ?? null, // Pass selected detailer_id
+      p_tax_amount: params.taxAmount, // Pass tax amount for correct total calculation
     });
 
     if (error) {

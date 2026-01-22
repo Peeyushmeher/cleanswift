@@ -21,8 +21,14 @@ import { supabase } from '../../lib/supabase';
 import { isGoogleMapsConfigured } from '../../services/googleGeocoding';
 import { normalizePostalCode, normalizeProvince } from '../../utils/addressValidation';
 
-const STEPS = [
+const ALL_STEPS = [
   { title: 'Profile', label: 'Profile Setup' },
+  { title: 'Vehicle', label: 'Add Vehicle' },
+  { title: 'Address', label: 'Add Address' },
+];
+
+// Steps for Apple users who skip the profile step (Apple guideline 4.0)
+const APPLE_STEPS = [
   { title: 'Vehicle', label: 'Add Vehicle' },
   { title: 'Address', label: 'Add Address' },
 ];
@@ -45,6 +51,10 @@ export default function OnboardingWizard() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // Apple Sign-in detection - skip profile step if Apple provided name and email
+  const [isAppleUser, setIsAppleUser] = useState(false);
+  const [shouldSkipProfileStep, setShouldSkipProfileStep] = useState(false);
 
   // Step 1: Profile data
   const [fullName, setFullName] = useState('');
@@ -105,9 +115,29 @@ export default function OnboardingWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
+  // Detect Apple Sign-in users and skip profile step if name and email are already provided
+  useEffect(() => {
+    const checkAppleUser = () => {
+      if (user) {
+        const provider = user.app_metadata?.provider;
+        const isApple = provider === 'apple';
+        setIsAppleUser(isApple);
+
+        // Skip profile step if Apple provided name and email (Apple guideline 4.0)
+        // Apple provides this data during OAuth, so asking again violates their guidelines
+        if (isApple && profile?.full_name && profile?.email) {
+          setShouldSkipProfileStep(true);
+          setCurrentStep(1); // Start at Vehicle step
+        }
+      }
+    };
+    checkAppleUser();
+  }, [user, profile]);
+
   const handleStep1Continue = async () => {
-    if (!fullName.trim() || !phone.trim()) {
-      Alert.alert('Required Fields', 'Please fill in your full name and phone number');
+    // Phone is optional per Apple guideline 5.1.1
+    if (!fullName.trim()) {
+      Alert.alert('Required Field', 'Please fill in your full name');
       return;
     }
 
@@ -155,7 +185,7 @@ export default function OnboardingWizard() {
           .update({
             full_name: fullName.trim(),
             email: userEmail, // Always use auth user's email
-            phone: phone.trim(),
+            phone: phone.trim() || null, // Use null for empty phone (optional per Apple guideline 5.1.1)
             updated_at: new Date().toISOString(),
           })
           .eq('id', userId)
@@ -168,7 +198,7 @@ export default function OnboardingWizard() {
             id: userId, // Use verified auth user ID
             full_name: fullName.trim(),
             email: userEmail, // Always use auth user's email
-            phone: phone.trim(),
+            phone: phone.trim() || null, // Use null for empty phone (optional per Apple guideline 5.1.1)
             role: 'user', // Set default role
             updated_at: new Date().toISOString(),
           })
@@ -367,7 +397,9 @@ export default function OnboardingWizard() {
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
+    // Don't go below step 1 for Apple users who skipped the profile step
+    const minStep = shouldSkipProfileStep ? 1 : 0;
+    if (currentStep > minStep) {
       setCurrentStep(currentStep - 1);
     }
   };
@@ -410,7 +442,7 @@ export default function OnboardingWizard() {
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Phone Number *</Text>
+            <Text style={styles.label}>Phone Number (Optional)</Text>
             <TextInput
               value={phone}
               onChangeText={setPhone}
@@ -420,6 +452,9 @@ export default function OnboardingWizard() {
               placeholderTextColor="rgba(198,207,217,0.5)"
               style={styles.input}
             />
+            <Text style={styles.helperText}>
+              Adding your phone helps detailers contact you about bookings
+            </Text>
           </View>
         </View>
       </View>
@@ -652,27 +687,38 @@ export default function OnboardingWizard() {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
-          {STEPS.map((step, index) => (
-            <View key={index} style={styles.progressStep}>
-              <View
-                style={[
-                  styles.progressDot,
-                  index <= currentStep && styles.progressDotActive,
-                ]}
-              />
-              {index < STEPS.length - 1 && (
-                <View
-                  style={[
-                    styles.progressLine,
-                    index < currentStep && styles.progressLineActive,
-                  ]}
-                />
-              )}
-            </View>
-          ))}
-        </View>
-        <Text style={styles.progressLabel}>{STEPS[currentStep].label}</Text>
+        {(() => {
+          // Use different steps for Apple users who skip profile step
+          const steps = shouldSkipProfileStep ? APPLE_STEPS : ALL_STEPS;
+          // Adjust displayed step index for Apple users
+          const displayStep = shouldSkipProfileStep ? currentStep - 1 : currentStep;
+
+          return (
+            <>
+              <View style={styles.progressContainer}>
+                {steps.map((step, index) => (
+                  <View key={index} style={styles.progressStep}>
+                    <View
+                      style={[
+                        styles.progressDot,
+                        index <= displayStep && styles.progressDotActive,
+                      ]}
+                    />
+                    {index < steps.length - 1 && (
+                      <View
+                        style={[
+                          styles.progressLine,
+                          index < displayStep && styles.progressLineActive,
+                        ]}
+                      />
+                    )}
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.progressLabel}>{steps[displayStep]?.label || ''}</Text>
+            </>
+          );
+        })()}
 
         {/* Step Content */}
         {currentStep === 0 && renderStep1()}
@@ -687,7 +733,8 @@ export default function OnboardingWizard() {
           ]}
         >
           <View style={[styles.footerInner, contentWidthStyle]}>
-            {currentStep > 0 && (
+            {/* Don't show Back button on first visible step for Apple users */}
+            {currentStep > (shouldSkipProfileStep ? 1 : 0) && (
               <TouchableOpacity
                 onPress={handleBack}
                 disabled={loading}
@@ -803,6 +850,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     paddingHorizontal: 4,
+  },
+  helperText: {
+    color: 'rgba(198,207,217,0.6)',
+    fontSize: 12,
+    paddingHorizontal: 4,
+    marginTop: 4,
   },
   input: {
     width: '100%',
